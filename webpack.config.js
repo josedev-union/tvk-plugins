@@ -1,4 +1,5 @@
 const CopyPlugin = require('copy-webpack-plugin');
+const RemovePlugin = require('remove-files-webpack-plugin');
 
 module.exports = {
   entry: {
@@ -16,14 +17,14 @@ module.exports = {
   target: "web",
   devtool: "source-map",
   output: {
-    path: __dirname + '/public/',
+    path: __dirname + '/public/assets/',
     publicPath: '/public',
-    filename: 'bundle.js'
+    filename: 'js/bundle.js'
   },
   plugins: [
+    new RemovePlugin({ before: {include: ['public/assets']}}),
     new CopyPlugin([
-      { from: './assets/css/*', to: '.', transformPath(target, abs) { return target.replace("assets", ""); } },
-      { from: './assets/img/*', to: '.', transformPath(target, abs) { return target.replace("assets", ""); } }
+      { from: './assets/css/*', to: '.', transformPath(target, abs) { return target.replace("assets", ""); } }
     ]),
   ],
 };
