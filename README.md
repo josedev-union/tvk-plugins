@@ -13,14 +13,12 @@ Web user-friendly interface to the smile enhancement image service named Miro Sm
 ├── views/                  # All the view templates
 ├── assets/                 # Assets to be compiled
 │   ├── css
-│   ├── img
 │   └── js
 ├── public/                 # Files that will be exposed
 |   └── assets/             # Compiled assets
 │       ├── bundle.js
 │       ├── bundle.js.map
 │       ├── css
-│       └── img
 ├── webpack.config.js
 ```
 
