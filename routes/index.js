@@ -5,7 +5,7 @@ import UploadCredentialsProvider from '../models/upload_credentials_provider'
 /* GET presigned post */
 router.post('/uploadCredentials', async function(req, res) {
   const provider = new UploadCredentialsProvider.forImage()
-  const presignedJson = await provider.presignedPostFor("xpto/pre.jpg", {expiresInSeconds: 10 * 60})
+  const presignedJson = await provider.presignedPostFor("xpto/pre", {expiresInSeconds: 10 * 60})
   res.json(presignedJson)
 });
 

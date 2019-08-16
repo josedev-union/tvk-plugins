@@ -4,14 +4,15 @@ class ClientHTTP {
             const xhr = new XMLHttpRequest()
             xhr.open("POST", url, true)
             xhr.send(data)
-            xhr.onload = () => {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    const contentType = xhr.getResponseHeader('Content-Type');
-                    const isJsonResponse = typeof(contentType) === 'string' && contentType.toLowerCase().includes('json');
-                    if (isJsonResponse) resolve(JSON.parse(xhr.responseText))
-                    else resolve(xhr.responseText)
-                } else reject(xhr.responseText)
+            const onResponse = () => {
+                const contentType = xhr.getResponseHeader('Content-Type');
+                const isJsonResponse = typeof(contentType) === 'string' && contentType.toLowerCase().includes('json');
+                const data = isJsonResponse ? JSON.parse(xhr.responseText) : xhr.responseText
+                resolve([data, xhr.status])
             }
+
+            xhr.onload = onResponse
+            xhr.onerror = onResponse
         })
     }
 }
