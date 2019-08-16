@@ -8,7 +8,7 @@ class UploadCredentialsProvider {
     }
 
     static forImage(s3) {
-        return new UploadCredentialsProvider(new AWS.S3(), 'autosmile.dev.us', 'image/*')
+        return new UploadCredentialsProvider(new AWS.S3(), process.env.MIROWEB_S3_BUCKET, 'image/*')
     }
 
     presignedPostFor(key, {expiresInSeconds}) {

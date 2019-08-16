@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "webpack --config ./webpack.config.js --mode development",
-    "up": "npm run build && babel-node bin/www",
+    "up": "npm run build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime bin/www",
     "start": "nodemon --exec 'npm run up'"
   },
   "dependencies": {
@@ -25,11 +25,13 @@
     "@babel/node": "~7.5.5",
     "@babel/cli": "~7.5.5",
     "@babel/preset-env": "~7.5.5",
+    "@babel/register": "~7.5.5",
     "babel-loader": "~8.0.6",
     "webpack": "~4.39.1",
     "webpack-cli": "~3.3.6",
     "copy-webpack-plugin": "~5.0.4",
-    "remove-files-webpack-plugin": "~1.1.3"
+    "remove-files-webpack-plugin": "~1.1.3",
+    "dotenv": "~8.0.0"
   },
   "babel": {
     "presets": [
