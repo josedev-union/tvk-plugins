@@ -5,8 +5,12 @@ class ClientHTTP {
             xhr.open("POST", url, true)
             xhr.send(data)
             xhr.onload = () => {
-                if (xhr.status >= 200 && xhr.status < 300) resolve(JSON.parse(xhr.responseText))
-                else reject(xhr.responseText)
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const contentType = xhr.getResponseHeader('Content-Type');
+                    const isJsonResponse = typeof(contentType) === 'string' && contentType.toLowerCase().includes('json');
+                    if (isJsonResponse) resolve(JSON.parse(xhr.responseText))
+                    else resolve(xhr.responseText)
+                } else reject(xhr.responseText)
             }
         })
     }
