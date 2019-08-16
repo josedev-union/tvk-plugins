@@ -1,12 +1,11 @@
 import express from 'express';
-import AWS from 'aws-sdk'
 const router = express.Router();
-import Uploader from '../models/uploader.js'
+import UploadCredentialsProvider from '../models/upload_credentials_provider'
 
 /* GET presigned post */
 router.post('/uploadCredentials', async function(req, res) {
-  const s3 = new AWS.S3()
-  const presignedJson = await new Uploader(s3).presignedPost()
+  const provider = new UploadCredentialsProvider.forImage()
+  const presignedJson = await provider.presignedPostFor("xpto/pre.jpg", {expiresInSeconds: 10 * 60})
   res.json(presignedJson)
 });
 

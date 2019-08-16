@@ -5,14 +5,9 @@ class Uploader {
             Object.keys(json.fields).forEach(key => {
                 data.append(key, json.fields[key])
             })
-            // data.append('key', 'xpto/pre.jpg')
             data.append('file', file)
             return this.post(json.url, data)
         })
-        //const data = new FormData()
-        //Object.keys(data).forEach((key) => {
-        //    data[key]
-        //})
     }
 
     static getPresignedPost() {
@@ -32,10 +27,7 @@ class Uploader {
     }
 }
 
-//document.addEventListener("load", (event) => {
-    var input = document.querySelector("input")
-    input.addEventListener("change", (event) => {
-        console.log("ASLKDJNAKLSJDN")
-        Uploader.uploadFile(input.files[0])
-    })
-//})
+var input = document.querySelector("input")
+input.addEventListener("change", (event) => {
+    Uploader.uploadFile(input.files[0])
+})
