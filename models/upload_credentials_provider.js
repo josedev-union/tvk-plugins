@@ -8,7 +8,7 @@ class UploadCredentialsProvider {
         this.maxSizeInMegabytes = maxSizeInMegabytes
     }
 
-    static forImage(s3) {
+    static forImageUpload(s3) {
         return new UploadCredentialsProvider(new AWS.S3(), {
             bucket: process.env.MIROWEB_S3_BUCKET, 
             contentTypePrefix: 'image/',

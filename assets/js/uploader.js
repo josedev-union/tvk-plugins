@@ -4,7 +4,7 @@ class Uploader {
     static uploadFile(file, presignedPost) {
         var data = new FormData()
         const extension = file.name.match(/([^.]+)$/)[1]
-        data.append('Key', 'xpto/pre.' + extension)
+        data.append('Key', 'xpto/xpto/pre.' + extension)
         data.append('Content-Type', file.type)
         Object.keys(presignedPost.fields).forEach(key => {
             data.append(key, presignedPost.fields[key])
@@ -26,7 +26,7 @@ class Uploader {
         })
     }
 
-    static getPresignedPost() {
+    static getPresignedData() {
         return ClientHTTP.post("/uploadCredentials")
     }
 }
