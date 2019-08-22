@@ -1,4 +1,5 @@
 import express from 'express';
+import admin from 'firebase-admin'
 import path from 'path'
 const router = express.Router();
 import UploadCredentialsProvider from '../models/upload_credentials_provider'
@@ -9,16 +10,25 @@ router.post('/sessions', async function(req, res) {
   const session = Object.assign({
     ip: req.ip,
     origin: req.get('Origin'),
+    createdAt: new Date(),
   }, req.body)
-  const sessionId = new Buffer(JSON.stringify(session)).toString('base64')
+  const sessionId = Buffer.from(JSON.stringify(session)).toString('base64')
   const sessionPath = `${session.email}/${sessionId}`
   const provider = new UploadCredentialsProvider.forImageUpload()
   const imageKey = path.join(sessionPath, 'pre')
+  const imageFullPath = `${imageKey}.jpg`
+  const afterFullPath = path.join(sessionPath, 'after.jpg')
+  const sessionRecord = Object.assign({
+    originalPath: imageFullPath,
+    afterPath: afterFullPath,
+  }, session)
+  const encodedEmail = Buffer.from(session.email).toString('base64')
+  admin.database().ref(`/miroweb_data/sessions/${encodedEmail}/${sessionId}`).set(sessionRecord)
   const presignedUploadJson = await provider.presignedPostFor(imageKey, {expiresInSeconds: 10 * 60})
-  const presignedDownloadOriginalUrl = await GetFileCredentialsProvider.presignedGetFor(`${imageKey}.jpg`, {
+  const presignedDownloadOriginalUrl = await GetFileCredentialsProvider.presignedGetFor(imageFullPath, {
     expiresInSeconds: 10 * 60,
   })
-  const presignedDownloadAfterUrl = await GetFileCredentialsProvider.presignedGetFor(path.join(sessionPath, 'after.jpg'), {
+  const presignedDownloadAfterUrl = await GetFileCredentialsProvider.presignedGetFor(afterFullPath, {
     expiresInSeconds: 10 * 60,
   })
   res.json({
