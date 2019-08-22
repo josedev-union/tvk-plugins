@@ -1,10 +1,10 @@
 import ClientHTTP from './client_http.js'
 
 class Uploader {
-    static uploadFile(file, presignedPost) {
+    static uploadFile(file, key, presignedPost) {
         var data = new FormData()
         const extension = file.name.match(/([^.]+)$/)[1]
-        data.append('Key', 'xpto/xpto/pre.' + extension)
+        data.append('Key', `${key}.${extension}`)
         data.append('Content-Type', file.type)
         Object.keys(presignedPost.fields).forEach(key => {
             data.append(key, presignedPost.fields[key])
@@ -15,7 +15,6 @@ class Uploader {
                 if (status >= 400) {
                     const errorCode = response.match(/<Code>(\w+)<\/Code>/)[1]
                     const message = response.match(/<Message>([^<]+)<\/Message>/)[1]
-                    console.log(message, message.includes('Content-Type'))
                     if (message.includes('Content-Type')) {
                         reject('BadContentType')
                     } else reject(errorCode)

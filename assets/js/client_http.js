@@ -1,8 +1,9 @@
 class ClientHTTP {
-    static post(url, data = null) {
+    static post(url, data = null, contentType = null) {
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest()
             xhr.open("POST", url, true)
+            if(contentType !== null) xhr.setRequestHeader("Content-Type", contentType)
             xhr.send(data)
             const onResponse = () => {
                 const contentType = xhr.getResponseHeader('Content-Type');

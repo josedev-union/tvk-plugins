@@ -1,1 +1,23 @@
-<form><input type="file"/></form>
+<form method="POST" action="/sessions" id="miroweb-data-form">
+    <label for="name">Full Name</label>
+    <input type="text" name="name"></input>
+
+    <br/>
+
+    <label for="email">Email</label>
+    <input type="email" name="email"></input>
+
+    <br/>
+
+    <label for="phone">Telephone Number</label>
+    <input type="tel" name="phone"></input>
+</form>
+
+<form method="POST" id="miroweb-upload-form">
+    <label for="image">Image</label>
+    <input name="image" type="file"/>
+
+    <br/>
+
+    <input type="button" id="miroweb-simulation-button" value="Start Simulation"></input>
+</form>
