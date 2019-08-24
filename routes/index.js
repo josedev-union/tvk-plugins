@@ -8,12 +8,14 @@ import GetFileCredentialsProvider from '../models/get_file_credentials_provider'
 /* GET presigned post */
 router.post('/sessions', async function(req, res) {
   const session = Object.assign({
+    createdAt: new Date(),
     ip: req.ip,
     origin: req.get('Origin'),
-    createdAt: new Date(),
   }, req.body)
-  const sessionId = Buffer.from(JSON.stringify(session)).toString('base64')
-  const sessionPath = `${session.email}/${sessionId}`
+  const cleanedOrigin = session.origin.match(/https?:\/\/(www\.)?([^\/]+)\/?/)[2]
+  const idbase = `${uuid(8)}|${session.email}|${cleanedOrigin}`
+  const sessionId = Buffer.from(idbase).toString('base64')
+  const sessionPath = `${session.ip}/${sessionId}`
   const provider = new UploadCredentialsProvider.forImageUpload()
   const imageKey = path.join(sessionPath, 'pre')
   const imageFullPath = `${imageKey}.jpg`
@@ -44,5 +46,14 @@ router.post('/sessions', async function(req, res) {
 router.get('/', async function(req, res) {
   res.render('index')
 });
+
+function uuid(size = 10) {
+  const uuidChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.,!@#$%&*()+=[]{}/\\<>;:".split('')
+  let uuid = ""
+  for (let i = 0; i < size; i++) {
+    uuid += uuidChars[Math.floor(Math.random()*uuidChars.length)]
+  }
+  return uuid
+}
 
 module.exports = router;
