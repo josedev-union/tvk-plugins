@@ -56,4 +56,4 @@ function uuid(size = 10) {
   return uuid
 }
 
-module.exports = router;
+export default router

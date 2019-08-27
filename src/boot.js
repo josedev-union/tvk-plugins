@@ -2,10 +2,11 @@
  * Module dependencies.
  */
 
-const app = require('../app');
-const debug = require('debug')('miroweb:server');
-const http = require('http');
-const { createTerminus } = require('@godaddy/terminus');
+import app from './app'
+import build_debug from 'debug'
+import http from 'http'
+import { createTerminus } from '@godaddy/terminus'
+const debug = build_debug('miroweb:server')
 
 /**
  * Get port from environment and store in Express.

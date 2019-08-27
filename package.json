@@ -3,8 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "webpack --config ./webpack.config.js --mode development",
-    "up": "npm run build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime bin/www",
+    "dev_build": "webpack --config ./webpack.config.js --mode development",
+    "build": "webpack --config ./webpack.config.js --mode production",
+    "build-backend": "npm run build && webpack --config ./webpack.config.server.js --mode production",
+    "up": "npm run dev_build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime src/boot.js",
     "start": "nodemon --exec 'npm run up'"
   },
   "dependencies": {
@@ -32,7 +34,8 @@
     "webpack-cli": "~3.3.6",
     "copy-webpack-plugin": "~5.0.4",
     "remove-files-webpack-plugin": "~1.1.3",
-    "dotenv": "~8.0.0"
+    "dotenv": "~8.0.0",
+    "webpack-node-externals": "~1.7.2"
   },
   "babel": {
     "presets": [

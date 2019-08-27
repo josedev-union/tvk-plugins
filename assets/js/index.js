@@ -31,7 +31,7 @@ import DataForm from './data_form.js'
             imgafter.width = 240
             imgafter.src = presignedDownloadAfter
 
-            input.after(p)
+            uploadInput.after(p)
             p.after(imgoriginal)
             imgoriginal.after(imgafter)
         })
@@ -43,7 +43,7 @@ import DataForm from './data_form.js'
             } else {
                 p.textContent = 'Error on upload'
             }
-            input.after(p)
+            uploadInput.after(p)
         })
     }
 }
