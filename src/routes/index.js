@@ -14,8 +14,8 @@ router.post('/sessions', async function(req, res) {
   }, req.body)
   const cleanedOrigin = session.origin.match(/https?:\/\/(www\.)?([^\/]+)\/?/)[2]
   const idbase = `${uuid(8)}|${session.email}|${cleanedOrigin}`
-  const sessionId = Buffer.from(idbase).toString('base64')
-  const sessionPath = `${session.ip}/${sessionId}`
+  const sessionId = base64(idbase)
+  const sessionPath = `${base64(session.ip)}/${sessionId}`
   const provider = new UploadCredentialsProvider.forImageUpload()
   const imageKey = path.join(sessionPath, 'pre')
   const imageFullPath = `${imageKey}.jpg`
@@ -24,7 +24,7 @@ router.post('/sessions', async function(req, res) {
     originalPath: imageFullPath,
     afterPath: afterFullPath,
   }, session)
-  const encodedEmail = Buffer.from(session.email).toString('base64')
+  const encodedEmail = base64(session.email)
   admin.database().ref(`/miroweb_data/sessions/${encodedEmail}/${sessionId}`).set(sessionRecord)
   const presignedUploadJson = await provider.presignedPostFor(imageKey, {expiresInSeconds: 10 * 60})
   const presignedDownloadOriginalUrl = await GetFileCredentialsProvider.presignedGetFor(imageFullPath, {
@@ -54,6 +54,10 @@ function uuid(size = 10) {
     uuid += uuidChars[Math.floor(Math.random()*uuidChars.length)]
   }
   return uuid
+}
+
+function base64(str) {
+  return Buffer.from(str).toString('base64')
 }
 
 export default router
