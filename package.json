@@ -3,12 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev_build": "webpack --config ./webpack.config.js --mode development",
-    "dev_up": "npm run dev_build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime src/boot.js",
-    "dev_start": "nodemon --exec 'npm run dev_up'",
+    "dev-build": "webpack --config ./webpack.config.js --mode development",
+    "dev-up": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime src/boot.js",
+    "dev-start": "nodemon --exec 'npm run dev-up'",
     "build": "webpack --config ./webpack.config.js --mode production",
     "build-backend": "npm run build && webpack --config ./webpack.config.server.js --mode production",
-    "start": "node -r regenerator-runtime/runtime start.js"
+    "start": "node -r regenerator-runtime/runtime src/start.js"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",

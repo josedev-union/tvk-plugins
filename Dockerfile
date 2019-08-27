@@ -17,7 +17,7 @@ ADD public ./public
 RUN npm install && \
     npm run build-backend && \
     npm prune --production && \
-    cp -rf $BUILD_DIR/dist/ /app && \
+    cp -rf $BUILD_DIR/dist/ /app/ && \
     cp -rf $BUILD_DIR/package.json /app/ && \
     cp -rf $BUILD_DIR/node_modules /app/ && \
     rm -rf $BUILD_DIR

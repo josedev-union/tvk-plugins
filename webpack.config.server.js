@@ -23,7 +23,7 @@ module.exports = {
   output: {
     path: __dirname + '/dist/',
     // publicPath: '/public',
-    filename: 'start.js'
+    filename: 'src/start.js'
   },
   resolve: {
     extensions: ['*', '.js']
@@ -35,7 +35,7 @@ module.exports = {
   plugins: [
     new RemovePlugin({ before: {include: ['dist']}}),
     new CopyPlugin([
-      { from: './src/views/', to: './views' },
+      { from: './src/views/', to: './src/views' },
       { from: './public/', to: './public' }
     ]),
   ],
