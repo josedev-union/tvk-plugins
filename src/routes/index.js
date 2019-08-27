@@ -1,4 +1,5 @@
 import express from 'express';
+import crypto from 'crypto'
 import admin from 'firebase-admin'
 import path from 'path'
 const router = express.Router();
@@ -14,7 +15,7 @@ router.post('/sessions', async function(req, res) {
   }, req.body)
   const cleanedOrigin = session.origin.match(/https?:\/\/(www\.)?([^\/]+)\/?/)[2]
   const idbase = `${uuid(8)}|${session.email}|${cleanedOrigin}`
-  const sessionId = base64(idbase)
+  const sessionId = sha1(idbase)
   const sessionPath = `${base64(session.ip)}/${sessionId}`
   const provider = new UploadCredentialsProvider.forImageUpload()
   const imageKey = path.join(sessionPath, 'pre')
@@ -58,6 +59,12 @@ function uuid(size = 10) {
 
 function base64(str) {
   return Buffer.from(str).toString('base64')
+}
+
+function sha1(str) {
+  const sha1 = crypto.createHash('sha1')
+  sha1.update(str)
+  return sha1.digest('hex')
 }
 
 export default router
