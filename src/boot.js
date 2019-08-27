@@ -5,7 +5,7 @@
 import app from './app'
 import build_debug from 'debug'
 import http from 'http'
-import { createTerminus } from '@godaddy/terminus'
+import { createTerminus, HealthCheckError } from '@godaddy/terminus'
 const debug = build_debug('miroweb:server')
 
 /**
@@ -25,7 +25,14 @@ const server = http.createServer(app);
  * Listen on provided port, on all network interfaces.
  */
 
-createTerminus(server);
+createTerminus(server, {
+  healthChecks: {
+    '/healthz': async function() {
+      // throw new HealthCheckError('healthcheck failed', ['error1', 'error2', 'error3'])
+      return undefined
+    }
+  }
+});
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
