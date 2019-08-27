@@ -4,10 +4,11 @@
   "private": true,
   "scripts": {
     "dev_build": "webpack --config ./webpack.config.js --mode development",
+    "dev_up": "npm run dev_build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime src/boot.js",
+    "dev_start": "nodemon --exec 'npm run dev_up'",
     "build": "webpack --config ./webpack.config.js --mode production",
     "build-backend": "npm run build && webpack --config ./webpack.config.server.js --mode production",
-    "up": "npm run dev_build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime src/boot.js",
-    "start": "nodemon --exec 'npm run up'"
+    "start": "node -r regenerator-runtime/runtime start.js"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",
@@ -20,7 +21,8 @@
     "helmet": "~3.20.0",
     "@godaddy/terminus": "~4.1.2",
     "aws-sdk": "~2.509.0",
-    "firebase-admin": "~8.3.0"
+    "firebase-admin": "~8.3.0",
+    "regenerator-runtime":"~0.13.3"
   },
   "devDependencies": {
     "nodemon": "~1.19.1",

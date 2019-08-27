@@ -1,0 +1,12 @@
+FROM node:12.8.0-alpine
+MAINTAINER support@tastytech.ca
+LABEL tastytech.miroweb.base.version="1.0.0"
+
+# Dependencies Pre-downloading
+ARG BUILD_DIR=/build
+WORKDIR $BUILD_DIR
+
+ADD package.json ./package.json
+ADD package-lock.json ./package-lock.json
+
+RUN npm install
