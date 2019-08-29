@@ -40,6 +40,23 @@ Web user-friendly interface to the smile enhancement image service named Miro Sm
 
 1. Install nodejs 12.8.0 (I suggest using [asdf](https://github.com/asdf-vm/asdf) / [asdf-nodejs](https://github.com/asdf-vm/asdf-nodejs))
 2. Run `npm install`
+3. Configure your `.env`
+4. Start the server `npm run dev-start`
+
+## Configuring .env file
+The application loads the `.env` file through the `dotenv` lib. So you need to configure the following env vars:
+
+```bash
+# Firebase
+MIROWEB_FIREBASE_DATABASE_URL=https://mirosmiles-us-staging.firebaseio.com
+MIROWEB_GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account","project_id": "mirosmiles-us-staging", ...}
+
+# AWS S3
+AWS_ACCESS_KEY_ID=<YOUR ACCOUNT>
+AWS_SECRET_ACCESS_KEY=<YOUR ACCOUNT>
+MIROWEB_S3_BUCKET=miroweb.staging.us
+AWS_DEFAULT_REGION=us-east-1
+```
 
 ## Development Tasks
 
