@@ -10,7 +10,17 @@ module.exports = {
       {
         test: /\.(js)$/,
         include: /assets/,
-        use: ['babel-loader']
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: [
+              [
+                '@babel/preset-env',
+                {targets: "defaults"}
+              ]
+            ]
+          }
+        }
       }
     ]
   },

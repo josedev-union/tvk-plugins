@@ -1,5 +1,5 @@
-import uuid from 'uuid/v4'
-import crypto from 'crypto'
+import {newId, newSecret} from '../models/id_generator'
+import Database from '../models/database'
 
 class DentistAccessPoint {
     constructor({id, secret, hosts = []}) {
@@ -12,6 +12,20 @@ class DentistAccessPoint {
         this.hosts.push(host)
     }
 
+    save() {
+        return Database.build().save(this, `/dentist_access_points/${this.id}`)
+    }
+
+    static async getAll() {
+        const db = Database.build()
+        const allAsObject = await db.getAll(`/dentist_access_points/`)
+        const all = []
+        for (var key in allAsObject) {
+            all.push(allAsObject[key])
+        }
+        return all
+    }
+
     static build({hosts = []}) {
         return new DentistAccessPoint({
             id: this.newId(),
@@ -21,38 +35,12 @@ class DentistAccessPoint {
     }
 
     static newId() {
-        return sha1(uuid())
+        return newId()
     }
 
     static newSecret() {
-        const SECRET_KEY = 'dfbd7ac2509df92476f23be475606c8f080872f5'
-        return base64(hmac(base64(manuuid(10)), SECRET_KEY)).replace(/=+/g, '')
+        return newSecret()
     }
-}
-
-function base64(str) {
-    return Buffer.from(str).toString('base64')
-}
-
-function sha1(str) {
-    const sha1 = crypto.createHash('sha1')
-    sha1.update(str)
-    return sha1.digest('hex')
-}
-
-function hmac(str, pass) {
-    const hmac = crypto.createHmac('sha256', pass)
-    hmac.update(str)
-    return hmac.digest('hex')
-}
-
-function manuuid(size = 10) {
-    const uuidChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.,!@#$%&*()+=[]{}/\\<>;:".split('')
-    let uuid = ""
-    for (let i = 0; i < size; i++) {
-        uuid += uuidChars[Math.floor(Math.random()*uuidChars.length)]
-    }
-    return uuid
 }
 
 export default DentistAccessPoint
