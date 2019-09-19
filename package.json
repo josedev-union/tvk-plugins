@@ -9,6 +9,7 @@
     "build": "webpack --config ./webpack.config.js --mode production",
     "build-backend": "npm run build && webpack --config ./webpack.config.server.js --mode production",
     "start": "node -r regenerator-runtime/runtime src/start.js",
+    "console": "node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config.js",
     "test": "jest"
   },
   "dependencies": {
