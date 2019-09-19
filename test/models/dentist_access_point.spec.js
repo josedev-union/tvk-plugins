@@ -67,4 +67,12 @@ describe('static', () => {
         ])
       })
     })
+
+    test('get all access points for specific host', () => {
+      DentistAccessPoint.allForHost('xpto.com').then((points) => {
+        expect(points.length).toEqual(2)
+        expect([points[0].id, points[1].id]).toEqual(
+          ['97415f9cecf782e931a3737fc70d81a87b425e18', 'a8cbd26dba547994880472b1dda27ca4eb1ae23b'])
+      });
+    })
 })

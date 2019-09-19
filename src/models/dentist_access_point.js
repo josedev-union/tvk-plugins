@@ -26,6 +26,18 @@ class DentistAccessPoint {
         return all
     }
 
+    static async allForHost(host) {
+        return this.getAll.then((all) => {
+            var filtered = []
+            all.foreach((access_point) => {
+                if (access_point.hosts.includes(host)) {
+                    filtered.push(access_point)
+                }
+            })
+            return filtered
+        })
+    }
+
     static build({hosts = []}) {
         return new DentistAccessPoint({
             id: this.newId(),
