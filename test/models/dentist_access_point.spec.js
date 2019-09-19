@@ -27,6 +27,28 @@ test('can add new hosts', () => {
     expect(access.hosts).toEqual(['myhost.com'])
 })
 
+test('normalize hosts when adding them', () => {
+    var access = Factory.build('dentist_access_point')
+    access.addHost('http://myhost.com')
+    access.addHost('https://myhost.com')
+    access.addHost('https://myhost2.com')
+    access.addHost('ftp://myhost3.com.br/')
+    access.addHost('myhost3.com.br')
+    access.addHost('myhost4.com.br:81')
+    access.addHost('http://myhost5.com.br:81/')
+    access.addHost('http://user:pass@myhost6.com.br:81/')
+    access.addHost('http://user@myhost7.com.br:81/')
+    expect(access.hosts).toEqual([
+      'myhost.com',
+      'myhost2.com',
+      'myhost3.com.br',
+      'myhost4.com.br:81',
+      'myhost5.com.br:81',
+      'myhost6.com.br:81',
+      'myhost7.com.br:81'
+    ])
+})
+
 describe('static', () => {
     test('build a new access point', () => {
         const access = DentistAccessPoint.build({hosts: ['myhost.com']})

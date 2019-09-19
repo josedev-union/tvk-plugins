@@ -9,7 +9,10 @@ class DentistAccessPoint {
     }
 
     addHost(host) {
-        this.hosts.push(host)
+        var normalized = host.match(/^([^:]+:\/\/)?([^@\/]+@)?([^\/]+)/)[3]
+        if (!this.hosts.includes(normalized)) {
+            this.hosts.push(normalized)
+        }
     }
 
     save() {
