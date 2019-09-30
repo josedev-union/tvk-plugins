@@ -1,4 +1,5 @@
-import crypto from 'crypto'
+import _sha1 from 'js-sha1'
+import sha256 from 'js-sha256'
 
 export function base64(str, params = {padding: true}) {
     var b64 = Buffer.from(str).toString('base64')
@@ -6,15 +7,15 @@ export function base64(str, params = {padding: true}) {
 }
 
 export function sha1(str) {
-    const sha1 = crypto.createHash('sha1')
-    sha1.update(str)
-    return sha1.digest('hex')
+    const s1 = _sha1.create()
+    s1.update(str)
+    return s1.hex()
 }
 
 export function hmac(str, pass) {
-    const hmac = crypto.createHmac('sha256', pass)
+    const hmac = sha256.hmac.create(pass)
     hmac.update(str)
-    return hmac.digest('hex')
+    return hmac.hex()
 }
 
 export function generic_uuid(size = 10) {

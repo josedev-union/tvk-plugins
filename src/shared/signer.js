@@ -1,4 +1,4 @@
-import { base64, hmac, sha1 } from "../models/simple_crypto";
+import { base64, hmac, sha1 } from "../shared/simple_crypto";
 
 export function sign(obj, key) {
     return hmac(sha1(base64(serialize(obj))), key)
