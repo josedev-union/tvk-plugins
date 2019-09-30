@@ -28,6 +28,10 @@ class Database {
         const all = await this.connection.ref(full_path).once("value")
         return all.val()
     }
+
+    async drop() {
+        return this.connection.ref(this.namespace).remove()
+    }
 }
 
 export default Database

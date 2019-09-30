@@ -9,7 +9,7 @@ class DentistAccessPoint {
     }
 
     addHost(host) {
-        var normalized = host.match(/^([^:]+:\/\/)?([^@\/]+@)?([^\/]+)/)[3]
+        var normalized = DentistAccessPoint.normalizeHost(host)
         if (!this.hosts.includes(normalized)) {
             this.hosts.push(normalized)
         }
@@ -20,7 +20,7 @@ class DentistAccessPoint {
     }
 
     static async getAll() {
-        const db = Database.build()
+        const db = Database.instance
         const allAsObject = await db.getAll(`/dentist_access_points/`)
         const all = []
         for (var key in allAsObject) {
@@ -30,15 +30,15 @@ class DentistAccessPoint {
     }
 
     static async allForHost(host) {
-        return this.getAll.then((all) => {
-            var filtered = []
-            all.foreach((access_point) => {
-                if (access_point.hosts.includes(host)) {
-                    filtered.push(access_point)
-                }
-            })
-            return filtered
+        let normalized = DentistAccessPoint.normalizeHost(host)
+        let all = await this.getAll()
+        var filtered = []
+        all.forEach((access_point) => {
+            if (access_point.hosts.includes(normalized)) {
+                filtered.push(access_point)
+            }
         })
+        return filtered
     }
 
     static build({hosts = []}) {
@@ -47,6 +47,10 @@ class DentistAccessPoint {
             secret: this.newSecret(),
             hosts: hosts
         })
+    }
+
+    static normalizeHost(host) {
+        return host.match(/^([^:]+:\/\/)?([^@\/]+@)?([^\/]+)/)[3]
     }
 
     static newId() {
