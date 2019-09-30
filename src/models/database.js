@@ -1,4 +1,3 @@
-// require("regenerator-runtime/runtime")
 import path from 'path'
 import admin from 'firebase-admin'
 
@@ -8,11 +7,15 @@ class Database {
         this.namespace = namespace
     }
 
-    static build() {
+    static build(db = admin.database()) {
         return new Database({
-            connection: admin.database(),
+            connection: db,
             namespace: "miroweb_data"
         })
+    }
+
+    static setInstance(db = null) {
+        this.instance = this.build(db)
     }
 
     save(obj, obj_path) {
@@ -24,6 +27,10 @@ class Database {
         const full_path = path.join(this.namespace, objs_path)
         const all = await this.connection.ref(full_path).once("value")
         return all.val()
+    }
+
+    async drop() {
+        return this.connection.ref(this.namespace).remove()
     }
 }
 

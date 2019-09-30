@@ -1,4 +1,5 @@
 import AWS from 'aws-sdk'
+import Database from '../src/models/database'
 
 AWS.config.update({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -7,9 +8,18 @@ AWS.config.update({
     signatureVersion: 'v4',
 })
 
-import admin from 'firebase-admin'
-const rawCredentials = JSON.parse(process.env.MIROWEB_GOOGLE_APPLICATION_CREDENTIALS)
-admin.initializeApp({
-    credential: admin.credential.cert(rawCredentials),
-    databaseURL: process.env.MIROWEB_FIREBASE_DATABASE_URL
-})
+let app
+if (process.env.NODE_ENV === 'test') {
+    const admin = require('@firebase/testing')
+    app = admin.initializeAdminApp({databaseName: 'miroweb-test-db', databaseURL: 'http://localhost:9000'})
+} else {
+    const admin = require('firebase-admin')
+    const appConfig = {}
+    if (process.env.MIROWEB_GOOGLE_APPLICATION_CREDENTIALS) {
+        const rawCredentials = JSON.parse(process.env.MIROWEB_GOOGLE_APPLICATION_CREDENTIALS)
+        appConfig.credential = admin.credential.cert(rawCredentials)
+    }
+    appConfig.databaseURL = process.env.MIROWEB_FIREBASE_DATABASE_URL || "http://localhost:9000"
+    app = admin.initializeApp(appConfig)
+}
+Database.setInstance(app.database())

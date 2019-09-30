@@ -1,10 +1,12 @@
 class ClientHTTP {
-    static post(url, data = null, contentType = null) {
+    static post({url, body, headers = {}}) {
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest()
             xhr.open("POST", url, true)
-            if(contentType !== null) xhr.setRequestHeader("Content-Type", contentType)
-            xhr.send(data)
+            for (let name in headers) {
+                xhr.setRequestHeader(name, headers[name])
+            }
+            xhr.send(body)
             const onResponse = () => {
                 const contentType = xhr.getResponseHeader('Content-Type');
                 const isJsonResponse = typeof(contentType) === 'string' && contentType.toLowerCase().includes('json');

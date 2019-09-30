@@ -9,7 +9,7 @@ module.exports = {
     rules: [
       {
         test: /\.(js)$/,
-        include: /assets/,
+        include: /(assets|src\/shared)/,
         use: {
           loader: 'babel-loader',
           options: {
