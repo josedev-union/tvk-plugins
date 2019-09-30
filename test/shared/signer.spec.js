@@ -1,4 +1,4 @@
-import * as signer from '../../src/models/signer.js'
+import * as signer from '../../src/shared/signer.js'
 
 test(`sign a string with a specified key`, () => {
     let str = "xpto-abcd-ho&^"

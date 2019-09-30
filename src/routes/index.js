@@ -2,7 +2,7 @@ import express from 'express';
 const router = express.Router();
 import ImageProcessingService from '../models/image_processing_service'
 import ImageProcessingSolicitation from '../models/image_processing_solicitation'
-import * as signer from '../models/signer'
+import * as signer from '../shared/signer'
 import DentistAccessPoint from '../models/dentist_access_point'
 
 /* GET presigned post */

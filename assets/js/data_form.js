@@ -1,5 +1,5 @@
 import ClientHTTP from './client_http.js'
-import * as signer from '../../src/models/signer'
+import * as signer from '../../src/shared/signer'
 
 class DataForm {
     static async submit(form, secret) {

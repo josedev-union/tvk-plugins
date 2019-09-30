@@ -1,7 +1,7 @@
 import { Factory } from 'rosie'
 import AWSMock from "aws-sdk-mock";
 import AWS from "aws-sdk"; 
-import * as signer from '../../src/models/signer'
+import * as signer from '../../src/shared/signer'
 import Database from '../../src/models/database'
 
 import app from '../../src/app'
