@@ -7,12 +7,13 @@ import DataForm from './data_form.js'
     const uploadForm = document.getElementById('miroweb-upload-form')
     const uploadButton = document.getElementById('miroweb-simulation-button')
     const uploadInput = uploadForm.querySelector("input[name=image]")
+    const secret = uploadForm.querySelector("input[name=secret]").value
 
     uploadButton.addEventListener('click', onFormSubmit)
     uploadForm.addEventListener('submit', event => event.preventDefault())
 
     async function onFormSubmit(event) {
-        var response = await DataForm.submit(userDataForm)
+        var response = await DataForm.submit(userDataForm, secret)
         const presignedUpload = response.presignedUpload
         const presignedDownloadOriginal = response.presignedDownloadOriginal
         const presignedDownloadAfter = response.presignedDownloadAfter

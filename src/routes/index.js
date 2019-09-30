@@ -42,8 +42,9 @@ router.post('/image_processing_solicitation', async function(req, res) {
 })
 
 /* GET index */
-router.get('/', async function(req, res) {
-  res.render('index')
+router.get('/', async (req, res) => {
+  let access = (await DentistAccessPoint.allForHost(req.get('Host')))[0]
+  res.render('index', {secret: access.secret})
 })
 
 export default router

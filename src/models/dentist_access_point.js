@@ -34,7 +34,7 @@ class DentistAccessPoint {
         let all = await this.getAll()
         var filtered = []
         all.forEach((access_point) => {
-            if (access_point.hosts.includes(normalized)) {
+            if ((access_point.hosts || []).includes(normalized)) {
                 filtered.push(access_point)
             }
         })

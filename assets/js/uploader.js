@@ -9,7 +9,7 @@ class Uploader {
             data.append(key, presignedPost.fields[key])
         })
         data.append('file', file)
-        return ClientHTTP.post(presignedPost.url, data).then(([response, status]) => {
+        return ClientHTTP.post({url: presignedPost.url, body: data}).then(([response, status]) => {
             return new Promise((resolve, reject) => {
                 if (status >= 400) {
                     const errorCode = response.match(/<Code>(\w+)<\/Code>/)[1]
