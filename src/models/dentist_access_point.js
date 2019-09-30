@@ -16,7 +16,7 @@ class DentistAccessPoint {
     }
 
     save() {
-        return Database.build().save(this, `/dentist_access_points/${this.id}`)
+        return Database.instance.save(this, `/dentist_access_points/${this.id}`)
     }
 
     static async getAll() {

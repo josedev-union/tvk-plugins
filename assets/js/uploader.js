@@ -3,8 +3,7 @@ import ClientHTTP from './client_http.js'
 class Uploader {
     static uploadFile(file, key, presignedPost) {
         var data = new FormData()
-        const extension = file.name.match(/([^.]+)$/)[1]
-        data.append('Key', `${key}.${extension}`)
+        data.append('Key', key)
         data.append('Content-Type', file.type)
         Object.keys(presignedPost.fields).forEach(key => {
             data.append(key, presignedPost.fields[key])
@@ -23,10 +22,6 @@ class Uploader {
                 }
             })
         })
-    }
-
-    static getPresignedData() {
-        return ClientHTTP.post("/uploadCredentials")
     }
 }
 export default Uploader
