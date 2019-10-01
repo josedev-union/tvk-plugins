@@ -23,6 +23,11 @@ class Database {
         return this.connection.ref(full_path).set(obj)
     }
 
+    transaction(obj_path, cb) {
+        const full_path = path.join(this.namespace, obj_path)
+        return this.connection.ref(full_path).transaction(cb)
+    }
+
     async getAll(objs_path) {
         const full_path = path.join(this.namespace, objs_path)
         const all = await this.connection.ref(full_path).once("value")
@@ -30,7 +35,12 @@ class Database {
     }
 
     async drop() {
-        return this.connection.ref(this.namespace).remove()
+        return this.delete('/')
+    }
+
+    async delete(objs_path) {
+        const full_path = path.join(this.namespace, objs_path)
+        return this.connection.ref(full_path).remove()
     }
 }
 

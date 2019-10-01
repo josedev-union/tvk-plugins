@@ -1,5 +1,5 @@
 import uuid from 'uuid/v4'
-import {sha1, generic_uuid, base64, hmac} from '../models/simple_crypto'
+import {sha1, generic_uuid, base64, hmac} from '../shared/simple_crypto'
 
 export function newId() {
     return sha1(uuid())

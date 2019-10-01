@@ -1,5 +1,5 @@
 import Database from '../models/database'
-import {generic_uuid, base64, hmac} from '../models/simple_crypto'
+import {generic_uuid, base64, hmac} from '../shared/simple_crypto'
 import {join} from 'path'
 
 const ORIGINAL_IMAGE_FILENAME = 'pre.jpg'
@@ -19,7 +19,7 @@ class ImageProcessingSolicitation {
     }
 
     static build(attrs) {
-        const createdAt = new Date()
+        const createdAt = attrs.createdAt || new Date()
         const id = attrs.id || ImageProcessingSolicitation.newId(createdAt)
         return new ImageProcessingSolicitation(Object.assign({
            id: id,
