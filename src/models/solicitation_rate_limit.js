@@ -2,6 +2,7 @@ import Database from "../models/database"
 import {base64} from "../shared/simple_crypto"
 import { promises } from "fs"
 
+const NAMESPACE = 'solicitation_rate_limit'
 class SolicitationRateLimit {
     constructor({limit, expiresIn}) {
         this.limit = limit
@@ -19,8 +20,8 @@ class SolicitationRateLimit {
         let originCode = base64(solicitation.origin, {padding: false})
         let ipCode = base64(solicitation.ip, {padding: false})
         let emailCode = base64(solicitation.email, {padding: false})
-        let ipPath = `/solicitation_rate_limit/ips/${originCode}/${ipCode}`
-        let emailPath = `/solicitation_rate_limit/emails/${originCode}/${emailCode}`
+        let ipPath = `/${NAMESPACE}/ips/${originCode}/${ipCode}`
+        let emailPath = `/${NAMESPACE}/emails/${originCode}/${emailCode}`
         let [hasSlotOnIp, hasSlotOnEmail] = await Promise.all([
             this.addSolicitationOn(ipPath, solicitation.id),
             this.addSolicitationOn(emailPath, solicitation.id),
@@ -41,6 +42,11 @@ class SolicitationRateLimit {
             return a
         })
         return wasUpdated
+    }
+
+    static deleteAll() {
+        console.log(`Deleting all SolicitationRateLimit entries. ${new Date()}`)
+        return Database.instance.delete(`/${NAMESPACE}/`)
     }
 }
 

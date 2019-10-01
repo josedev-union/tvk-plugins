@@ -35,7 +35,12 @@ class Database {
     }
 
     async drop() {
-        return this.connection.ref(this.namespace).remove()
+        return this.delete('/')
+    }
+
+    async delete(objs_path) {
+        const full_path = path.join(this.namespace, objs_path)
+        return this.connection.ref(full_path).remove()
     }
 }
 

@@ -9,6 +9,7 @@ import helmet from 'helmet'
 import indexRouter from './routes/index'
 import usersRouter from './routes/users'
 import './config'
+import './cron_jobs'
 
 const app = express();
 
