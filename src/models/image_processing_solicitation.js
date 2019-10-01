@@ -19,7 +19,7 @@ class ImageProcessingSolicitation {
     }
 
     static build(attrs) {
-        const createdAt = new Date()
+        const createdAt = attrs.createdAt || new Date()
         const id = attrs.id || ImageProcessingSolicitation.newId(createdAt)
         return new ImageProcessingSolicitation(Object.assign({
            id: id,

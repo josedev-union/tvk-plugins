@@ -4,6 +4,7 @@ import ImageProcessingService from '../models/image_processing_service'
 import ImageProcessingSolicitation from '../models/image_processing_solicitation'
 import * as signer from '../shared/signer'
 import DentistAccessPoint from '../models/dentist_access_point'
+import SolicitationRateLimit from '../models/solicitation_rate_limit';
 
 /* GET presigned post */
 router.post('/image_processing_solicitation', async function(req, res) {
@@ -23,6 +24,9 @@ router.post('/image_processing_solicitation', async function(req, res) {
     ip: req.ip,
     origin: origin
   }, req.body))
+
+  let hasFreeSlot = await SolicitationRateLimit.build().add(solicitation)
+  if (!hasFreeSlot) return res.status(403).send('')
 
   const credentials = ImageProcessingService.build().credentialsFor(solicitation)
   const tasks = [
