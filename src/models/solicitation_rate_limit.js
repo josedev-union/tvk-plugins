@@ -17,21 +17,33 @@ class SolicitationRateLimit {
     }
 
     async add(solicitation) {
-        let originCode = base64(solicitation.origin, {padding: false})
-        let ipCode = base64(solicitation.ip, {padding: false})
-        let emailCode = base64(solicitation.email, {padding: false})
-        let ipPath = `/${NAMESPACE}/ips/${originCode}/${ipCode}`
-        let emailPath = `/${NAMESPACE}/emails/${originCode}/${emailCode}`
-        let [hasSlotOnIp, hasSlotOnEmail] = await Promise.all([
-            this.addSolicitationOn(ipPath, solicitation.id),
-            this.addSolicitationOn(emailPath, solicitation.id),
-        ])
-        const allowed = hasSlotOnIp && hasSlotOnEmail
-        if (!allowed) {
-            await Database.instance.delete(ipPath)
-            await Database.instance.delete(emailPath)
+        const originCode = base64(solicitation.origin, {padding: false})
+        const ipCode = base64(solicitation.ip, {padding: false})
+        const emailCode = base64(solicitation.email, {padding: false})
+        const ipPath = `/${NAMESPACE}/ips/${originCode}/${ipCode}`
+        const emailPath = `/${NAMESPACE}/emails/${originCode}/${emailCode}`
+        let [ipEntries, emailEntries] = await Promise.all([getFromDB(ipPath), getFromDB(emailPath)])
+        ipEntries = ipEntries || []
+        emailEntries = emailEntries || []
+        const allowedByIp = this.haveAvailableSlotsOn(ipEntries, solicitation.id)
+        const allowedByEmail = this.haveAvailableSlotsOn(emailEntries, solicitation.id)
+        const allowed = allowedByIp && allowedByEmail
+        if (allowed) {
+            var entry = {solicitationId: solicitation.id, timestamp: new Date().getTime()}
+            ipEntries.push(entry)
+            emailEntries.push(entry)
+            await Promise.all([setInDB(ipPath, ipEntries), setInDB(emailPath, emailEntries)])
         }
         return allowed
+    }
+
+    haveAvailableSlotsOn(entries, solicitationId) {
+        if (entries.length >= this.limit) entries = cleanupExpiredOn(entries, this.expiresIn)
+        if (entries.length < this.limit && entries.find(({listedSolicitationId}) => listedSolicitationId === solicitationId) === undefined) {
+            return true
+        } else {
+            return false
+        }
     }
 
     async addSolicitationOn(path, solicitationId) {
@@ -53,6 +65,14 @@ class SolicitationRateLimit {
         console.log(`Deleting all SolicitationRateLimit entries. ${new Date()}`)
         return Database.instance.delete(`/${NAMESPACE}/`)
     }
+}
+
+function getFromDB(path) {
+    return Database.instance.get(path)
+}
+
+function setInDB(path, value) {
+    return Database.instance.set(path, value)
 }
 
 function cleanupExpiredOn(array, expires_in) {
