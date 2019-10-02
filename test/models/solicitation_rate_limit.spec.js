@@ -61,6 +61,20 @@ describe(`add solicitations`, () => {
         expect(sol2Allowed).toBe(true)
         expect(sol3Allowed).toBe(true)
     })
+
+    test(`don't persist anything if solicitation is denied`, async () => {
+        await Database.instance.drop()
+        let rateLimit = new SolicitationRateLimit({limit: 1, expiresIn: 10000})
+        const sol1 = Solicitation.build(Factory.attributes('image_processing_solicitation', {ip: "127.0.0.1", email: "anemail@fgmail.com", origin: 'localhost:3000'}))
+        const sol2 = Solicitation.build(Factory.attributes('image_processing_solicitation', {ip: "127.0.0.1", email: "anemail2@fgmail.com", origin: 'localhost:3000'}))
+        const sol3 = Solicitation.build(Factory.attributes('image_processing_solicitation', {ip: "127.0.0.2", email: "anemail2@fgmail.com", origin: 'localhost:3000'}))
+        const sol1Allowed = await rateLimit.add(sol1)
+        const sol2Allowed = await rateLimit.add(sol2)
+        const sol3Allowed = await rateLimit.add(sol3)
+        expect(sol1Allowed).toBe(true)
+        expect(sol2Allowed).toBe(false)
+        expect(sol3Allowed).toBe(true)
+    })
 })
 
 test(`delete all entries`, async () => {

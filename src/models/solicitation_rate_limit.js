@@ -26,7 +26,12 @@ class SolicitationRateLimit {
             this.addSolicitationOn(ipPath, solicitation.id),
             this.addSolicitationOn(emailPath, solicitation.id),
         ])
-        return hasSlotOnIp && hasSlotOnEmail
+        const allowed = hasSlotOnIp && hasSlotOnEmail
+        if (!allowed) {
+            await Database.instance.delete(ipPath)
+            await Database.instance.delete(emailPath)
+        }
+        return allowed
     }
 
     async addSolicitationOn(path, solicitationId) {
