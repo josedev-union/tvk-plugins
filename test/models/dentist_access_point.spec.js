@@ -79,7 +79,10 @@ describe('static', () => {
       await access1.save()
       await access2.save()
       const accessPoints = await DentistAccessPoint.getAll()
-      expect(accessPoints).toEqual([access1, access2])
+      const ids = accessPoints.map((access) => access.id)
+      expect(ids.length).toBe(2)
+      expect(ids).toContain(access1.id)
+      expect(ids).toContain(access2.id)
     })
 
     test('get all access points for specific host', async () => {
@@ -97,6 +100,9 @@ describe('static', () => {
       await access2.save()
       await access3.save()
       const accessPoints = await DentistAccessPoint.allForHost('xpto.com')
-      expect(accessPoints).toEqual([access1, access2])
+      const ids = accessPoints.map((access) => access.id)
+      expect(ids.length).toBe(2)
+      expect(ids).toContain(access1.id)
+      expect(ids).toContain(access2.id)
     })
 })
