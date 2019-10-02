@@ -38,38 +38,19 @@ describe(`on a successful request`, () => {
     await Database.instance.drop()
     var access = Factory.build('dentist_access_point')
     access.addHost('http://myhost.com:8080/')
-    access.save()
+    await access.save()
 
     let json = {name: "Michael Jordan", email: "michael@fgmail.com", phone: "+5521912341234"}
-    response = await request
-      .post('/image_processing_solicitation')
-      .set('Origin', 'https://myhost.com:8080')
-      .set('Miroweb-ID', signer.sign(json, access.secret))
-      .set('Content-Type', 'application/json')
-      .send(json)
+    let signature = signer.sign(json, access.secret)
+    response = await postSolicitation(json, 'https://myhost.com:8080', signature)
   })
 
   test(`respond 200`, () => {
     expect(response.status).toBe(200)
-  })
-
-  test(`has the presigned JSON to upload to S3`, () => {
     expect(response.body.presignedUpload).toEqual(uploadJson)
-  })
-    
-  test(`has the presigned URL to get the original image`, () => {
     expect(response.body.presignedDownloadOriginal).toBe(imageSignedUrl)
-  })
-
-  test(`has the presigned URL to get the processed image`, () => {
     expect(response.body.presignedDownloadAfter).toBe(processedSignedUrl)
-  })
-
-  test(`has the session id`, () => {
     expect(typeof(response.body.sessionId)).toBe('string')
-  })
-
-  test(`has the key to be used on upload`, () => {
     expect(typeof(response.body.key)).toBe('string')
   })
 })
@@ -78,13 +59,9 @@ describe(`when host doesn't belong to any client`, () => {
   let response
 
   beforeEach(async () => {
+    await Database.instance.drop()
     const json = {name: "Michael Jordan", email: "michael@fgmail.com", phone: "+5521912341234"}
-    response = await request
-      .post('/image_processing_solicitation')
-      .set('Origin', 'https://myhost.com')
-      .set('Content-Type', 'application/json')
-      .set('Miroweb-ID', signer.sign(json, "abcd"))
-      .send(json)
+    response = await postSolicitation(json, 'https://myhost.com', signer.sign(json, "abcd"))
   })
 
   test(`respond 403`, () => {
@@ -100,14 +77,10 @@ describe(`when the body doesn't match the signature`, () => {
     const json2 = {name: "Michael Jackson", email: "michael@fgmail.com", phone: "+5521912341234"}
     var access = Factory.build('dentist_access_point')
     access.addHost('http://myhost.com:8080/')
-    access.save()
+    await access.save()
 
-    response = await request
-      .post('/image_processing_solicitation')
-      .set('Origin', 'http://myhost.com:8080')
-      .set('Content-Type', 'application/json')
-      .set('Miroweb-ID', signer.sign(json2, access.secret))
-      .send(json)
+    const signature = signer.sign(json2, access.secret)
+    response = await postSolicitation(json, 'http://myhost.com:8080', signature)
   })
 
   test(`respond 403`, () => {
@@ -124,7 +97,7 @@ describe(`when email reached rate limit`, () => {
     const json = {name: "Michael Jordan", email: "michael@fgmail.com", phone: "+5521912341234"}
     var access = Factory.build('dentist_access_point')
     access.addHost(host)
-    access.save()
+    await access.save()
 
     let promises = []
     let signature = signer.sign(json, access.secret)
@@ -155,7 +128,7 @@ describe(`when ip reached rate limit`, () => {
     const json = {name: "Michael Jordan", email: "michael@fgmail.com", phone: "+5521912341234"}
     var access = Factory.build('dentist_access_point')
     access.addHost(host)
-    access.save()
+    await access.save()
 
     let promises = []
     let signature = signer.sign(json, access.secret)

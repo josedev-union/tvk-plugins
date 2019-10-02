@@ -1,11 +1,13 @@
-import {newId, newSecret} from '../models/id_generator'
+import {newOrderedId, newSecret} from '../models/id_generator'
 import Database from '../models/database'
 
 class DentistAccessPoint {
-    constructor({id, secret, hosts = []}) {
+    constructor({id, secret, hosts = [], createdAt = new Date().toISOString(), updatedAt = null}) {
         this.id = id
         this.secret = secret
         this.hosts = hosts
+        this.createdAt = createdAt
+        this.updatedAt = updatedAt || createdAt
     }
 
     addHost(host) {
@@ -16,6 +18,8 @@ class DentistAccessPoint {
     }
 
     save() {
+        this.updatedAt = new Date().toISOString()
+        this.createdAt = this.createdAt || new Date().toISOString()
         return Database.instance.save(this, `/dentist_access_points/${this.id}`)
     }
 
@@ -26,7 +30,7 @@ class DentistAccessPoint {
         for (var key in allAsObject) {
             all.push(allAsObject[key])
         }
-        return all
+        return all.reverse()
     }
 
     static async allForHost(host) {
@@ -54,7 +58,7 @@ class DentistAccessPoint {
     }
 
     static newId() {
-        return newId()
+        return newOrderedId()
     }
 
     static newSecret() {

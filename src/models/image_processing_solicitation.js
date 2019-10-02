@@ -1,5 +1,6 @@
 import Database from '../models/database'
 import {generic_uuid, base64, hmac} from '../shared/simple_crypto'
+import {newOrderedId} from '../models/id_generator'
 import {join} from 'path'
 
 const ORIGINAL_IMAGE_FILENAME = 'pre.jpg'
@@ -19,8 +20,8 @@ class ImageProcessingSolicitation {
     }
 
     static build(attrs) {
-        const createdAt = attrs.createdAt || new Date()
-        const id = attrs.id || ImageProcessingSolicitation.newId(createdAt)
+        const createdAt = attrs.createdAt || new Date().toISOString()
+        const id = attrs.id || ImageProcessingSolicitation.newId()
         return new ImageProcessingSolicitation(Object.assign({
            id: id,
            createdAt: createdAt,
@@ -34,7 +35,7 @@ class ImageProcessingSolicitation {
     }
 
     static newId(createdAt) {
-        return base64(`${createdAt.getTime()}${generic_uuid(8)}`, {padding: false})
+        return newOrderedId()
     }
 }
 

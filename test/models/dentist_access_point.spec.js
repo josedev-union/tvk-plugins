@@ -1,24 +1,9 @@
 import DentistAccessPoint from '../../src/models/dentist_access_point.js'
 import { Factory } from 'rosie'
+import Database from '../../src/models/database'
+import '../../src/config'
 
-jest.mock('firebase-admin')
-import admin from 'firebase-admin'
-const refMock = {}
-refMock.once = jest.fn(() => Promise.resolve({
-  "97415f9cecf782e931a3737fc70d81a87b425e18": {
-    hosts: [ 'xpto.com', 'xpto2.com' ],
-    id: '97415f9cecf782e931a3737fc70d81a87b425e18',
-    secret: 'MGZkMTRjYzMwNTYxMjM0NjVlNjExZDA1NjMzMDMzY2ExY2YxZjIxZDk1NDU3NjUyNTM1MWYyNDkzZjgwZGRiZA'
-  },
-  "a8cbd26dba547994880472b1dda27ca4eb1ae23b": {
-    hosts: [ 'xpto.com', 'xpto3.com' ],
-    id: 'a8cbd26dba547994880472b1dda27ca4eb1ae23b',
-    secret: 'MzRhZjFkZjI4MWM4YTljNmQwMzgzNzM4ZjgzYjRhMTRmODhjMDg0MmRlMDRkZjU3YmI2N2ZiYmJlNDNkZWZiMg'
-  }
-}))
-admin.ref = jest.fn(() => refMock)
-
-const ID_PATTERN = /^[-0-9a-f]+$/
+const ID_PATTERN = /^[0-9A-Za-z+/]+$/
 const SECRET_PATTERN = /^[0-9A-Za-z]+$/
 
 test('can add new hosts', () => {
@@ -49,6 +34,16 @@ test('normalize hosts when adding them', () => {
     ])
 })
 
+test('change updatedAt when saving', async () => {
+    var access = Factory.build('dentist_access_point')
+    access.addHost('http://myhost.com')
+    await access.save()
+    let oldUpdatedAt = access.updatedAt
+    access.addHost('https://myhost2.com')
+    await access.save()
+    expect(access.updatedAt).not.toBe(oldUpdatedAt)
+})
+
 describe('static', () => {
     test('build a new access point', () => {
         const access = DentistAccessPoint.build({hosts: ['myhost.com']})
@@ -73,28 +68,41 @@ describe('static', () => {
         expect(secret1).not.toEqual(secret2)
     })
 
-    test('get all access points', () => {
-      DentistAccessPoint.getAll().then((all) => {
-        expect(all).toEqual([
-          {
-            hosts: [ 'xpto.com', 'xpto2.com' ],
-            id: '97415f9cecf782e931a3737fc70d81a87b425e18',
-            secret: 'MGZkMTRjYzMwNTYxMjM0NjVlNjExZDA1NjMzMDMzY2ExY2YxZjIxZDk1NDU3NjUyNTM1MWYyNDkzZjgwZGRiZA'
-          },
-          {
-            hosts: [ 'xpto.com', 'xpto3.com' ],
-            id: 'a8cbd26dba547994880472b1dda27ca4eb1ae23b',
-            secret: 'MzRhZjFkZjI4MWM4YTljNmQwMzgzNzM4ZjgzYjRhMTRmODhjMDg0MmRlMDRkZjU3YmI2N2ZiYmJlNDNkZWZiMg'
-          }
-        ])
-      })
+    test('get all access points', async () => {
+      await Database.instance.drop()
+      const access1 = Factory.build('dentist_access_point')
+      const access2 = Factory.build('dentist_access_point')
+      access1.addHost('xpto.com')
+      access1.addHost('xpto2.com')
+      access2.addHost('xpto.com')
+      access2.addHost('xpto3.com')
+      await access1.save()
+      await access2.save()
+      const accessPoints = await DentistAccessPoint.getAll()
+      const ids = accessPoints.map((access) => access.id)
+      expect(ids.length).toBe(2)
+      expect(ids).toContain(access1.id)
+      expect(ids).toContain(access2.id)
     })
 
-    test('get all access points for specific host', () => {
-      DentistAccessPoint.allForHost('xpto.com').then((points) => {
-        expect(points.length).toEqual(2)
-        expect([points[0].id, points[1].id]).toEqual(
-          ['97415f9cecf782e931a3737fc70d81a87b425e18', 'a8cbd26dba547994880472b1dda27ca4eb1ae23b'])
-      });
+    test('get all access points for specific host', async () => {
+      await Database.instance.drop()
+      const access1 = Factory.build('dentist_access_point')
+      const access2 = Factory.build('dentist_access_point')
+      const access3 = Factory.build('dentist_access_point')
+      access1.addHost('xpto.com')
+      access1.addHost('xpto2.com')
+      access2.addHost('xpto.com')
+      access2.addHost('xpto3.com')
+      access3.addHost('xpto2.com')
+      access3.addHost('xpto3.com')
+      await access1.save()
+      await access2.save()
+      await access3.save()
+      const accessPoints = await DentistAccessPoint.allForHost('xpto.com')
+      const ids = accessPoints.map((access) => access.id)
+      expect(ids.length).toBe(2)
+      expect(ids).toContain(access1.id)
+      expect(ids).toContain(access2.id)
     })
 })

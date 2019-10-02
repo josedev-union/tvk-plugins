@@ -8,7 +8,7 @@ import SolicitationRateLimit from '../models/solicitation_rate_limit';
 
 /* GET presigned post */
 router.post('/image_processing_solicitation', async function(req, res) {
-  let origin = req.get('Origin')
+  let origin = req.get('Referer') || req.get('Origin') || req.get('Host')
   let signature = req.get('Miroweb-ID')
   let receivedSignature = typeof(signature) === 'string' && signature !== ''
   let accessPoints = await DentistAccessPoint.allForHost(origin)
