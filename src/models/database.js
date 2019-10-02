@@ -28,10 +28,19 @@ class Database {
         return this.connection.ref(full_path).transaction(cb)
     }
 
-    async getAll(objs_path) {
+    getAll(objs_path) {
+        return this.get(objs_path)
+    }
+
+    async get(objs_path) {
         const full_path = path.join(this.namespace, objs_path)
         const all = await this.connection.ref(full_path).once("value")
         return all.val()
+    }
+
+    set(obj_path, value) {
+        const full_path = path.join(this.namespace, obj_path)
+        return this.connection.ref(full_path).set(value)
     }
 
     async drop() {

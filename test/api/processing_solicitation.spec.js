@@ -99,12 +99,12 @@ describe(`when email reached rate limit`, () => {
     access.addHost(host)
     await access.save()
 
-    let promises = []
     let signature = signer.sign(json, access.secret)
-    for (let i = 0; i < 5; i++) {
-      promises.push(postSolicitation(json, host, signature))
-    }
-    [resp1, resp2, resp3, resp4, resp5] = await Promise.all(promises)
+    resp1 = await postSolicitation(json, host, signature)
+    resp2 = await postSolicitation(json, host, signature)
+    resp3 = await postSolicitation(json, host, signature)
+    resp4 = await postSolicitation(json, host, signature)
+    resp5 = await postSolicitation(json, host, signature)
 
     response = await postSolicitation(json, host, signature, '192.168.9.9')
   })
@@ -130,12 +130,12 @@ describe(`when ip reached rate limit`, () => {
     access.addHost(host)
     await access.save()
 
-    let promises = []
     let signature = signer.sign(json, access.secret)
-    for (let i = 0; i < 5; i++) {
-      promises.push(postSolicitation(json, host, signature))
-    }
-    [resp1, resp2, resp3, resp4, resp5] = await Promise.all(promises)
+    resp1 = await postSolicitation(json, host, signature)
+    resp2 = await postSolicitation(json, host, signature)
+    resp3 = await postSolicitation(json, host, signature)
+    resp4 = await postSolicitation(json, host, signature)
+    resp5 = await postSolicitation(json, host, signature)
 
     json.email = "michael2@fgmail.com"
     signature = signer.sign(json, access.secret)
