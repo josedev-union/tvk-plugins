@@ -18,7 +18,7 @@ refMock.once = jest.fn(() => Promise.resolve({
 }))
 admin.ref = jest.fn(() => refMock)
 
-const ID_PATTERN = /^[-0-9a-f]+$/
+const ID_PATTERN = /^[0-9A-Za-z]+$/
 const SECRET_PATTERN = /^[0-9A-Za-z]+$/
 
 test('can add new hosts', () => {

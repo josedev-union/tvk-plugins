@@ -1,4 +1,4 @@
-import {newId, newSecret} from '../models/id_generator'
+import {newOrderedId, newSecret} from '../models/id_generator'
 import Database from '../models/database'
 
 class DentistAccessPoint {
@@ -54,7 +54,7 @@ class DentistAccessPoint {
     }
 
     static newId() {
-        return newId()
+        return newOrderedId()
     }
 
     static newSecret() {
