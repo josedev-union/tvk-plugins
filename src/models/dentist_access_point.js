@@ -1,5 +1,6 @@
 import {newOrderedId, newSecret} from '../models/id_generator'
 import Database from '../models/database'
+import * as signer from '../shared/signer'
 
 class DentistAccessPoint {
     constructor({id, secret, hosts = [], createdAt = new Date().toISOString(), updatedAt = null}) {
@@ -43,6 +44,14 @@ class DentistAccessPoint {
             }
         })
         return filtered
+    }
+
+    static async findOne(params, referer, signature) {
+        const accessPoints = await this.allForHost(referer)
+        const access = accessPoints.find((access) => {
+            return signer.verify(params, access.secret, signature)
+        })
+        return access
     }
 
     static build({hosts = []}) {

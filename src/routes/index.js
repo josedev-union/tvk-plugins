@@ -2,7 +2,6 @@ import express from 'express';
 const router = express.Router();
 import ImageProcessingService from '../models/image_processing_service'
 import ImageProcessingSolicitation from '../models/image_processing_solicitation'
-import * as signer from '../shared/signer'
 import DentistAccessPoint from '../models/dentist_access_point'
 import SolicitationRateLimit from '../models/solicitation_rate_limit';
 import Uri from '../models/uri'
@@ -14,33 +13,29 @@ router.options('/image_processing_solicitation', (req, res) => {
 })
 
 router.post('/image_processing_solicitation', async function(req, res) {
-  let data = {}
-  for (let k in req.body) {
-    data[k] = req.body[k]
-  }
-  const referer = req.get('Referer') || req.get('Origin') || req.get('Host')
-  const receivedReferer = typeof(referer) === 'string' && referer !== ''
-  const signature = req.get('Miroweb-ID')
-  const receivedSignature = typeof(signature) === 'string' && signature !== ''
-  let access
-  if (receivedSignature && receivedReferer) {
-    const accessPoints = await DentistAccessPoint.allForHost(referer)
-    access = accessPoints.find((access) => {
-      return signer.verify(data, access.secret, signature)
-    })
+  let params = {}
+  for (let k in req.body) params[k] = req.body[k]
+
+  const referer = normalizeParamValue(req.get('Referer') || req.get('Origin') || req.get('Host'))
+  const signature = normalizeParamValue(req.get('Miroweb-ID'))
+  if (!referer || !signature) {
+    return res.status(403).send('')
   }
 
-  if (access === undefined) {
+  const access = await DentistAccessPoint.findOne(params, referer, signature)
+  if (!access) {
     return res.status(403).send('')
   }
 
   const solicitation = ImageProcessingSolicitation.build(Object.assign({
     ip: req.ip,
     origin: referer
-  }, data))
+  }, params))
 
   let hasFreeSlot = await SolicitationRateLimit.build().add(solicitation)
-  if (!hasFreeSlot) return res.status(403).send('')
+  if (!hasFreeSlot) {
+    return res.status(403).send('')
+  }
 
   const credentials = ImageProcessingService.build().credentialsFor(solicitation)
   const tasks = [
@@ -63,9 +58,17 @@ router.post('/image_processing_solicitation', async function(req, res) {
 
 /* GET index */
 router.get('/', async (req, res) => {
-  let access = (await DentistAccessPoint.allForHost(req.get('Host')))[0]
+  const access = (await DentistAccessPoint.allForHost(req.get('Host')))[0]
   res.render('index', {secret: access.secret})
 })
+
+function normalizeParamValue(value) {
+  return isSet(value) ? value : null
+}
+
+function isSet(value) {
+  return typeof(value) === 'string' && value !== '' && typeof(value) !== 'undefined'
+}
 
 function setCors(req, res) {
   const referer = req.get('Referer') || req.get('Origin') || req.get('Host')
