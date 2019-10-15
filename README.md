@@ -64,6 +64,8 @@ AWS_DEFAULT_REGION=us-east-1
 $ npm run dev-start # Start server with nodemon
 $ npm run dev-up    # Compile assets and start server
 $ npm run dev-build # Compile assets
+$ npm run db-up     # Start local database
+$ npm test          # Run the tests (Need to start local database before)
 ```
 
 ## Production Tasks

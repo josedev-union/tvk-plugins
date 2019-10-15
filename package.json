@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "db-up": "firebase emulators:start --only database",
     "dev-build": "webpack --config ./webpack.config.js --mode development",
     "dev-up": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime src/boot.js",
     "dev-start": "nodemon --exec 'npm run dev-up'",
