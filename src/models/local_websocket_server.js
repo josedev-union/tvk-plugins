@@ -41,14 +41,11 @@ class LocalWebsocketServer {
       console.log(`MESSAGE FROM REDIS ${channel} ${message}`)
       if (message === "#QUIT#") {
         this.terminate()
+        return
       }
 
-      this.server.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(message)
-        }
-      })
-      this.timeout.restart()
+      this.sendToClients(message)
+      // this.timeout.restart()
     })
     return redis
   }
@@ -57,9 +54,23 @@ class LocalWebsocketServer {
     let timeout = new Timeout(inactiveTimeout * 1000)
     timeout.onExpiration(() => {
       console.log(`Timed out ${this.processingId}`)
+      let msg = JSON.stringify({
+        event: 'error',
+        code: 'timeout',
+        message: 'Server are waiting too much for progress.'
+      })
+      this.sendToClients(msg)
       this.terminate()
     })
     return timeout
+  }
+
+  sendToClients(message) {
+    this.server.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message)
+      }
+    })
   }
 }
 
