@@ -1,0 +1,10 @@
+FROM tastytech/miroweb-base:latest
+MAINTAINER support@tastytech.ca
+
+WORKDIR /app
+
+# Adding Files
+ADD . /app
+
+# Booting
+CMD ["npm", "run", "dev-start"]

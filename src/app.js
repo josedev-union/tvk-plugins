@@ -6,12 +6,13 @@ import logger from 'morgan'
 import compression from 'compression'
 import helmet from 'helmet'
 
+const app = express()
+
 import indexRouter from './routes/index'
 import usersRouter from './routes/users'
+import processingsRouter from './routes/processings'
 import './config'
 import './cron_jobs'
-
-const app = express();
 
 app.disable('trust proxy')
 

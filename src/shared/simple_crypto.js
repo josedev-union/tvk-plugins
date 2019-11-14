@@ -6,6 +6,10 @@ export function base64(str, params = {padding: true}) {
     return params.padding ? b64 : b64.replace(/=+/g, '')
 }
 
+export function base64_decode(str) {
+    return Buffer.from(str, 'base64').toString()
+}
+
 export function sha1(str) {
     const s1 = _sha1.create()
     s1.update(str)

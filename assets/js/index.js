@@ -1,6 +1,7 @@
 import "regenerator-runtime/runtime"
 import Uploader from './uploader.js'
 import DataForm from './data_form.js'
+import {base64} from '../../src/shared/simple_crypto'
 
 {
     const userDataForm = document.getElementById('miroweb-data-form')
@@ -17,28 +18,36 @@ import DataForm from './data_form.js'
         const presignedUpload = response.presignedUpload
         const presignedDownloadOriginal = response.presignedDownloadOriginal
         const presignedDownloadAfter = response.presignedDownloadAfter
+        const sessionId = response.sessionId
         const key = response.key
 
         document.querySelectorAll('p').forEach(e => e.remove())
         document.querySelectorAll('img').forEach(e => e.remove())
         const p = document.createElement("p")
 
+      // TODO: Uploader progress
         Uploader.uploadFile(uploadInput.files[0], key, presignedUpload)
         .then(() => {
             p.innerHTML = `Image uploaded successfully. <a href="${presignedDownloadAfter}">Download Result</a>`
             waitFor(() => {
                 return new Promise((resolve, reject) => {
-                    const xhr = new XMLHttpRequest()
-                    xhr.open('GET', presignedDownloadAfter, true)
-                    xhr.onload = () => {
-                        if (xhr.status >= 400) {
-                            reject()
-                        } else {
-                            resolve()
-                        }
+                  var idBase = `autosmile.dev.us/${sessionId}/`
+                  var processingId = base64(idBase)
+                  var url = `ws://${window.location.host}/ws/processings/${processingId}`
+                  console.log(url, idBase)
+                  var ws = new WebSocket(url)
+                  ws.onopen = function() { console.log("open") }
+                  ws.onmessage = function(msg) {
+                    var data = JSON.parse(msg.data)
+                    if (data.event === "progress") {
+                      var percent = parseInt(data.percent * 1000) / 10.0
+                      console.log(`${percent}%`)
+                    } else if (data.event === "end") {
+                      console.log("Processing Ended")
+                      resolve()
                     }
-                    xhr.onerror = () => reject()
-                    xhr.send()
+                  }
+                  ws.onerror = reject
                 })
             }).then(() => {
                 var imgoriginal = document.createElement('img')
