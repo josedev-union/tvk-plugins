@@ -6,3 +6,35 @@ body {
 a {
   color: #00B7FF;
 }
+
+.progress-component {
+  display: inline-block;
+}
+
+.progress-component.hide {
+  display: none;
+}
+
+.progress-component .loading-dots {
+  display: inline-block;
+  width: 1em;
+  text-align: left;
+}
+
+.progress-component .description {
+  font-weight: bold;
+  text-align: center;
+  padding: 0;
+  margin: 0;
+}
+
+.progress-component .percentage {
+  text-align: center;
+  font-size: 3em;
+  min-width: 3em;
+  display: block;
+}
+
+.progress-component .percentage::after {
+  content: "%";
+}
