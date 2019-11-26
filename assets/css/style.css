@@ -7,12 +7,12 @@ a {
   color: #00B7FF;
 }
 
-.progress-component {
-  display: inline-block;
+#miroweb-component .hide {
+  display: none;
 }
 
-.progress-component.hide {
-  display: none;
+.progress-component, .progress-component .progress-success {
+  display: inline-block;
 }
 
 .progress-component .loading-dots {
@@ -37,4 +37,10 @@ a {
 
 .progress-component .percentage::after {
   content: "%";
+}
+
+#miroweb-component .error-container {
+  padding: 10px;
+  font-size: 1.2rem;
+  color: darkred;
 }

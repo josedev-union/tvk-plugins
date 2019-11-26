@@ -1,27 +1,34 @@
 class Progress {
   constructor(root) {
     this.root = root
-    this.percentageElement = root.querySelector('.percentage')
-    this.stageElement = root.querySelector('.stage')
-    this.dotsElement = root.querySelector('.loading-dots')
+    this.successRoot = root.querySelector('.progress-success')
+
+    this.percentageElement = this.successRoot.querySelector('.percentage')
+    this.stageElement = this.successRoot.querySelector('.stage')
+    this.dotsElement = this.successRoot.querySelector('.loading-dots')
   }
 
   setup() {
     this.dotsElement.textContent = '...'
     this.scheduleDotsUpdating()
-    this.root.classList.remove('hide')
   }
 
   hide() {
     this.root.classList.add('hide')
   }
 
+  show() {
+    this.root.classList.remove('hide')
+  }
+
   updateProgress(percentage) {
     this.percentageElement.textContent = percentage
+    this.show()
   }
 
   updateStage(stage) {
     this.stageElement.textContent = stage
+    this.show()
   }
 
   scheduleDotsUpdating() {

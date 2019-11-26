@@ -19,7 +19,7 @@ router.post('/image_processing_solicitation', async function(req, res) {
   const referer = normalizeParamValue(req.get('Referer') || req.get('Origin') || req.get('Host'))
   const signature = normalizeParamValue(req.get('Miroweb-ID'))
   if (!referer || !signature) {
-    return res.status(403).send('')
+    return res.status(400).send('')
   }
 
   const access = await DentistAccessPoint.findOne(params, referer, signature)
