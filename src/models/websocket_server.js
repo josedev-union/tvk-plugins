@@ -30,6 +30,10 @@ class WebsocketServer {
     const processingId = base64_decode(processingIdBase64)
     console.log(`processingId: ${processingId}`)
 
+    if (!this.generalRedis.isOnline) {
+      socket.destroy()
+      return
+    }
     this.generalRedis.get(`progress:ws:${processingId}`, (err, value) => {
       if (value === null) {
         console.log("Connection denied")

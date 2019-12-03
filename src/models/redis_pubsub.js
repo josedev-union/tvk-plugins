@@ -7,5 +7,14 @@ const config = {
 }
 
 export function newRedis() {
-  return redis.createClient(config)
+  let client = redis.createClient(config)
+  client.on('error', (err) => {
+    console.error('[REDIS ERROR]', err)
+    client.isOnline = false
+  })
+  client.on('ready', (x) => {
+    console.log('[READY]', x)
+    client.isOnline = true
+  })
+  return client
 }

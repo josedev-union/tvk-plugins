@@ -35,6 +35,7 @@ class LocalWebsocketServer {
 
   setupRedisPubSub() {
     let redis = newRedis()
+    redis.on('error', () => this.terminate())
     console.log(`SUBSCRIBED TO ${this.processingId}`)
     redis.subscribe(this.processingId)
     redis.on('message', (channel, message) => {
@@ -45,7 +46,7 @@ class LocalWebsocketServer {
       }
 
       this.sendToClients(message)
-      // this.timeout.restart()
+      this.timeout.restart()
     })
     return redis
   }

@@ -10,13 +10,21 @@ class DataForm {
       urlEncodedParts.push(`${input.name}=${encodeURIComponent(input.value)}`)
     })
     let urlEncoded = `${urlEncodedParts.join('&')}`
-    return ClientHTTP.post({
-      url: form.action,
-      data: urlEncoded,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Miroweb-ID': signer.sign(data, secret)
-      }
+    return new Promise((resolve, reject) => {
+      ClientHTTP.post({
+        url: form.action,
+        data: urlEncoded,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Miroweb-ID': signer.sign(data, secret)
+        }
+      }).then(([response, httpStatus]) => {
+        if (typeof(response) !== 'object' || httpStatus === 0) {
+          reject([`Non-HTTP Error: ${response}`, httpStatus])
+        } else {
+          resolve([response, httpStatus])
+        }
+      }).catch(reject)
     })
   }
 }

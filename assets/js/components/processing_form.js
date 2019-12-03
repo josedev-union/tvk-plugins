@@ -19,9 +19,10 @@ class ProcessingForm {
 
   onFormSubmit(event) {
     DataForm.submit(this.userDataForm, this.secret)
-    .then(([response, httpStatus]) => this.uploadToS3(response))
+    .then(([response, httpStatus]) => {
+      this.uploadToS3(response)
+    })
     .catch((error) => {
-      console.log('onFormSubmit error', error)
       let [response, httpStatus] = error
       if (this.onerror) {
         if (httpStatus === 400) {
