@@ -87,18 +87,41 @@ class ProcessingForm {
             if (this.onerror) this.onerror({error: 'unexpected-websockets-error', data: data})
           }
         }
-        ws.onerror = reject
+        ws.onclose = (event) => {
+          if (event.code > 1000) {
+            reject({error: 'websockets-bad-close', data: event})
+          }
+        }
       })
     }).then(() => {
       if (this.oncomplete) this.oncomplete(response)
     }).catch((error) => {
-      if (this.onerror) this.onerror({error: 'runtime-error', data: error})
+      const presignedDownloadAfter = response.presignedDownloadAfter
+      waitFor(() => {
+        return new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest()
+          xhr.open('GET', presignedDownloadAfter, true)
+          xhr.onload = () => {
+            if (xhr.status >= 400) {
+              reject()
+            } else {
+              resolve()
+            }
+          }
+          xhr.onerror = () => reject()
+          xhr.send()
+        })
+      }, 20000).then(() => {
+        if (this.oncomplete) this.oncomplete(response)
+      }).catch(() => {
+        if (this.onerror) this.onerror(error)
+      })
     })
   }
 }
 
 function waitFor(condition, timeout=10000) {
-  const RETRYDELAY = 1000;
+  const RETRYDELAY = 5000;
   return new Promise((resolve, reject) => {
     const tryAgain = (error) => {
       if (timeout <= 0) {
