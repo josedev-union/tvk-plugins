@@ -64,11 +64,12 @@ class ProcessingForm {
 
   trackProgress(response) {
     const sessionId = response.sessionId
+    const bucket = response.bucket
 
     if (this.onprogress) this.onprogress('Starting Processing', 0)
     waitFor(() => {
       return new Promise((resolve, reject) => {
-        var idBase = `autosmile.dev.us/${sessionId}/`
+        var idBase = `${bucket}/${sessionId}/`
         var processingId = base64(idBase)
         var url = `ws://${window.location.host}/ws/processings/${processingId}`
         console.log(url, idBase)
@@ -121,7 +122,7 @@ class ProcessingForm {
 }
 
 function waitFor(condition, timeout=10000) {
-  const RETRYDELAY = 5000;
+  const RETRYDELAY = 2500;
   return new Promise((resolve, reject) => {
     const tryAgain = (error) => {
       if (timeout <= 0) {

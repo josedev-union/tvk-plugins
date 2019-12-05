@@ -53,6 +53,7 @@ router.post('/image_processing_solicitation', async function(req, res) {
     presignedDownloadAfter: urlToGetProcessed,
     sessionId: solicitation.id,
     key: solicitation.imageFilepath,
+    bucket: process.env.MIROWEB_S3_BUCKET,
   })
 })
 
