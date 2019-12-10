@@ -1,4 +1,5 @@
 import redis from 'redis'
+import logger from '../models/logger'
 
 const config = {
   host: process.env.MIROWEB_REDIS_HOSTNAME,
@@ -9,11 +10,10 @@ const config = {
 export function newRedis() {
   let client = redis.createClient(config)
   client.on('error', (err) => {
-    console.error('[REDIS ERROR]', err)
+    logger.error('Error on Redis', err)
     client.isOnline = false
   })
   client.on('ready', () => {
-    console.log('[REDIS READY]')
     client.isOnline = true
   })
   return client

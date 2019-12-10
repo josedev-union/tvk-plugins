@@ -1,5 +1,6 @@
 import Database from "../models/database"
 import {base64} from "../shared/simple_crypto"
+import logger from '../models/logger'
 import { promises } from "fs"
 
 const NAMESPACE = 'solicitation_rate_limit'
@@ -62,7 +63,7 @@ class SolicitationRateLimit {
     }
 
     static deleteAll() {
-        console.log(`Deleting all SolicitationRateLimit entries. ${new Date()}`)
+        logger.info(`Deleting all SolicitationRateLimit entries.`)
         return Database.instance.delete(`/${NAMESPACE}/`)
     }
 }

@@ -12,7 +12,7 @@ router.options('/image_processing_solicitation', (req, res) => {
   res.status(200).send('')
 })
 
-router.post('/image_processing_solicitation', async function(req, res) {
+router.post('/image_processing_solicitation', async (req, res) => {
   let params = {}
   for (let k in req.body) params[k] = req.body[k]
 

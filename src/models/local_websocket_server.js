@@ -1,6 +1,7 @@
 import WebSocket from 'ws'
 import Timeout from '../models/timeout'
 import {newRedis} from '../models/redis_pubsub'
+import logger from '../models/logger'
 
 class LocalWebsocketServer {
   constructor(socket, processingId, {onTerminate = null, inactiveTimeout = 30}) {
@@ -36,10 +37,9 @@ class LocalWebsocketServer {
   setupRedisPubSub() {
     let redis = newRedis()
     redis.on('error', () => this.terminate())
-    console.log(`SUBSCRIBED TO ${this.processingId}`)
     redis.subscribe(this.processingId)
     redis.on('message', (channel, message) => {
-      console.log(`MESSAGE FROM REDIS ${channel} ${message}`)
+      logger.info(`WebsocketServer ${this.processingId} - Received message from redis ${channel} ${message}`)
       if (message === "#QUIT#") {
         this.terminate()
         return
@@ -54,7 +54,7 @@ class LocalWebsocketServer {
   setupInactiveTimeout(inactiveTimeout) {
     let timeout = new Timeout(inactiveTimeout * 1000)
     timeout.onExpiration(() => {
-      console.log(`Timed out ${this.processingId}`)
+      logger.info(`WebsocketServer ${this.processingId} - Timed out (Too long without messages)`)
       let msg = JSON.stringify({
         event: 'error',
         code: 'timeout',
