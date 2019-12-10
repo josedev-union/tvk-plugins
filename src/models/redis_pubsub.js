@@ -12,8 +12,8 @@ export function newRedis() {
     console.error('[REDIS ERROR]', err)
     client.isOnline = false
   })
-  client.on('ready', (x) => {
-    console.log('[READY]', x)
+  client.on('ready', () => {
+    console.log('[REDIS READY]')
     client.isOnline = true
   })
   return client
