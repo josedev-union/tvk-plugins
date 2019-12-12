@@ -60,6 +60,9 @@ router.post('/image_processing_solicitation', async (req, res) => {
 /* GET index */
 router.get('/', async (req, res) => {
   const access = (await DentistAccessPoint.allForHost(req.get('Host')))[0]
+  if (!access) {
+    return res.status(403).send('Not allowed')
+  }
   res.render('index', {secret: access.secret})
 })
 
