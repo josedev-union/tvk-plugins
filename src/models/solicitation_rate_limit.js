@@ -18,6 +18,7 @@ class SolicitationRateLimit {
     }
 
     async add(solicitation) {
+        if (process.env.MIROWEB_RATE_LIMIT_DISABLED) return true
         const originCode = base64(solicitation.origin, {padding: false})
         const ipCode = base64(solicitation.ip, {padding: false})
         const emailCode = base64(solicitation.email, {padding: false})
