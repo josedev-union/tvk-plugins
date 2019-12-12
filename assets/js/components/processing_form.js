@@ -2,6 +2,10 @@ import Uploader from '../uploader.js'
 import DataForm from '../data_form.js'
 import {base64} from '../../../src/shared/simple_crypto'
 
+const TIMEOUT_TO_START_PROCESSING = 20000
+const TIMEOUT_TO_FINISH_PROCESSING = 20000
+const TIMEOUT_TO_IMAGE_GET_READY = 20000
+
 class ProcessingForm {
   constructor(root) {
     this.root = root
@@ -23,15 +27,13 @@ class ProcessingForm {
       this.uploadToS3(response)
     })
     .catch((error) => {
-      let [response, httpStatus] = error
-      if (this.onerror) {
-        if (httpStatus === 400) {
-          this.onerror({error: 'bad-solicitation-request', data: {data: response, status: httpStatus}})
-        } else if(httpStatus === 403) {
-          this.onerror({error: 'solicitation-denied', data: {data: response, status: httpStatus}})
-        } else {
-          this.onerror({error: 'unknown-solicitation-error', data: {data: response, status: httpStatus}})
-        }
+      const [response, httpStatus] = error
+      if (httpStatus === 400) {
+        this.emitError('bad-solicitation-request', {data: response, status: httpStatus})
+      } else if (httpStatus === 403) {
+        this.emitError('solicitation-denied', {data: response, status: httpStatus})
+      } else {
+        this.emitError('unknown-solicitation-error', {data: response, status: httpStatus})
       }
     })
   }
@@ -40,17 +42,14 @@ class ProcessingForm {
     const presignedUpload = response.presignedUpload
     const key = response.key
 
-    if (this.onstart) this.onstart()
-    if (this.onprogress) this.onprogress('Uploading', 0)
+    this.emitStart()
+    this.emitProgress('Uploading', 0)
 
     const uploader = new Uploader()
-    uploader.onprogress = (percentage) => {
-      if (this.onprogress) this.onprogress('Uploading', percentage)
-    }
+    uploader.onprogress = (percentage) => this.emitProgress('Uploading', percentage)
     uploader.uploadFile(this.uploadInput.files[0], key, presignedUpload)
-    .then(() => this.trackProgress(response))
     .catch((errorCode) => {
-      var msg
+      let msg
       if (errorCode === 'EntityTooLarge') {
         msg = 'Image exceeded the 5mb size limit'
       } else if (errorCode === 'BadContentType') {
@@ -58,88 +57,173 @@ class ProcessingForm {
       } else {
         msg = 'Error on upload'
       }
-      if (this.onerror) this.onerror({error: 'validation-error', data: msg})
+      this.emitError('validation-error', msg)
     })
+    .then(() => this.trackProgress(response))
   }
 
   trackProgress(response) {
-    const sessionId = response.sessionId
-    const bucket = response.bucket
+    this.emitProgress('Waiting processing start', 0)
 
-    if (this.onprogress) this.onprogress('Starting Processing', 0)
-    waitFor(() => {
-      return new Promise((resolve, reject) => {
-        var idBase = `${bucket}/${sessionId}/`
-        var processingId = base64(idBase)
-        var url = `ws://${window.location.host}/ws/processings/${processingId}`
-        console.log(url, idBase)
-        var ws = new WebSocket(url)
-        ws.onmessage = (msg) => {
-          var data = JSON.parse(msg.data)
-          if (data.event === "progress") {
-            var percent = parseInt(data.percent * 100)
-            if (this.onprogress) this.onprogress('Processing', percent)
-          } else if (data.event === "start") {
-            if (this.onprogress) this.onprogress('Processing', 0)
-          } else if (data.event === "end") {
-            resolve()
-          } else {
-            console.error('Unexpected WebSockets Message:', data)
-            if (this.onerror) this.onerror({error: 'unexpected-websockets-error', data: data})
-          }
-        }
-        ws.onclose = (event) => {
-          if (event.code > 1000) {
-            reject({error: 'websockets-bad-close', data: event})
-          }
-        }
-      })
-    }).then(() => {
-      if (this.oncomplete) this.oncomplete(response)
-    }).catch((error) => {
-      const presignedDownloadAfter = response.presignedDownloadAfter
-      waitFor(() => {
-        return new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest()
-          xhr.open('GET', presignedDownloadAfter, true)
-          xhr.onload = () => {
-            if (xhr.status >= 400) {
-              reject()
-            } else {
-              resolve()
-            }
-          }
-          xhr.onerror = () => reject()
-          xhr.send()
-        })
-      }, 20000).then(() => {
-        if (this.oncomplete) this.oncomplete(response)
-      }).catch(() => {
-        if (this.onerror) this.onerror(error)
-      })
+    this.openWebsocketsConnection(response)
+    .then((ws) => this.waitForMessages(ws, response))
+    .then(() => {
+      this.emitCompletion(response)
     })
+  }
+
+  openWebsocketsConnection(response) {
+    const bucket = response.bucket
+    const sessionId = response.sessionId
+
+    let idBase = `${bucket}/${sessionId}/`
+    let processingId = base64(idBase)
+    let url = `ws://${window.location.host}/ws/processings/${processingId}`
+    console.log(url, idBase)
+    console.log("WAITING FOR CONNECTION")
+
+    const promise = waitFor((resolve, reject) => {
+      const ws = new WebSocket(url)
+      ws.onclose = (event) => {
+        console.log("Connection Closed...")
+        reject({error: 'websockets-could-not-connect', data: event})
+      }
+      ws.onopen = () => {
+        console.log("Connection Opened...")
+        ws.onclose = null
+        resolve(ws)
+      }
+    }, TIMEOUT_TO_START_PROCESSING)
+
+    promise.catch((error) => {
+      console.log("IMAGE POLLING (could not connect)")
+      this.doImagePolling(response)
+    })
+    
+    return new Promise((resolve, reject) => promise.then(resolve))
+  }
+
+  waitForMessages(ws, response) {
+    const promise = timeoutFor((resolve, reject) => {
+      console.log("Waiting for messages...")
+      ws.onmessage = (msg) => {
+        const data = JSON.parse(msg.data)
+        if (data.event === 'progress') {
+          const percent = parseInt(data.percent * 100)
+          this.emitProgress('Processing', percent)
+        } else if (data.event === 'start') {
+          this.emitProgress('Processing', 0)
+        } else if (data.event === 'finished') {
+          resolve()
+        } else {
+          reject({error: 'unexpected-websockets-error', data: data})
+        }
+      }
+    }, TIMEOUT_TO_FINISH_PROCESSING)
+
+    promise.catch(([hasTimedout, error]) => {
+      console.error("Error", `timedout: ${hasTimedout}`, error)
+      ws.onclose = null
+      if (ws) ws.close()
+      if (hasTimedout) {
+        this.doImagePolling(response)
+      } else {
+        this.emitError(error.error, error.data)
+      }
+    })
+
+    return new Promise((resolve, reject) => promise.then(resolve))
+  }
+
+  doImagePolling(response) {
+    const presignedDownloadAfter = response.presignedDownloadAfter
+    console.log("WAITING FOR IMAGE")
+    waitFor((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+      xhr.open('GET', presignedDownloadAfter, true)
+      xhr.onload = () => {
+        if (xhr.status >= 400) {
+          reject()
+        } else {
+          resolve()
+        }
+      }
+      xhr.onerror = () => reject()
+      xhr.send()
+    }, TIMEOUT_TO_IMAGE_GET_READY)
+    .then(() => this.emitCompletion())
+    .catch(() => this.emitError('image-polling-timedout', 'Could not find the image on the server.'))
+  }
+
+  emitError(error, data) {
+    if (this.onerror) this.onerror({error: error, data: data})
+  }
+
+  emitCompletion(response) {
+    if (this.oncomplete) this.oncomplete(response)
+  }
+
+  emitStart() {
+    if (this.onstart) this.onstart()
+  }
+
+  emitProgress(stage, percent) {
+    if (this.onprogress) this.onprogress(stage, percent)
   }
 }
 
-function waitFor(condition, timeout=10000) {
+function waitFor(condition, timeout) {
   const RETRYDELAY = 2500;
+  let lastError = null
+  let currentSchedule = null
+  let timedout = false
   return new Promise((resolve, reject) => {
-    const tryAgain = (error) => {
-      if (timeout <= 0) {
-        reject(error)
-      } else {
-        setTimeout(() => {
-          timeout -= RETRYDELAY
-          condition()
-            .then(resolve)
-            .catch(tryAgain)
-        }, RETRYDELAY)
-      }
-    }
+    timeoutFor((resolve, reject) => {
+      let tryAgain = null
 
-    condition()
-      .then(resolve)
-      .catch(tryAgain)
+      const execCondition = () => {
+        new Promise((resolve, reject) => condition(resolve, reject))
+          .then(resolve)
+          .catch(tryAgain)
+      }
+
+      tryAgain = (error) => {
+        if (timedout) return
+        lastError = error
+        currentSchedule = setTimeout(() => execCondition(), RETRYDELAY)
+      }
+
+      execCondition()
+    }, timeout)
+    .then(resolve)
+    .catch(([hasTimedout, ...args]) => {
+      if (hasTimedout) timedout = true
+      if (currentSchedule) {
+        clearInterval(currentSchedule)
+      }
+      reject(lastError)
+    })
+  })
+}
+
+function timeoutFor(condition, timeout) {
+  let finished = false
+  return new Promise((resolve, reject) => {
+    const timeoutTimer = setTimeout(() => {
+      if (!finished) reject([true])
+    }, timeout)
+
+    new Promise((resolve, reject) => condition(resolve, reject))
+      .then((...args) => {
+        finished = true
+        clearInterval(timeoutTimer)
+        resolve(...args)
+      })
+      .catch((...args) => {
+        finished = true
+        clearInterval(timeoutTimer)
+        reject([false, ...args])
+      })
   })
 }
 

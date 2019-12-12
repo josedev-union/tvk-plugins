@@ -51,7 +51,7 @@ import ErrorComponent from './components/error_component.js'
     } else if (error.error === 'websockets-bad-close') {
       console.error(`Unexpected closed websockets connection (code: ${error.data.code}). More information on: https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent#Status_codes`)
     } else {
-      errorComponent.show('Unexpected Error')
+      errorComponent.show('An error has ocurred, try again later.')
     }
   }
 }
