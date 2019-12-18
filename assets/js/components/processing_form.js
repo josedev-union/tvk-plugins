@@ -3,8 +3,9 @@ import DataForm from '../data_form.js'
 import {base64} from '../../../src/shared/simple_crypto'
 
 const TIMEOUT_TO_START_PROCESSING = 20000
-const TIMEOUT_TO_FINISH_PROCESSING = 20000
-const TIMEOUT_TO_IMAGE_GET_READY = 20000
+const TIMEOUT_TO_FINISH_PROCESSING = 30000
+const TIMEOUT_TO_IMAGE_GET_READY = 30000
+const RETRY_DELAY = 2500
 
 class ProcessingForm {
   constructor(root) {
@@ -80,23 +81,21 @@ class ProcessingForm {
     let processingId = base64(idBase)
     let url = `ws://${window.location.host}/ws/processings/${processingId}`
     console.log(url, idBase)
-    console.log("WAITING FOR CONNECTION")
+    console.log("Waiting for websockets connection")
 
     const promise = waitFor((resolve, reject) => {
       const ws = new WebSocket(url)
       ws.onclose = (event) => {
-        console.log("Connection Closed...")
         reject({error: 'websockets-could-not-connect', data: event})
       }
       ws.onopen = () => {
-        console.log("Connection Opened...")
         ws.onclose = null
         resolve(ws)
       }
     }, TIMEOUT_TO_START_PROCESSING)
 
     promise.catch((error) => {
-      console.log("IMAGE POLLING (could not connect)")
+      console.warn('Could not connect to websockets', error)
       this.doImagePolling(response)
     })
     
@@ -122,12 +121,13 @@ class ProcessingForm {
     }, TIMEOUT_TO_FINISH_PROCESSING)
 
     promise.catch(([hasTimedout, error]) => {
-      console.error("Error", `timedout: ${hasTimedout}`, error)
       ws.onclose = null
       if (ws) ws.close()
       if (hasTimedout) {
+        console.warn('Processing took too long', error)
         this.doImagePolling(response)
       } else {
+        console.error('Critical error when receiving messages', error)
         this.emitError(error.error, error.data)
       }
     })
@@ -136,9 +136,12 @@ class ProcessingForm {
   }
 
   doImagePolling(response) {
+    console.warn('Starting image polling as fallback')
+    let retriesCount = 0
+    const maxRetries = Math.floor(TIMEOUT_TO_IMAGE_GET_READY / RETRY_DELAY)
     const presignedDownloadAfter = response.presignedDownloadAfter
-    console.log("WAITING FOR IMAGE")
     waitFor((resolve, reject) => {
+      this.emitImagePollingTry(++retriesCount, maxRetries)
       const xhr = new XMLHttpRequest()
       xhr.open('GET', presignedDownloadAfter, true)
       xhr.onload = () => {
@@ -151,8 +154,11 @@ class ProcessingForm {
       xhr.onerror = () => reject()
       xhr.send()
     }, TIMEOUT_TO_IMAGE_GET_READY)
-    .then(() => this.emitCompletion())
-    .catch(() => this.emitError('image-polling-timedout', 'Could not find the image on the server.'))
+    .then(() => this.emitCompletion(response))
+    .catch((err) => {
+      console.error('Could not find the image on server', err)
+      this.emitError('image-polling-timedout', 'Could not find the image on server.')
+    })
   }
 
   emitError(error, data) {
@@ -170,10 +176,13 @@ class ProcessingForm {
   emitProgress(stage, percent) {
     if (this.onprogress) this.onprogress(stage, percent)
   }
+
+  emitImagePollingTry(count, max) {
+    if (this.onimagepolling) this.onimagepolling(count, max)
+  }
 }
 
 function waitFor(condition, timeout) {
-  const RETRYDELAY = 2500;
   let lastError = null
   let currentSchedule = null
   let timedout = false
@@ -182,7 +191,7 @@ function waitFor(condition, timeout) {
       let tryAgain = null
 
       const execCondition = () => {
-        new Promise((resolve, reject) => condition(resolve, reject))
+        return new Promise((resolve, reject) => condition(resolve, reject))
           .then(resolve)
           .catch(tryAgain)
       }
@@ -190,7 +199,7 @@ function waitFor(condition, timeout) {
       tryAgain = (error) => {
         if (timedout) return
         lastError = error
-        currentSchedule = setTimeout(() => execCondition(), RETRYDELAY)
+        currentSchedule = setTimeout(() => execCondition(), RETRY_DELAY)
       }
 
       execCondition()

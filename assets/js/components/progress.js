@@ -21,6 +21,14 @@ class Progress {
     this.root.classList.remove('hide')
   }
 
+  hideProgress() {
+    this.percentageElement.classList.add('hide')
+  }
+
+  showProgress() {
+    this.percentageElement.classList.remove('hide')
+  }
+
   updateProgress(percentage) {
     this.percentageElement.textContent = percentage
     this.show()

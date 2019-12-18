@@ -1,9 +1,12 @@
 body {
   padding: 50px;
+}
+
+#miroweb-component {
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 }
 
-a {
+#miroweb-component a {
   color: #00B7FF;
 }
 
@@ -15,32 +18,35 @@ a {
   display: inline-block;
 }
 
-.progress-component .loading-dots {
+#miroweb-component .progress-component .loading-dots {
   display: inline-block;
   width: 1em;
   text-align: left;
 }
 
-.progress-component .description {
+#miroweb-component .progress-component .description {
   font-weight: bold;
   text-align: center;
   padding: 0;
   margin: 0;
 }
 
-.progress-component .percentage {
+#miroweb-component .progress-component .percentage {
   text-align: center;
   font-size: 3em;
   min-width: 3em;
   display: block;
 }
 
-.progress-component .percentage::after {
+#miroweb-component .progress-component .percentage::after {
   content: "%";
 }
 
 #miroweb-component .error-container {
-  padding: 10px;
   font-size: 1.2rem;
   color: darkred;
+}
+
+#miroweb-component .output-container {
+  padding: 10px;
 }

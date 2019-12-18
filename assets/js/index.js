@@ -41,6 +41,11 @@ import ErrorComponent from './components/error_component.js'
     errorComponent.hide()
   }
 
+  processingForm.onimagepolling = (retriesCount, maxRetries) => {
+    progress.updateStage(`Trying to download image. (Retries: ${retriesCount}/${maxRetries})`)
+    progress.hideProgress()
+  }
+
   processingForm.onerror = (error) => {
     console.error("Error", error)
     progress.hide()
