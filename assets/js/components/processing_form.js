@@ -7,6 +7,7 @@ const TIMEOUT_TO_FINISH_PROCESSING = 30000
 const TIMEOUT_TO_IMAGE_GET_READY = 30000
 const RETRY_DELAY = 2500
 
+
 class ProcessingForm {
   constructor(root) {
     this.root = root

@@ -50,3 +50,21 @@ body {
 #miroweb-component .output-container {
   padding: 10px;
 }
+
+#miroweb-component form fieldset {
+  padding: 10px 0;
+  border: none;
+}
+
+#miroweb-component form input {
+  padding: 5px 0;
+}
+
+#miroweb-component form label {
+  display: inline-block;
+  width: 175px;
+}
+
+#miroweb-component .processing-button {
+  padding: 20px 10px;
+}
