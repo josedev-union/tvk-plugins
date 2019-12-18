@@ -16,6 +16,7 @@ class ProcessingForm {
     this.uploadButton = root.querySelector('.processing-button')
     this.uploadInput = this.uploadForm.querySelector("input[name=image]")
     this.secret = this.uploadForm.querySelector("input[name=secret]").value
+    this.locked = false
   }
 
   setup() {
@@ -24,6 +25,8 @@ class ProcessingForm {
   }
 
   onFormSubmit(event) {
+    if (this.locked) return
+    this.lock()
     DataForm.submit(this.userDataForm, this.secret)
     .then(([response, httpStatus]) => {
       this.uploadToS3(response)
@@ -163,10 +166,12 @@ class ProcessingForm {
   }
 
   emitError(error, data) {
+    this.unlock()
     if (this.onerror) this.onerror({error: error, data: data})
   }
 
   emitCompletion(response) {
+    this.unlock()
     if (this.oncomplete) this.oncomplete(response)
   }
 
@@ -180,6 +185,16 @@ class ProcessingForm {
 
   emitImagePollingTry(count, max) {
     if (this.onimagepolling) this.onimagepolling(count, max)
+  }
+
+  lock() {
+    this.locked = true
+    this.uploadButton.disabled = true
+  }
+
+  unlock() {
+    this.locked = false
+    this.uploadButton.disabled = false
   }
 }
 
