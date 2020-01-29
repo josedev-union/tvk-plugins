@@ -2,17 +2,17 @@
   <div class="processing-form">
     <form method="POST" action="/image_processing_solicitation" class="data-form">
       <fieldset>
-        <label for="name">Full Name</label>
+        <label for="name">{{i18n "form:user:name"}}</label>
         <input type="text" name="name"></input>
       </fieldset>
 
       <fieldset>
-        <label for="email">Email</label>
+        <label for="email">{{i18n "form:user:email"}}</label>
         <input type="email" name="email"></input>
       </fieldset>
 
       <fieldset>
-        <label for="phone">Telephone Number</label>
+        <label for="phone">{{i18n "form:user:telephone-number"}}</label>
         <input type="tel" name="phone"></input>
       </fieldset>
     </form>
@@ -20,11 +20,11 @@
     <form method="POST" class="upload-form">
       <input type="hidden" name="secret" value="{{secret}}"></input>
       <fieldset>
-        <label for="image">Image</label>
+        <label for="image">{{i18n "form:user:image"}}</label>
         <input name="image" type="file" accept="image/*" capture />
       </fieldset>
 
-      <input type="button" class="processing-button" value="Start Simulation"></input>
+      <input type="button" class="processing-button" value="{{i18n "form:submit"}}"></input>
     </form>
   </div>
 

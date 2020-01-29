@@ -1,5 +1,9 @@
 import AWS from 'aws-sdk'
 import Database from '../src/models/database'
+import Handlebars from 'hbs'
+import i18n from './shared/lang'
+
+Handlebars.registerHelper('i18n', key => i18n(key))
 
 AWS.config.update({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,

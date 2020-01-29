@@ -6,6 +6,7 @@ class Progress {
     this.percentageElement = this.successRoot.querySelector('.percentage')
     this.stageElement = this.successRoot.querySelector('.stage')
     this.dotsElement = this.successRoot.querySelector('.loading-dots')
+    this.timeoutScheduled = false
   }
 
   setup() {
@@ -40,6 +41,8 @@ class Progress {
   }
 
   scheduleDotsUpdating() {
+    if (this.timeoutScheduled) return
+    this.timeoutScheduled = true
     if (this.dotsElement.textContent.length >= 3) {
       this.dotsElement.textContent = ''
     } else {

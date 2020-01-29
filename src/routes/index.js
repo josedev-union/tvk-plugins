@@ -3,8 +3,9 @@ const router = express.Router();
 import ImageProcessingService from '../models/image_processing_service'
 import ImageProcessingSolicitation from '../models/image_processing_solicitation'
 import DentistAccessPoint from '../models/dentist_access_point'
-import SolicitationRateLimit from '../models/solicitation_rate_limit';
+import SolicitationRateLimit from '../models/solicitation_rate_limit'
 import Uri from '../models/uri'
+import i18n from '../shared/lang'
 
 /* GET presigned post */
 router.options('/image_processing_solicitation', (req, res) => {
@@ -63,7 +64,7 @@ router.get('/', async (req, res) => {
   if (!access) {
     return res.status(403).send('Not allowed')
   }
-  res.render('index', {secret: access.secret})
+  res.render('index', {secret: access.secret, i18n: i18n})
 })
 
 function normalizeParamValue(value) {

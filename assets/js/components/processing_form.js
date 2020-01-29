@@ -1,6 +1,7 @@
 import Uploader from '../uploader.js'
 import DataForm from '../data_form.js'
 import {base64} from '../../../src/shared/simple_crypto'
+import i18n from '../../../src/shared/lang'
 
 const TIMEOUT_TO_START_PROCESSING = 20000
 const TIMEOUT_TO_FINISH_PROCESSING = 30000
@@ -48,19 +49,19 @@ class ProcessingForm {
     const key = response.key
 
     this.emitStart()
-    this.emitProgress('Uploading', 0)
+    this.emitProgress(i18n('progress:stages:uploading'), 0)
 
     const uploader = new Uploader()
-    uploader.onprogress = (percentage) => this.emitProgress('Uploading', percentage)
+    uploader.onprogress = (percentage) => this.emitProgress(i18n('progress:stages:uploading'), percentage)
     uploader.uploadFile(this.uploadInput.files[0], key, presignedUpload)
     .catch((errorCode) => {
       let msg
       if (errorCode === 'EntityTooLarge') {
-        msg = 'Image exceeded the 5mb size limit'
+        msg = i18n('errors:upload:image-size-limit')
       } else if (errorCode === 'BadContentType') {
-        msg = 'File must be an image'
+        msg = i18n('errors:upload:wrong-image-format')
       } else {
-        msg = 'Error on upload'
+        msg = i18n('errors:upload:generic')
       }
       this.emitError('validation-error', msg)
     })
@@ -68,7 +69,7 @@ class ProcessingForm {
   }
 
   trackProgress(response) {
-    this.emitProgress('Waiting processing start', 0)
+    this.emitProgress(i18n('progress:stages:pre-processing'), 0)
 
     this.openWebsocketsConnection(response)
     .then((ws) => this.waitForMessages(ws, response))
@@ -113,10 +114,10 @@ class ProcessingForm {
         const data = JSON.parse(msg.data)
         if (data.event === 'progress') {
           const percent = parseInt(data.percent * 100)
-          this.emitProgress('Processing', percent)
+          this.emitProgress(i18n('progress:stages:processing'), percent)
         } else if (data.event === 'start') {
-          this.emitProgress('Processing', 0)
-        } else if (data.event === 'finished') {
+          this.emitProgress(i18n('progress:stages:processing'), 0)
+        } else if (data.event === 'end') {
           resolve()
         } else {
           reject({error: 'unexpected-websockets-error', data: data})
@@ -161,7 +162,7 @@ class ProcessingForm {
     .then(() => this.emitCompletion(response))
     .catch((err) => {
       console.error('Could not find the image on server', err)
-      this.emitError('image-polling-timedout', 'Could not find the image on server.')
+      this.emitError('image-polling-timedout', i18n('errors:image-polling-timeout'))
     })
   }
 

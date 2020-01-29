@@ -2,6 +2,7 @@ import "regenerator-runtime/runtime"
 import Progress from './components/progress.js'
 import ProcessingForm from './components/processing_form.js'
 import ErrorComponent from './components/error_component.js'
+import i18n from '../../src/shared/lang'
 
 {
   const progressElement = document.querySelector('#miroweb-component .progress-component')
@@ -42,7 +43,7 @@ import ErrorComponent from './components/error_component.js'
   }
 
   processingForm.onimagepolling = (retriesCount, maxRetries) => {
-    progress.updateStage(`Trying to download image. (Retries: ${retriesCount}/${maxRetries})`)
+    progress.updateStage(i18n('progress:polling-fallback', {count: retriesCount, max: maxRetries}))
     progress.hideProgress()
   }
 
@@ -52,11 +53,11 @@ import ErrorComponent from './components/error_component.js'
     if (error.error === 'validation-error') {
       errorComponent.show(error.data)
     } else if (error.error === 'solicitation-denied') {
-      errorComponent.show('You have reached the limit of simulations, try again in 24 hours.')
+      errorComponent.show(i18n('errors:simulations-limit'))
     } else if (error.error === 'websockets-bad-close') {
       console.error(`Unexpected closed websockets connection (code: ${error.data.code}). More information on: https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent#Status_codes`)
     } else {
-      errorComponent.show('An error has ocurred, try again later.')
+      errorComponent.show(i18n('errors:unknown-processing-error'))
     }
   }
 }
