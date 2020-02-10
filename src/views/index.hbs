@@ -1,24 +1,46 @@
-<form method="POST" action="/image_processing_solicitation" id="miroweb-data-form">
-    <label for="name">Full Name</label>
-    <input type="text" name="name"></input>
+<div id="miroweb-component">
+  <div class="processing-form">
+    <form method="POST" action="/image_processing_solicitation" class="data-form">
+      <fieldset>
+        <label for="name">{{i18n "form:user:name"}}</label>
+        <input type="text" name="name"></input>
+      </fieldset>
 
-    <br/>
+      <fieldset>
+        <label for="email">{{i18n "form:user:email"}}</label>
+        <input type="email" name="email"></input>
+      </fieldset>
 
-    <label for="email">Email</label>
-    <input type="email" name="email"></input>
+      <fieldset>
+        <label for="phone">{{i18n "form:user:telephone-number"}}</label>
+        <input type="tel" name="phone"></input>
+      </fieldset>
+    </form>
 
-    <br/>
+    <form method="POST" class="upload-form">
+      <input type="hidden" name="secret" value="{{secret}}"></input>
+      <fieldset>
+        <label for="image">{{i18n "form:user:image"}}</label>
+        <input name="image" type="file" accept="image/*" capture />
+      </fieldset>
 
-    <label for="phone">Telephone Number</label>
-    <input type="tel" name="phone"></input>
-</form>
+      <input type="button" class="processing-button" value="{{i18n "form:submit"}}"></input>
+    </form>
+  </div>
 
-<form method="POST" id="miroweb-upload-form">
-    <input type="hidden" name="secret" value="{{secret}}"></input>
-    <label for="image">Image</label>
-    <input name="image" type="file"/>
+  <div class="output-container">
+    <div class="error-container hide">
+      <span class="error-message">Error</span>
+    </div>
 
-    <br/>
-
-    <input type="button" id="miroweb-simulation-button" value="Start Simulation"></input>
-</form>
+    <div class="progress-component hide">
+      <div class="progress-success">
+        <span class="percentage">100</span>
+        <div class="description">
+          <span class="stage">Uploading</span>
+          <span class="loading-dots">...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

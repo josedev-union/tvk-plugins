@@ -1,6 +1,6 @@
-FROM node:12.8.0-alpine
+FROM node:12.13.1-alpine3.10
 MAINTAINER support@tastytech.ca
-LABEL tastytech.miroweb.base.version="1.0.0"
+LABEL tastytech.miroweb.base.version="1.0.1"
 
 # Dependencies Pre-downloading
 ARG BUILD_DIR=/build

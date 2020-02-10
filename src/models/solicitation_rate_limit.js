@@ -1,5 +1,6 @@
 import Database from "../models/database"
 import {base64} from "../shared/simple_crypto"
+import logger from '../models/logger'
 import { promises } from "fs"
 
 const NAMESPACE = 'solicitation_rate_limit'
@@ -17,6 +18,7 @@ class SolicitationRateLimit {
     }
 
     async add(solicitation) {
+        if (process.env.MIROWEB_RATE_LIMIT_DISABLED) return true
         const originCode = base64(solicitation.origin, {padding: false})
         const ipCode = base64(solicitation.ip, {padding: false})
         const emailCode = base64(solicitation.email, {padding: false})
@@ -62,7 +64,7 @@ class SolicitationRateLimit {
     }
 
     static deleteAll() {
-        console.log(`Deleting all SolicitationRateLimit entries. ${new Date()}`)
+        logger.info(`Deleting all SolicitationRateLimit entries.`)
         return Database.instance.delete(`/${NAMESPACE}/`)
     }
 }

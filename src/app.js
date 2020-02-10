@@ -2,16 +2,16 @@ import createError from 'http-errors'
 import express from 'express'
 import path from 'path'
 import cookieParser from 'cookie-parser'
-import logger from 'morgan'
+import morgan from 'morgan'
 import compression from 'compression'
 import helmet from 'helmet'
+
+const app = express()
 
 import indexRouter from './routes/index'
 import usersRouter from './routes/users'
 import './config'
 import './cron_jobs'
-
-const app = express();
 
 app.disable('trust proxy')
 
@@ -19,7 +19,7 @@ app.disable('trust proxy')
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 
-app.use(logger('dev'));
+app.use(morgan(':date[iso] :method :url HTTP/:http-version" :status :res[content-length] [:remote-addr - :remote-user]'));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(compression());

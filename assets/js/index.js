@@ -1,83 +1,63 @@
 import "regenerator-runtime/runtime"
-import Uploader from './uploader.js'
-import DataForm from './data_form.js'
+import Progress from './components/progress.js'
+import ProcessingForm from './components/processing_form.js'
+import ErrorComponent from './components/error_component.js'
+import i18n from '../../src/shared/lang'
 
 {
-    const userDataForm = document.getElementById('miroweb-data-form')
-    const uploadForm = document.getElementById('miroweb-upload-form')
-    const uploadButton = document.getElementById('miroweb-simulation-button')
-    const uploadInput = uploadForm.querySelector("input[name=image]")
-    const secret = uploadForm.querySelector("input[name=secret]").value
+  const progressElement = document.querySelector('#miroweb-component .progress-component')
+  const progress = new Progress(progressElement)
 
-    uploadButton.addEventListener('click', onFormSubmit)
-    uploadForm.addEventListener('submit', event => event.preventDefault())
+  const formElement = document.querySelector('#miroweb-component .processing-form')
+  const processingForm = new ProcessingForm(formElement)
+  processingForm.setup()
 
-    async function onFormSubmit(event) {
-        var response = await DataForm.submit(userDataForm, secret)
-        const presignedUpload = response.presignedUpload
-        const presignedDownloadOriginal = response.presignedDownloadOriginal
-        const presignedDownloadAfter = response.presignedDownloadAfter
-        const key = response.key
+  const errorContainerElement = document.querySelector('#miroweb-component .error-container')
+  const errorComponent = new ErrorComponent(errorContainerElement)
 
-        document.querySelectorAll('p').forEach(e => e.remove())
-        document.querySelectorAll('img').forEach(e => e.remove())
-        const p = document.createElement("p")
+  processingForm.onstart = (response) => {
+    document.querySelectorAll('img').forEach(e => e.remove())
+    progress.setup()
+  }
 
-        Uploader.uploadFile(uploadInput.files[0], key, presignedUpload)
-        .then(() => {
-            p.innerHTML = `Image uploaded successfully. <a href="${presignedDownloadAfter}">Download Result</a>`
-            waitFor(() => {
-                return new Promise((resolve, reject) => {
-                    const xhr = new XMLHttpRequest()
-                    xhr.open('GET', presignedDownloadAfter, true)
-                    xhr.onload = () => {
-                        if (xhr.status >= 400) {
-                            reject()
-                        } else {
-                            resolve()
-                        }
-                    }
-                    xhr.onerror = () => reject()
-                    xhr.send()
-                })
-            }).then(() => {
-                var imgoriginal = document.createElement('img')
-                imgoriginal.height = 240
-                imgoriginal.src = presignedDownloadOriginal
-                var imgafter = document.createElement('img')
-                imgafter.height = 240
-                imgafter.src = presignedDownloadAfter
+  processingForm.oncomplete = (response) => {
+    const presignedDownloadOriginal = response.presignedDownloadOriginal
+    const presignedDownloadAfter = response.presignedDownloadAfter
 
-                uploadInput.after(p)
-                p.after(imgoriginal)
-                imgoriginal.after(imgafter)
-            })
-        })
-        .catch((errorCode) => {
-            if (errorCode === 'EntityTooLarge') {
-                p.textContent = 'Image exceeded the 5mb size limit'
-            } else if (errorCode === 'BadContentType') {
-                p.textContent = 'File must be an image'
-            } else {
-                p.textContent = 'Error on upload'
-            }
-            uploadInput.after(p)
-        })
+    progress.hide()
+    var imgoriginal = document.createElement('img')
+    imgoriginal.height = 240
+    imgoriginal.src = presignedDownloadOriginal
+    var imgafter = document.createElement('img')
+    imgafter.height = 240
+    imgafter.src = presignedDownloadAfter
+
+    formElement.after(imgoriginal)
+    imgoriginal.after(imgafter)
+  }
+
+  processingForm.onprogress = (stage, percentage) => {
+    progress.updateStage(stage)
+    progress.updateProgress(percentage)
+    errorComponent.hide()
+  }
+
+  processingForm.onimagepolling = (retriesCount, maxRetries) => {
+    progress.updateStage(i18n('progress:polling-fallback', {count: retriesCount, max: maxRetries}))
+    progress.hideProgress()
+  }
+
+  processingForm.onerror = (error) => {
+    console.error("Error", error)
+    progress.hide()
+    if (error.error === 'validation-error') {
+      errorComponent.show(error.data)
+    } else if (error.error === 'solicitation-denied') {
+      errorComponent.show(i18n('errors:simulations-limit'))
+    } else if (error.error === 'websockets-bad-close') {
+      console.error(`Unexpected closed websockets connection (code: ${error.data.code}). More information on: https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent#Status_codes`)
+    } else {
+      errorComponent.show(i18n('errors:unknown-processing-error'))
     }
-
-    function waitFor(condition) {
-        return new Promise((resolve, reject) => {
-            const tryAgain = () => {
-                setTimeout(() => {
-                    condition()
-                        .then(resolve)
-                        .catch(tryAgain)
-                }, 1000)
-            }
-
-            condition()
-                .then(resolve)
-                .catch(tryAgain)
-        })
-    }
+  }
 }

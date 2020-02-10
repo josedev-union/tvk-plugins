@@ -15,7 +15,7 @@ class ImageProcessingService {
         const jsonUploadConstraints = {
             keyPrefix: pathWithoutExtension,
             contentTypePrefix: 'image/',
-            maxSizeInMegabytes: 5,
+            maxSizeInMegabytes: 15,
             expiresInSeconds: EXPIRATION_IN_SECONDS,
         }
         return {
