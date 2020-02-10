@@ -3,8 +3,9 @@ import Database from '../models/database'
 import * as signer from '../shared/signer'
 
 class DentistAccessPoint {
-    constructor({id, secret, hosts = [], createdAt = new Date().toISOString(), updatedAt = null}) {
+    constructor({id, userId, secret, hosts = [], createdAt = new Date().toISOString(), updatedAt = null}) {
         this.id = id
+        this.userId = userId
         this.secret = secret
         this.hosts = hosts
         this.createdAt = createdAt

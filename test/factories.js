@@ -4,6 +4,7 @@ import ImageProcessingSolicitation from '../src/models/image_processing_solicita
 
 Factory.define('dentist_access_point', DentistAccessPoint)
     .attr('id', () => DentistAccessPoint.newId())
+    .attr('userId', () => "user-external-id")
     .attr('secret', () => DentistAccessPoint.newSecret())
 
 Factory.define('image_processing_solicitation', ImageProcessingSolicitation)
