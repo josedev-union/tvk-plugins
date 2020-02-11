@@ -1,4 +1,5 @@
 import DentistAccessPoint from '../../src/models/dentist_access_point.js'
+import * as signer from '../../src/shared/signer'
 import { Factory } from 'rosie'
 import Database from '../../src/models/database'
 import '../../src/config'
@@ -42,6 +43,19 @@ test('change updatedAt when saving', async () => {
     access.addHost('https://myhost2.com')
     await access.save()
     expect(access.updatedAt).not.toBe(oldUpdatedAt)
+})
+
+test('get configured slug to the website', async () => {
+    var access = Factory.build('dentist_access_point', {directPage: {slug: 'my-host', disabled: false}})
+    expect(access.slug()).toBe('my-host')
+})
+
+test('verify slug matching', async () => {
+    var access = Factory.build('dentist_access_point', {directPage: {slug: 'My-Host', disabled: false}})
+    expect(access.matchSlug('My-Host')).toBe(true)
+    expect(access.matchSlug('my-host')).toBe(true)
+    expect(access.matchSlug('MY-HOST')).toBe(true)
+    expect(access.matchSlug('myhost')).toBe(false)
 })
 
 describe('static', () => {
@@ -104,5 +118,75 @@ describe('static', () => {
       expect(ids.length).toBe(2)
       expect(ids).toContain(access1.id)
       expect(ids).toContain(access2.id)
+    })
+
+    test('get all access points if is master host', async () => {
+      await Database.instance.drop()
+      const access1 = Factory.build('dentist_access_point')
+      const access2 = Factory.build('dentist_access_point')
+      const access3 = Factory.build('dentist_access_point')
+      access1.addHost('xpto.com')
+      access1.addHost('xpto2.com')
+      access2.addHost('xpto.com')
+      access2.addHost('xpto3.com')
+      access3.addHost('xpto2.com')
+      access3.addHost('xpto3.com')
+      await access1.save()
+      await access2.save()
+      await access3.save()
+      const accessPoints = await DentistAccessPoint.allForHost('localhost')
+      const ids = accessPoints.map((access) => access.id)
+      expect(ids.length).toBe(3)
+      expect(ids).toContain(access1.id)
+      expect(ids).toContain(access2.id)
+      expect(ids).toContain(access3.id)
+    })
+
+    test('find the access point that match host and the parameters serialization', async () => {
+      await Database.instance.drop()
+      const access1 = Factory.build('dentist_access_point')
+      const access2 = Factory.build('dentist_access_point')
+      const access3 = Factory.build('dentist_access_point')
+      access1.addHost('xpto.com')
+      access1.addHost('xpto2.com')
+      access2.addHost('xpto.com')
+      access2.addHost('xpto3.com')
+      access3.addHost('xpto2.com')
+      access3.addHost('xpto3.com')
+      await access1.save()
+      await access2.save()
+      await access3.save()
+      const params = {user: {name: 'Dr. Suresh', telephone: '+5521999999999'}}
+      const access2signature = signer.sign(params, access2.secret)
+      const accessFound = await DentistAccessPoint.findOne(params, 'http://xpto.com/random/page', access2signature)
+      expect(accessFound.id).toBe(access2.id)
+    })
+
+    test('find the access point for direct page access', async () => {
+      await Database.instance.drop()
+      const access1 = Factory.build('dentist_access_point', {directPage: {slug: 'access-1', disabled: false}})
+      const access2 = Factory.build('dentist_access_point', {directPage: {slug: 'access-2', disabled: false}})
+      const access3 = Factory.build('dentist_access_point', {directPage: {slug: 'access-3', disabled: false}})
+      access1.addHost('xpto.com')
+      access1.addHost('xpto2.com')
+      access2.addHost('xpto.com')
+      access2.addHost('xpto3.com')
+      access3.addHost('xpto2.com')
+      access3.addHost('xpto3.com')
+      await access1.save()
+      await access2.save()
+      await access3.save()
+
+      const accessFound1 = await DentistAccessPoint.findForDirectPage('access-2', 'http://xpto.com/random/page')
+      expect(accessFound1.id).toBe(access2.id)
+
+      const accessFound2 = await DentistAccessPoint.findForDirectPage('access-1', '')
+      expect(accessFound2.id).toBe(access1.id)
+
+      const accessNotFound1 = await DentistAccessPoint.findForDirectPage('access-3', 'http://xpto.com/random/page')
+      expect(accessNotFound1).toBe(null)
+
+      const accessNotFound2 = await DentistAccessPoint.findForDirectPage('access-unknown', 'http://xpto.com/random/page')
+      expect(accessNotFound2).toBe(null)
     })
 })

@@ -17,7 +17,7 @@ router.post('/image_processing_solicitation', async (req, res) => {
   let params = {}
   for (let k in req.body) params[k] = req.body[k]
 
-  const referer = normalizeParamValue(req.get('Referer') || req.get('Origin') || req.get('Host'))
+  const referer = getReferer(req)
   const signature = normalizeParamValue(req.get('Miroweb-ID'))
   if (!referer || !signature) {
     return res.status(400).send('')
@@ -59,10 +59,23 @@ router.post('/image_processing_solicitation', async (req, res) => {
 })
 
 /* GET index */
-router.get('/', async (req, res) => {
+router.get('/preview', async (req, res) => {
   const access = (await DentistAccessPoint.allForHost(req.get('Host')))[0]
   if (!access) {
     return res.status(403).send('Not allowed')
+  }
+  res.render('index', {secret: access.secret, i18n: i18n})
+})
+
+router.get('/d/:slug', async (req, res) => {
+  const slug = req.params.slug
+  const referer = normalizeParamValue(req.get('Referer') || req.get('Origin'))
+  const access = await DentistAccessPoint.findForDirectPage(slug, referer)
+  if (!access) {
+    return res.status(404).send('Page Not Found')
+  }
+  if (access.isDisabled()) {
+    return res.render('coming_soon')
   }
   res.render('index', {secret: access.secret, i18n: i18n})
 })
@@ -82,6 +95,10 @@ function setCors(req, res) {
     "Access-Control-Allow-Methods": "POST",
     "Access-Control-Allow-Headers": "MIROWEB-ID",
   })
+}
+
+function getReferer(req) {
+  return normalizeParamValue(req.get('Referer') || req.get('Origin') || req.get('Host'))
 }
 
 export default router
