@@ -3,9 +3,14 @@ import Database from '../models/database'
 import * as signer from '../shared/signer'
 
 class DentistAccessPoint {
-    constructor({id, secret, hosts = [], createdAt = new Date().toISOString(), updatedAt = null}) {
+    constructor({id, userId, secret, directPage = {}, hosts = [], createdAt = new Date().toISOString(), updatedAt = null}) {
         this.id = id
+        this.userId = userId
         this.secret = secret
+        this.directPage = {
+          slug: directPage.slug,
+          disabled: directPage.disabled || false,
+        }
         this.hosts = hosts
         this.createdAt = createdAt
         this.updatedAt = updatedAt || createdAt
@@ -24,19 +29,44 @@ class DentistAccessPoint {
         return Database.instance.save(this, `/dentist_access_points/${this.id}`)
     }
 
+    slug() {
+        if (this.directPage === null) {
+          return null
+        } else {
+          return this.directPage.slug
+        }
+    }
+
+    isDisabled() {
+        if (this.directPage === null) {
+          return false
+        } else {
+          return this.directPage.disabled
+        }
+    }
+
+    matchSlug(slug) {
+      var s = this.slug()
+      if (!s) return false
+      return s.toLowerCase() === slug.toLowerCase()
+    }
+
     static async getAll() {
         const db = Database.instance
         const allAsObject = await db.getAll(`/dentist_access_points/`)
         const all = []
         for (var key in allAsObject) {
-            all.push(allAsObject[key])
+            all.push(new DentistAccessPoint(allAsObject[key]))
         }
         return all.reverse()
     }
 
     static async allForHost(host) {
-        let normalized = DentistAccessPoint.normalizeHost(host)
         let all = await this.getAll()
+        if (DentistAccessPoint.isMasterHost(host)) {
+          return all
+        }
+        let normalized = DentistAccessPoint.normalizeHost(host)
         var filtered = []
         all.forEach((access_point) => {
             if ((access_point.hosts || []).includes(normalized)) {
@@ -52,6 +82,22 @@ class DentistAccessPoint {
             return signer.verify(params, access.secret, signature)
         })
         return access
+    }
+
+    static async findForDirectPage(slug, referer = null) {
+        let all = null
+        if (!referer || referer === '') {
+          all = await this.getAll()
+        } else {
+          all = await this.allForHost(referer)
+        }
+        let selected = null
+        all.forEach((accessPoint) => {
+          if (!selected && accessPoint.matchSlug(slug)) {
+            selected = accessPoint
+          }
+        })
+        return selected
     }
 
     static build({hosts = []}) {
@@ -72,6 +118,16 @@ class DentistAccessPoint {
 
     static newSecret() {
         return newSecret()
+    }
+
+    static isMasterHost(host) {
+      var normalizedHost = this.normalizeHost(host)
+      var masterHost = process.env.MASTER_HOST
+      if (!masterHost) {
+        return normalizedHost.includes('localhost')
+      } else {
+        return this.normalizeHost(masterHost) === normalizedHost
+      }
     }
 }
 

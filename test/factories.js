@@ -4,7 +4,11 @@ import ImageProcessingSolicitation from '../src/models/image_processing_solicita
 
 Factory.define('dentist_access_point', DentistAccessPoint)
     .attr('id', () => DentistAccessPoint.newId())
+    .attr('userId', () => "user-external-id")
     .attr('secret', () => DentistAccessPoint.newSecret())
+    .attr('directPage', () => {
+      return {slug: 'dr-suresh', disabled: false}
+    })
 
 Factory.define('image_processing_solicitation', ImageProcessingSolicitation)
     .attr('ip', '127.0.0.1')
