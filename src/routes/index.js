@@ -67,6 +67,18 @@ router.get('/preview', async (req, res) => {
   res.render('index', {secret: access.secret, i18n: i18n})
 })
 
+import mailHelpers from '../models/mailHelpers'
+router.get('/', async (req, res) => {
+  let emailBody = await mailHelpers.render('dentist_notification.hbs', {variable: 'xpto'})
+  console.log(emailBody)
+  // mailHelpers.send({
+  //   to: 'hugolnx@gmail.com',
+  //   subject: 'Sending with Twilio SendGrid is Fun',
+  //   html: emailBody
+  // })
+  res.status(200).send('hey ho')
+})
+
 router.get('/d/:slug', async (req, res) => {
   const slug = req.params.slug
   const referer = normalizeParamValue(req.get('Referer') || req.get('Origin'))
