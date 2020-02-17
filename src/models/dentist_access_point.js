@@ -100,11 +100,13 @@ class DentistAccessPoint {
         return selected
     }
 
-    static build({hosts = []}) {
+    static build({hosts = [], directPage = {}, userId}) {
         return new DentistAccessPoint({
             id: this.newId(),
             secret: this.newSecret(),
-            hosts: hosts
+            userId: userId,
+            hosts: hosts,
+            directPage: directPage
         })
     }
 

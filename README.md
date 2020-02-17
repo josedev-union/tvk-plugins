@@ -105,3 +105,27 @@ Before pushing new base versions, change the label version on `Dockerfile.base`.
 $ VERSION=x.x.x make build_base   # Build the new base
 $ VERSION=x.x.x make push_base    # Push the new base
 ```
+
+## Add New Access Points
+To add new access points run:
+
+```bash
+$ npm run new-access-point
+```
+
+It will create a template access point on firebase, you have to edit it directly on [Firebase Console (/mirosmiles-us-staging/miroweb\_data/dentist\_access\_points/)](https://console.firebase.google.com/u/0/project/mirosmiles-us-staging/database/mirosmiles-us-staging/data~2Fmiroweb_data~2Fdentist_access_points).
+
+## Dentist Access Point Structure
+```
+// Editable
+hosts: List of hosts that will be allowed to access the form page.
+directPage.slug: Name of the access point slug to access it directly on https://<miroweb-host.com>/d/<slug>.
+directPage.disabled: If the page is disabled, the user will see a coming soon page.
+
+// Read-only
+id: Access Point id
+secret: Secret key to be used on internal API communication.
+userId: The related dentist id on miro-smiles database
+createdAt: Creation date
+updatedAt: Last update date
+```
