@@ -7,7 +7,7 @@ import supertest from 'supertest'
 const request = supertest(app)
 
 test(`renders the form if the slug exist and referer is valid`, async () => {
-  await Database.instance.drop()
+  await Database.instance().drop()
   const access = Factory.build('dentist_access_point', {directPage: {slug: 'my-host', disabled: false}})
   access.addHost('http://myhost.com:8080/')
   await access.save()
@@ -22,7 +22,7 @@ test(`renders the form if the slug exist and referer is valid`, async () => {
 })
 
 test(`renders the form if the slug exist and has no referer`, async () => {
-  await Database.instance.drop()
+  await Database.instance().drop()
   const access = Factory.build('dentist_access_point', {directPage: {slug: 'my-host', disabled: false}})
   access.addHost('http://myhost.com:8080/')
   await access.save()
@@ -36,7 +36,7 @@ test(`renders the form if the slug exist and has no referer`, async () => {
 })
 
 test(`respond 404 if the slug isn't found`, async () => {
-  await Database.instance.drop()
+  await Database.instance().drop()
   const access = Factory.build('dentist_access_point', {directPage: {slug: 'myhost', disabled: false}})
   access.addHost('http://myhost.com:8080/')
   await access.save()
@@ -50,7 +50,7 @@ test(`respond 404 if the slug isn't found`, async () => {
 })
 
 test(`respond 404 if the host isn't valid`, async () => {
-  await Database.instance.drop()
+  await Database.instance().drop()
   const access = Factory.build('dentist_access_point', {directPage: {slug: 'my-host', disabled: false}})
   access.addHost('http://myhost.com:8080/')
   await access.save()
@@ -64,7 +64,7 @@ test(`respond 404 if the host isn't valid`, async () => {
 })
 
 test(`render a coming soon page if the access point is disabled`, async () => {
-  await Database.instance.drop()
+  await Database.instance().drop()
   const access = Factory.build('dentist_access_point', {directPage: {slug: 'my-host', disabled: true}})
   access.addHost('http://myhost.com:8080/')
   await access.save()

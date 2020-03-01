@@ -31,7 +31,7 @@ class ImageProcessingSolicitation {
     }
 
     save() {
-        return Database.instance.save(this, `/image_processing_solicitations/${this.id}`)
+        return Database.instance().save(this, `/image_processing_solicitations/${this.id}`)
     }
 
     static newId(createdAt) {

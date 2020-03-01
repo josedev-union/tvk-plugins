@@ -2,6 +2,7 @@ import AWS from 'aws-sdk'
 import Database from '../src/models/database'
 import Handlebars from 'hbs'
 import i18n from './shared/lang'
+import * as env from './models/env'
 
 Handlebars.registerHelper('i18n', key => i18n(key))
 
@@ -13,7 +14,7 @@ AWS.config.update({
 })
 
 let app
-if (process.env.NODE_ENV === 'test') {
+if (env.isTest()) {
     const admin = require('@firebase/testing')
     app = admin.initializeAdminApp({databaseName: 'miroweb-test-db', databaseURL: 'http://localhost:9000'})
 } else {
@@ -26,4 +27,7 @@ if (process.env.NODE_ENV === 'test') {
     appConfig.databaseURL = process.env.MIROWEB_FIREBASE_DATABASE_URL || "http://localhost:9000"
     app = admin.initializeApp(appConfig)
 }
-Database.setInstance(app.database())
+const defaultDatabase = Database.build(app.database())
+const mirosmilesDatabase = Database.build(app.database(), 'app_data')
+Database.setInstance(defaultDatabase)
+Database.setInstance(mirosmilesDatabase, 'mirosmiles')

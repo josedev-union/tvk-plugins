@@ -83,7 +83,7 @@ describe('static', () => {
     })
 
     test('get all access points', async () => {
-      await Database.instance.drop()
+      await Database.instance().drop()
       const access1 = Factory.build('dentist_access_point')
       const access2 = Factory.build('dentist_access_point')
       access1.addHost('xpto.com')
@@ -100,7 +100,7 @@ describe('static', () => {
     })
 
     test('get all access points for specific host', async () => {
-      await Database.instance.drop()
+      await Database.instance().drop()
       const access1 = Factory.build('dentist_access_point')
       const access2 = Factory.build('dentist_access_point')
       const access3 = Factory.build('dentist_access_point')
@@ -121,7 +121,7 @@ describe('static', () => {
     })
 
     test('get all access points if is master host', async () => {
-      await Database.instance.drop()
+      await Database.instance().drop()
       const access1 = Factory.build('dentist_access_point')
       const access2 = Factory.build('dentist_access_point')
       const access3 = Factory.build('dentist_access_point')
@@ -143,7 +143,7 @@ describe('static', () => {
     })
 
     test('find the access point that match host and the parameters serialization', async () => {
-      await Database.instance.drop()
+      await Database.instance().drop()
       const access1 = Factory.build('dentist_access_point')
       const access2 = Factory.build('dentist_access_point')
       const access3 = Factory.build('dentist_access_point')
@@ -163,7 +163,7 @@ describe('static', () => {
     })
 
     test('find the access point for direct page access', async () => {
-      await Database.instance.drop()
+      await Database.instance().drop()
       const access1 = Factory.build('dentist_access_point', {directPage: {slug: 'access-1', disabled: false}})
       const access2 = Factory.build('dentist_access_point', {directPage: {slug: 'access-2', disabled: false}})
       const access3 = Factory.build('dentist_access_point', {directPage: {slug: 'access-3', disabled: false}})

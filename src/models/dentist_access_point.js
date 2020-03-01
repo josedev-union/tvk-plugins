@@ -3,9 +3,10 @@ import Database from '../models/database'
 import * as signer from '../shared/signer'
 
 class DentistAccessPoint {
-    constructor({id, userId, secret, directPage = {}, hosts = [], createdAt = new Date().toISOString(), updatedAt = null}) {
+    constructor({id, userId, secret, customEmail = null, directPage = {}, hosts = [], createdAt = new Date().toISOString(), updatedAt = null}) {
         this.id = id
         this.userId = userId
+        this.customEmail = customEmail
         this.secret = secret
         this.directPage = {
           slug: directPage.slug,
@@ -26,7 +27,18 @@ class DentistAccessPoint {
     save() {
         this.updatedAt = new Date().toISOString()
         this.createdAt = this.createdAt || new Date().toISOString()
-        return Database.instance.save(this, `/dentist_access_points/${this.id}`)
+        return Database.instance().save(this, `/dentist_access_points/${this.id}`)
+    }
+
+    email() {
+        if (!this.customEmail) {
+          return this.customEmail
+        } else {
+        }
+    }
+
+    user() {
+      return MiroSmilesUser.get(this.userId)
     }
 
     slug() {
@@ -52,7 +64,7 @@ class DentistAccessPoint {
     }
 
     static async getAll() {
-        const db = Database.instance
+        const db = Database.instance()
         const allAsObject = await db.getAll(`/dentist_access_points/`)
         const all = []
         for (var key in allAsObject) {

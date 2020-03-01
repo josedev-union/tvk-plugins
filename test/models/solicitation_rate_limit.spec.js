@@ -6,7 +6,7 @@ import '../../src/config'
 
 describe(`add solicitations`, () => {
     test(`can not add more than the limit on the same ip`, async () => {
-        await Database.instance.drop()
+        await Database.instance().drop()
         let rateLimit = new SolicitationRateLimit({limit: 2, expiresIn: 24*60*60*1000})
         const sol1 = Solicitation.build(Factory.attributes('image_processing_solicitation', {ip: "127.0.0.1", origin: 'localhost:3000'}))
         const sol2 = Solicitation.build(Factory.attributes('image_processing_solicitation', {ip: "127.0.0.1", origin: 'localhost:3000'}))
@@ -20,7 +20,7 @@ describe(`add solicitations`, () => {
     })
 
     test(`can not add more than the limit on the same email`, async () => {
-        await Database.instance.drop()
+        await Database.instance().drop()
         let rateLimit = new SolicitationRateLimit({limit: 2, expiresIn: 24*60*60*1000})
         const sol1 = Solicitation.build(Factory.attributes('image_processing_solicitation', {ip: "127.0.0.1", email: "anemail@fgmail.com", origin: 'localhost:3000'}))
         const sol2 = Solicitation.build(Factory.attributes('image_processing_solicitation', {ip: "127.0.0.2", email: "anemail@fgmail.com", origin: 'localhost:3000'}))
@@ -34,7 +34,7 @@ describe(`add solicitations`, () => {
     })
 
     test(`limit is set per origin`, async () => {
-        await Database.instance.drop()
+        await Database.instance().drop()
         let rateLimit = new SolicitationRateLimit({limit: 2, expiresIn: 24*60*60*1000})
         const sol1 = Solicitation.build(Factory.attributes('image_processing_solicitation', {ip: "127.0.0.1", email: "anemail@fgmail.com", origin: 'localhost:3000'}))
         const sol2 = Solicitation.build(Factory.attributes('image_processing_solicitation', {ip: "127.0.0.1", email: "anemail@fgmail.com", origin: 'localhost:3000'}))
@@ -48,7 +48,7 @@ describe(`add solicitations`, () => {
     })
 
     test(`slots are expired after the configured time`, async () => {
-        await Database.instance.drop()
+        await Database.instance().drop()
         let rateLimit = new SolicitationRateLimit({limit: 2, expiresIn: 20})
         const sol1 = Solicitation.build(Factory.attributes('image_processing_solicitation', {ip: "127.0.0.1", email: "anemail@fgmail.com", origin: 'localhost:3000'}))
         const sol2 = Solicitation.build(Factory.attributes('image_processing_solicitation', {ip: "127.0.0.1", email: "anemail@fgmail.com", origin: 'localhost:3000'}))
@@ -63,7 +63,7 @@ describe(`add solicitations`, () => {
     })
 
     test(`don't persist anything if solicitation is denied`, async () => {
-        await Database.instance.drop()
+        await Database.instance().drop()
         let rateLimit = new SolicitationRateLimit({limit: 1, expiresIn: 10000})
         const sol1 = Solicitation.build(Factory.attributes('image_processing_solicitation', {ip: "127.0.0.1", email: "anemail@fgmail.com", origin: 'localhost:3000'}))
         const sol2 = Solicitation.build(Factory.attributes('image_processing_solicitation', {ip: "127.0.0.1", email: "anemail2@fgmail.com", origin: 'localhost:3000'}))
@@ -78,7 +78,7 @@ describe(`add solicitations`, () => {
 })
 
 test(`delete all entries`, async () => {
-    await Database.instance.drop()
+    await Database.instance().drop()
     let rateLimit = new SolicitationRateLimit({limit: 1, expiresIn: 10000})
     const sol1 = Solicitation.build(Factory.attributes('image_processing_solicitation', {ip: "127.0.0.1", email: "anemail@fgmail.com", origin: 'localhost:3000'}))
     const sol2 = Solicitation.build(Factory.attributes('image_processing_solicitation', {ip: "127.0.0.1", email: "anemail@fgmail.com", origin: 'localhost:3000'}))
