@@ -17,6 +17,7 @@ class ImageProcessingSolicitation {
         this.phone = attrs.phone
         this.imageFilepath = attrs.imageFilepath
         this.processedFilepath = attrs.processedFilepath
+        this.accessPointId = attrs.accessPointId
     }
 
     static build(attrs) {
@@ -32,6 +33,11 @@ class ImageProcessingSolicitation {
 
     save() {
         return Database.instance().save(this, `/image_processing_solicitations/${this.id}`)
+    }
+
+    static async get(id) {
+        const data = await Database.instance().get(`/image_processing_solicitations/${id}`)
+        return new ImageProcessingSolicitation(data)
     }
 
     static newId(createdAt) {

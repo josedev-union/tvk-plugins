@@ -4,11 +4,12 @@ import {newRedis} from '../models/redis_pubsub'
 import logger from '../models/logger'
 
 class LocalWebsocketServer {
-  constructor(socket, processingId, {onTerminate = null, inactiveTimeout = 30}) {
+  constructor(socket, processingIdBase, {onTerminate = null, onReceive = null, inactiveTimeout = 30}) {
     this.onTerminate = onTerminate
     this.socket = socket
-    this.processingId = processingId
+    this.processingIdBase = processingIdBase
     this.onTerminate = onTerminate
+    this.onReceive = onReceive
 
     this.server = this.setupWebsocketServer()
     this.redis = this.setupRedisPubSub()
@@ -37,14 +38,15 @@ class LocalWebsocketServer {
   setupRedisPubSub() {
     let redis = newRedis()
     redis.on('error', () => this.terminate())
-    redis.subscribe(this.processingId)
+    redis.subscribe(this.processingIdBase)
     redis.on('message', (channel, message) => {
-      logger.info(`WebsocketServer ${this.processingId} - Received message from redis ${channel} ${message}`)
-      if (message === "#QUIT#") {
+      logger.info(`WebsocketServer ${this.processingIdBase} - Received message from redis ${channel} ${message}`)
+      if (message === '#QUIT#') {
         this.terminate()
         return
       }
 
+      if (this.onReceive) this.onReceive(JSON.parse(message))
       this.sendToClients(message)
       this.timeout.restart()
     })
@@ -54,7 +56,7 @@ class LocalWebsocketServer {
   setupInactiveTimeout(inactiveTimeout) {
     let timeout = new Timeout(inactiveTimeout * 1000)
     timeout.onExpiration(() => {
-      logger.info(`WebsocketServer ${this.processingId} - Timed out (Too long without messages)`)
+      logger.info(`WebsocketServer ${this.processingIdBase} - Timed out (Too long without messages)`)
       let msg = JSON.stringify({
         event: 'error',
         code: 'timeout',

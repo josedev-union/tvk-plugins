@@ -30,7 +30,8 @@ router.post('/image_processing_solicitation', async (req, res) => {
 
   const solicitation = ImageProcessingSolicitation.build(Object.assign({
     ip: req.ip,
-    origin: referer
+    origin: referer,
+    accessPointId: access.id
   }, params))
 
   let hasFreeSlot = await SolicitationRateLimit.build().add(solicitation)

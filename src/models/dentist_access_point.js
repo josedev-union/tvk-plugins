@@ -67,6 +67,11 @@ class DentistAccessPoint {
       return s.toLowerCase() === slug.toLowerCase()
     }
 
+    static async get(id) {
+      const data = await Database.instance().get(`/dentist_access_points/${id}`)
+      return new DentistAccessPoint(data)
+    }
+
     static async getAll() {
         const db = Database.instance()
         const allAsObject = await db.getAll(`/dentist_access_points/`)
