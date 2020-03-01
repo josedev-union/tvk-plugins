@@ -58,6 +58,28 @@ test('verify slug matching', async () => {
     expect(access.matchSlug('myhost')).toBe(false)
 })
 
+test(`get email from mirosmiles user if customEmail wasn't set`, async () => {
+    await Database.instance().drop()
+    const user = Factory.build('miro_smiles_user')
+    user.save()
+    const accessEmailNull = Factory.build('dentist_access_point', {customEmail: null, userId: user.id})
+    const accessEmailEmpty = Factory.build('dentist_access_point', {customEmail: '', userId: user.id})
+    await expect(accessEmailNull.email()).resolves.toEqual(user.email)
+    await expect(accessEmailEmpty.email()).resolves.toEqual(user.email)
+})
+
+test(`get custom email`, async () => {
+    await Database.instance().drop()
+    const access = Factory.build('dentist_access_point', {customEmail: 'customemail@fgmail.com'})
+    await expect(access.email()).resolves.toEqual('customemail@fgmail.com')
+})
+
+test(`get null email when has no user and no customEmail`, async () => {
+    await Database.instance().drop()
+    const access = Factory.build('dentist_access_point', {customEmail: null})
+    await expect(access.email()).resolves.toEqual(null)
+})
+
 describe('static', () => {
     test('build a new access point', () => {
         const access = DentistAccessPoint.build({hosts: ['myhost.com']})

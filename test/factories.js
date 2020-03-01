@@ -8,6 +8,7 @@ Factory.define('dentist_access_point', DentistAccessPoint)
   .attr('id', () => DentistAccessPoint.newId())
   .attr('userId', () => "user-external-id")
   .attr('secret', () => DentistAccessPoint.newSecret())
+  .attr('customEmail', null)
   .attr('directPage', () => {
     return {slug: 'dr-suresh', disabled: false}
   })

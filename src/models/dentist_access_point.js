@@ -1,5 +1,6 @@
 import {newOrderedId, newSecret} from '../models/id_generator'
 import Database from '../models/database'
+import MiroSmilesUser from '../models/miro_smiles_user'
 import * as signer from '../shared/signer'
 
 class DentistAccessPoint {
@@ -30,10 +31,13 @@ class DentistAccessPoint {
         return Database.instance().save(this, `/dentist_access_points/${this.id}`)
     }
 
-    email() {
-        if (!this.customEmail) {
+    async email() {
+        if (this.customEmail) {
           return this.customEmail
         } else {
+          let u = await this.user()
+          if (u === null) return null
+          return u.email
         }
     }
 
