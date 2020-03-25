@@ -74,6 +74,11 @@ class DentistAccessPoint {
       return s.toLowerCase() === slug.toLowerCase()
     }
 
+    checkHost(host) {
+        let normalized = DentistAccessPoint.normalizeHost(host)
+        return (this.hosts || []).includes(normalized)
+    }
+
     static async get(id) {
       const data = await Database.instance().get(`/dentist_access_points/${id}`)
       return new DentistAccessPoint(data)
@@ -91,17 +96,7 @@ class DentistAccessPoint {
 
     static async allForHost(host) {
         let all = await this.getAll()
-        if (DentistAccessPoint.isMasterHost(host)) {
-          return all
-        }
-        let normalized = DentistAccessPoint.normalizeHost(host)
-        var filtered = []
-        all.forEach((access_point) => {
-            if ((access_point.hosts || []).includes(normalized)) {
-                filtered.push(access_point)
-            }
-        })
-        return filtered
+        return this.filterHost(all, host)
     }
 
     static async findOne(params, referer, signature) {
@@ -112,20 +107,10 @@ class DentistAccessPoint {
         return access
     }
 
-    static async findForDirectPage(slug, referer = null) {
-        let all = null
-        if (!referer || referer === '') {
-          all = await this.getAll()
-        } else {
-          all = await this.allForHost(referer)
-        }
-        let selected = null
-        all.forEach((accessPoint) => {
-          if (!selected && accessPoint.matchSlug(slug)) {
-            selected = accessPoint
-          }
-        })
-        return selected
+    static async findOneBySlug(slug) {
+        let all = await this.getAll()
+        all = this.filterSlug(all, slug)
+        return (all.length > 0 ? all[0] : null)
     }
 
     static build({hosts = [], directPage = {}, userId}) {
@@ -158,6 +143,29 @@ class DentistAccessPoint {
       } else {
         return this.normalizeHost(masterHost) === normalizedHost
       }
+    }
+
+    static filterHost(all, host) {
+        if (DentistAccessPoint.isMasterHost(host) || !host) {
+          return all
+        }
+        var filtered = []
+        all.forEach((accessPoint) => {
+            if (accessPoint.checkHost(host)) {
+                filtered.push(accessPoint)
+            }
+        })
+        return filtered
+    }
+
+    static filterSlug(all, slug) {
+        let filtered = []
+        all.forEach((accessPoint) => {
+          if (accessPoint.matchSlug(slug)) {
+            filtered.push(accessPoint)
+          }
+        })
+        return filtered
     }
 }
 

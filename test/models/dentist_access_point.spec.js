@@ -184,31 +184,22 @@ describe('static', () => {
       expect(accessFound.id).toBe(access2.id)
     })
 
-    test('find the access point for direct page access', async () => {
+    test('find an access point by slug', async () => {
       await Database.instance().drop()
       const access1 = Factory.build('dentist_access_point', {directPage: {slug: 'access-1', disabled: false}})
       const access2 = Factory.build('dentist_access_point', {directPage: {slug: 'access-2', disabled: false}})
       const access3 = Factory.build('dentist_access_point', {directPage: {slug: 'access-3', disabled: false}})
-      access1.addHost('xpto.com')
-      access1.addHost('xpto2.com')
-      access2.addHost('xpto.com')
-      access2.addHost('xpto3.com')
-      access3.addHost('xpto2.com')
-      access3.addHost('xpto3.com')
       await access1.save()
       await access2.save()
       await access3.save()
 
-      const accessFound1 = await DentistAccessPoint.findForDirectPage('access-2', 'http://xpto.com/random/page')
+      const accessFound1 = await DentistAccessPoint.findOneBySlug('access-2')
       expect(accessFound1.id).toBe(access2.id)
 
-      const accessFound2 = await DentistAccessPoint.findForDirectPage('access-1', '')
+      const accessFound2 = await DentistAccessPoint.findOneBySlug('access-1')
       expect(accessFound2.id).toBe(access1.id)
 
-      const accessNotFound1 = await DentistAccessPoint.findForDirectPage('access-3', 'http://xpto.com/random/page')
+      const accessNotFound1 = await DentistAccessPoint.findOneBySlug('access-unknown')
       expect(accessNotFound1).toBe(null)
-
-      const accessNotFound2 = await DentistAccessPoint.findForDirectPage('access-unknown', 'http://xpto.com/random/page')
-      expect(accessNotFound2).toBe(null)
     })
 })

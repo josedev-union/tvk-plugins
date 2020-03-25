@@ -84,9 +84,12 @@ router.get('/', async (req, res) => {
 router.get('/d/:slug', async (req, res) => {
   const slug = req.params.slug
   const referer = normalizeParamValue(req.get('Referer') || req.get('Origin'))
-  const access = await DentistAccessPoint.findForDirectPage(slug, referer)
+  const access = await DentistAccessPoint.findOneBySlug(slug)
   if (!access) {
     return res.status(404).send('Page Not Found')
+  }
+  if (isSet(referer) && !access.checkHost(referer)) {
+    return res.status(403).send('Unauthorized Usage')
   }
   if (access.isDisabled()) {
     return res.render('coming_soon')
