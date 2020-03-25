@@ -41,8 +41,15 @@ class DentistAccessPoint {
         }
     }
 
-    user() {
-      return MiroSmilesUser.get(this.userId)
+    async user() {
+      var user = await MiroSmilesUser.get(this.userId)
+      this.cachedUser = user
+      return user
+    }
+
+    async cacheableUser() {
+      if (this.cachedUser) return this.cachedUser
+      return await this.user()
     }
 
     slug() {

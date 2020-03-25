@@ -6,6 +6,7 @@ import DentistAccessPoint from '../models/dentist_access_point'
 import SolicitationRateLimit from '../models/solicitation_rate_limit'
 import Uri from '../models/uri'
 import i18n from '../shared/lang'
+import * as env from '../models/env'
 
 /* GET presigned post */
 router.options('/image_processing_solicitation', (req, res) => {
@@ -54,8 +55,8 @@ router.post('/image_processing_solicitation', async (req, res) => {
     presignedDownloadOriginal: urlToGetOriginal,
     presignedDownloadAfter: urlToGetProcessed,
     sessionId: solicitation.id,
-    key: solicitation.imageFilepath,
-    bucket: process.env.MIROWEB_S3_BUCKET,
+    key: solicitation.filepathOriginal,
+    bucket: env.s3Bucket,
   })
 })
 

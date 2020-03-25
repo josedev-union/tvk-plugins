@@ -1,1 +1,3 @@
-<h1>[{{variable}}] A patient just finished processing</h1>
+<h1>A patient just finished processing{{#with dentist.company}} on {{this}}{{/with}}</h1>
+<p>Hi{{#with dentist.fullName}}, {{this}}{{/with}}</p>
+<p>The user {{solicitation.name}} ({{solicitation.email}}) used your smile processing service provided by Miroweb and the result is attached to this email.</p>

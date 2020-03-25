@@ -5,9 +5,11 @@ import * as env from '../models/env'
 const db = () => Database.instance('mirosmiles')
 
 class MiroSmilesUser {
-  constructor({id, email}) {
+  constructor({id, email, fullName, company}) {
     this.id = id
     this.email = email
+    this.fullName = fullName
+    this.company = company
   }
 
   static async get(id) {
