@@ -6,6 +6,7 @@ import DentistAccessPoint from '../models/dentist_access_point'
 import SolicitationRateLimit from '../models/solicitation_rate_limit'
 import Uri from '../models/uri'
 import i18n from '../shared/lang'
+import * as env from '../models/env'
 
 /* GET presigned post */
 router.options('/image_processing_solicitation', (req, res) => {
@@ -30,7 +31,8 @@ router.post('/image_processing_solicitation', async (req, res) => {
 
   const solicitation = ImageProcessingSolicitation.build(Object.assign({
     ip: req.ip,
-    origin: referer
+    origin: referer,
+    accessPointId: access.id
   }, params))
 
   let hasFreeSlot = await SolicitationRateLimit.build().add(solicitation)
@@ -53,8 +55,8 @@ router.post('/image_processing_solicitation', async (req, res) => {
     presignedDownloadOriginal: urlToGetOriginal,
     presignedDownloadAfter: urlToGetProcessed,
     sessionId: solicitation.id,
-    key: solicitation.imageFilepath,
-    bucket: process.env.MIROWEB_S3_BUCKET,
+    key: solicitation.filepathOriginal,
+    bucket: env.s3Bucket,
   })
 })
 
@@ -67,12 +69,27 @@ router.get('/preview', async (req, res) => {
   res.render('index', {secret: access.secret, i18n: i18n})
 })
 
+import mailHelpers from '../models/mailHelpers'
+router.get('/', async (req, res) => {
+  let emailBody = await mailHelpers.render('dentist_notification.hbs', {variable: 'xpto'})
+  console.log(emailBody)
+  // mailHelpers.send({
+  //   to: 'hugolnx@gmail.com',
+  //   subject: 'Sending with Twilio SendGrid is Fun',
+  //   html: emailBody
+  // })
+  res.status(200).send('hey ho')
+})
+
 router.get('/d/:slug', async (req, res) => {
   const slug = req.params.slug
   const referer = normalizeParamValue(req.get('Referer') || req.get('Origin'))
-  const access = await DentistAccessPoint.findForDirectPage(slug, referer)
+  const access = await DentistAccessPoint.findOneBySlug(slug)
   if (!access) {
     return res.status(404).send('Page Not Found')
+  }
+  if (isSet(referer) && !access.checkHost(referer)) {
+    return res.status(403).send('Unauthorized Usage')
   }
   if (access.isDisabled()) {
     return res.render('coming_soon')

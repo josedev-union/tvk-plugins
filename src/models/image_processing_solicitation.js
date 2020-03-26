@@ -5,6 +5,7 @@ import {join} from 'path'
 
 const ORIGINAL_IMAGE_FILENAME = 'pre.jpg'
 const PROCESSED_IMAGE_FILENAME = 'after.jpg'
+const SIDEBYSIDE_IMAGE_FILENAME = 'sidebyside.jpg'
 
 class ImageProcessingSolicitation {
     constructor(attrs = {}) {
@@ -15,8 +16,10 @@ class ImageProcessingSolicitation {
         this.email = attrs.email
         this.name = attrs.name
         this.phone = attrs.phone
-        this.imageFilepath = attrs.imageFilepath
-        this.processedFilepath = attrs.processedFilepath
+        this.filepathOriginal = attrs.filepathOriginal
+        this.filepathProcessed = attrs.filepathProcessed
+        this.filepathSideBySide = attrs.filepathSideBySide
+        this.accessPointId = attrs.accessPointId
     }
 
     static build(attrs) {
@@ -25,13 +28,19 @@ class ImageProcessingSolicitation {
         return new ImageProcessingSolicitation(Object.assign({
            id: id,
            createdAt: createdAt,
-           imageFilepath: join(id, ORIGINAL_IMAGE_FILENAME),
-           processedFilepath: join(id, PROCESSED_IMAGE_FILENAME),
+           filepathOriginal: join(id, ORIGINAL_IMAGE_FILENAME),
+           filepathProcessed: join(id, PROCESSED_IMAGE_FILENAME),
+           filepathSideBySide: join(id, SIDEBYSIDE_IMAGE_FILENAME),
         }, attrs))
     }
 
     save() {
-        return Database.instance.save(this, `/image_processing_solicitations/${this.id}`)
+        return Database.instance().save(this, `/image_processing_solicitations/${this.id}`)
+    }
+
+    static async get(id) {
+        const data = await Database.instance().get(`/image_processing_solicitations/${id}`)
+        return new ImageProcessingSolicitation(data)
     }
 
     static newId(createdAt) {

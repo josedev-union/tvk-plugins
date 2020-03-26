@@ -11,7 +11,7 @@ class ImageProcessingService {
     }
 
     credentialsFor(solicitation) {
-        const pathWithoutExtension = solicitation.imageFilepath.replace(/[^\.]+$/, '')
+        const pathWithoutExtension = solicitation.filepathOriginal.replace(/[^\.]+$/, '')
         const jsonUploadConstraints = {
             keyPrefix: pathWithoutExtension,
             contentTypePrefix: 'image/',
@@ -20,8 +20,8 @@ class ImageProcessingService {
         }
         return {
             requestJsonToUpload: this.credentialsProvider.jsonToUpload(jsonUploadConstraints),
-            requestUrlToGetOriginal: this.credentialsProvider.urlToGet(solicitation.imageFilepath, {expiresInSeconds: EXPIRATION_IN_SECONDS}),
-            requestUrlToGetProcessed: this.credentialsProvider.urlToGet(solicitation.processedFilepath, {expiresInSeconds: EXPIRATION_IN_SECONDS}),
+            requestUrlToGetOriginal: this.credentialsProvider.urlToGet(solicitation.filepathOriginal, {expiresInSeconds: EXPIRATION_IN_SECONDS}),
+            requestUrlToGetProcessed: this.credentialsProvider.urlToGet(solicitation.filepathProcessed, {expiresInSeconds: EXPIRATION_IN_SECONDS}),
         }
     }
 }

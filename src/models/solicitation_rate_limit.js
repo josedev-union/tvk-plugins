@@ -50,7 +50,7 @@ class SolicitationRateLimit {
 
     async addSolicitationOn(path, solicitationId) {
         let wasUpdated = true
-        await Database.instance.transaction(path, (current_value) => {
+        await Database.instance().transaction(path, (current_value) => {
             let a = current_value || []
             if (a.length >= this.limit) a = cleanupExpiredOn(a, this.expiresIn)
             if (a.length < this.limit && a.find(({listedSolicitationId}) => listedSolicitationId === solicitationId) === undefined) {
@@ -65,16 +65,16 @@ class SolicitationRateLimit {
 
     static deleteAll() {
         logger.info(`Deleting all SolicitationRateLimit entries.`)
-        return Database.instance.delete(`/${NAMESPACE}/`)
+        return Database.instance().delete(`/${NAMESPACE}/`)
     }
 }
 
 function getFromDB(path) {
-    return Database.instance.get(path)
+    return Database.instance().get(path)
 }
 
 function setInDB(path, value) {
-    return Database.instance.set(path, value)
+    return Database.instance().set(path, value)
 }
 
 function cleanupExpiredOn(array, expires_in) {

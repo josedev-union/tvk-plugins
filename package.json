@@ -34,7 +34,8 @@
     "ws": "~7.2.0",
     "redis": "~2.8.0",
     "winston": "~3.2.1",
-    "roddeh-i18n": "~1.2.0"
+    "roddeh-i18n": "~1.2.0",
+    "@sendgrid/mail": "~6.5.2"
   },
   "devDependencies": {
     "nodemon": "~1.19.1",

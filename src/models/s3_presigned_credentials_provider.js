@@ -1,3 +1,4 @@
+import * as env from './env'
 import AWS from 'aws-sdk'
 
 class S3PresignedCredentialsProvider {
@@ -7,7 +8,7 @@ class S3PresignedCredentialsProvider {
     }
 
     static build() {
-        return new S3PresignedCredentialsProvider(new AWS.S3(), process.env.MIROWEB_S3_BUCKET)
+        return new S3PresignedCredentialsProvider(new AWS.S3(), env.s3Bucket)
     }
 
     jsonToUpload({keyPrefix, expiresInSeconds, contentTypePrefix, maxSizeInMegabytes}) {

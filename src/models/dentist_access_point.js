@@ -1,11 +1,13 @@
 import {newOrderedId, newSecret} from '../models/id_generator'
 import Database from '../models/database'
+import MiroSmilesUser from '../models/miro_smiles_user'
 import * as signer from '../shared/signer'
 
 class DentistAccessPoint {
-    constructor({id, userId, secret, directPage = {}, hosts = [], createdAt = new Date().toISOString(), updatedAt = null}) {
+    constructor({id, userId, secret, customEmail = null, directPage = {}, hosts = [], createdAt = new Date().toISOString(), updatedAt = null}) {
         this.id = id
         this.userId = userId
+        this.customEmail = customEmail
         this.secret = secret
         this.directPage = {
           slug: directPage.slug,
@@ -26,7 +28,28 @@ class DentistAccessPoint {
     save() {
         this.updatedAt = new Date().toISOString()
         this.createdAt = this.createdAt || new Date().toISOString()
-        return Database.instance.save(this, `/dentist_access_points/${this.id}`)
+        return Database.instance().save(this, `/dentist_access_points/${this.id}`)
+    }
+
+    async email() {
+        if (this.customEmail) {
+          return this.customEmail
+        } else {
+          let u = await this.user()
+          if (u === null) return null
+          return u.email
+        }
+    }
+
+    async user() {
+      var user = await MiroSmilesUser.get(this.userId)
+      this.cachedUser = user
+      return user
+    }
+
+    async cacheableUser() {
+      if (this.cachedUser) return this.cachedUser
+      return await this.user()
     }
 
     slug() {
@@ -51,8 +74,18 @@ class DentistAccessPoint {
       return s.toLowerCase() === slug.toLowerCase()
     }
 
+    checkHost(host) {
+        let normalized = DentistAccessPoint.normalizeHost(host)
+        return (this.hosts || []).includes(normalized)
+    }
+
+    static async get(id) {
+      const data = await Database.instance().get(`/dentist_access_points/${id}`)
+      return new DentistAccessPoint(data)
+    }
+
     static async getAll() {
-        const db = Database.instance
+        const db = Database.instance()
         const allAsObject = await db.getAll(`/dentist_access_points/`)
         const all = []
         for (var key in allAsObject) {
@@ -63,17 +96,7 @@ class DentistAccessPoint {
 
     static async allForHost(host) {
         let all = await this.getAll()
-        if (DentistAccessPoint.isMasterHost(host)) {
-          return all
-        }
-        let normalized = DentistAccessPoint.normalizeHost(host)
-        var filtered = []
-        all.forEach((access_point) => {
-            if ((access_point.hosts || []).includes(normalized)) {
-                filtered.push(access_point)
-            }
-        })
-        return filtered
+        return this.filterHost(all, host)
     }
 
     static async findOne(params, referer, signature) {
@@ -84,20 +107,10 @@ class DentistAccessPoint {
         return access
     }
 
-    static async findForDirectPage(slug, referer = null) {
-        let all = null
-        if (!referer || referer === '') {
-          all = await this.getAll()
-        } else {
-          all = await this.allForHost(referer)
-        }
-        let selected = null
-        all.forEach((accessPoint) => {
-          if (!selected && accessPoint.matchSlug(slug)) {
-            selected = accessPoint
-          }
-        })
-        return selected
+    static async findOneBySlug(slug) {
+        let all = await this.getAll()
+        all = this.filterSlug(all, slug)
+        return (all.length > 0 ? all[0] : null)
     }
 
     static build({hosts = [], directPage = {}, userId}) {
@@ -130,6 +143,29 @@ class DentistAccessPoint {
       } else {
         return this.normalizeHost(masterHost) === normalizedHost
       }
+    }
+
+    static filterHost(all, host) {
+        if (DentistAccessPoint.isMasterHost(host) || !host) {
+          return all
+        }
+        var filtered = []
+        all.forEach((accessPoint) => {
+            if (accessPoint.checkHost(host)) {
+                filtered.push(accessPoint)
+            }
+        })
+        return filtered
+    }
+
+    static filterSlug(all, slug) {
+        let filtered = []
+        all.forEach((accessPoint) => {
+          if (accessPoint.matchSlug(slug)) {
+            filtered.push(accessPoint)
+          }
+        })
+        return filtered
     }
 }
 

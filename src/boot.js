@@ -6,7 +6,8 @@ import app from './app'
 import build_debug from 'debug'
 import http from 'http'
 import { createTerminus, HealthCheckError } from '@godaddy/terminus'
-import WebsocketServer from './models/websocket_server.js'
+import WebsocketServer from './websockets/websocket_server'
+import * as wsCallbacks from './websockets/callbacks'
 const debug = build_debug('miroweb:server')
 
 /**
@@ -40,6 +41,13 @@ server.on('listening', onListening);
 server.on('upgrade', (request, socket, head) => {
   WebsocketServer.instance().onUpgrade(request, socket, head);
 });
+
+WebsocketServer.instance().onReceive = (processingIdBase, message) => {
+  if (message['event'] === 'end') {
+    let [bucket, solicitationId] = processingIdBase.replace(/^\//g, '').replace(/\/$/g, '').split('/')
+    wsCallbacks.onProcessingComplete(bucket, solicitationId)
+  }
+}
 
 /**
  * Normalize a port into a number, string, or false.

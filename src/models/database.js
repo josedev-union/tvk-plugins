@@ -1,5 +1,6 @@
 import path from 'path'
 import admin from 'firebase-admin'
+import * as env from '../models/env'
 
 class Database {
     constructor({connection, namespace = ""}) {
@@ -7,15 +8,22 @@ class Database {
         this.namespace = namespace
     }
 
-    static build(db = admin.database()) {
+    static build(db = admin.database(), namespace = 'miroweb_data') {
         return new Database({
             connection: db,
-            namespace: "miroweb_data"
+            namespace: namespace
         })
     }
 
-    static setInstance(db = null) {
-        this.instance = this.build(db)
+    static setInstance(database, key='default') {
+        if (!this.instances) this.instances = {}
+        this.instances[key] = database
+    }
+
+    static instance(key='default') {
+      let instance = this.instances[key]
+      if (!instance) throw `Couldn't find database named ${key}`
+      return instance
     }
 
     save(obj, obj_path) {
@@ -44,6 +52,9 @@ class Database {
     }
 
     async drop() {
+        if (!env.isLocal()) {
+            throw `Can't drop database on ${process.env.NODE_ENV}`
+        }
         return this.delete('/')
     }
 
