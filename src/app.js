@@ -12,6 +12,7 @@ import indexRouter from './routes/index'
 import usersRouter from './routes/users'
 import './config'
 import './cron_jobs'
+import * as Sentry from '@sentry/node'
 
 app.disable('trust proxy')
 
@@ -19,6 +20,7 @@ app.disable('trust proxy')
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 
+app.use(Sentry.Handlers.requestHandler());
 app.use(morgan(':date[iso] :method :url HTTP/:http-version" :status :res[content-length] [:remote-addr - :remote-user]'));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
@@ -29,6 +31,8 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+
+app.use(Sentry.Handlers.errorHandler());
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
