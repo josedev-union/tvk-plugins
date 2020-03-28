@@ -27,13 +27,11 @@ class Database {
     }
 
     save(obj, obj_path) {
-        const full_path = path.join(this.namespace, obj_path)
-        return this.connection.ref(full_path).set(obj)
+        return this.getRef(obj_path).set(obj)
     }
 
     transaction(obj_path, cb) {
-        const full_path = path.join(this.namespace, obj_path)
-        return this.connection.ref(full_path).transaction(cb)
+        return this.getRef(obj_path).transaction(cb)
     }
 
     getAll(objs_path) {
@@ -41,26 +39,29 @@ class Database {
     }
 
     async get(objs_path) {
-        const full_path = path.join(this.namespace, objs_path)
-        const all = await this.connection.ref(full_path).once("value")
+        const all = await this.getRef(objs_path).once("value")
         return all.val()
     }
 
     set(obj_path, value) {
+        return this.getRef(obj_path).set(value)
+    }
+
+    async delete(obj_path, allow_root = false) {
+        if (!allow_root && (obj_path === '/' || obj_path === '' || !obj_path)) throw "Can't delete root"
+        return this.getRef(obj_path).remove()
+    }
+
+    getRef(obj_path) {
         const full_path = path.join(this.namespace, obj_path)
-        return this.connection.ref(full_path).set(value)
+        return this.connection.ref(full_path)
     }
 
     async drop() {
         if (!env.isLocal()) {
             throw `Can't drop database on ${process.env.NODE_ENV}`
         }
-        return this.delete('/')
-    }
-
-    async delete(objs_path) {
-        const full_path = path.join(this.namespace, objs_path)
-        return this.connection.ref(full_path).remove()
+        return this.delete('/', true)
     }
 }
 

@@ -107,6 +107,11 @@ class DentistAccessPoint {
         return access
     }
 
+    static destroy(id) {
+        if (id === '/' || id === '' || !id) throw "Can't delete root"
+        return Database.instance().delete(`/dentist_access_points/${id}`)
+    }
+
     static async findOneBySlug(slug) {
         let all = await this.getAll()
         all = this.filterSlug(all, slug)
