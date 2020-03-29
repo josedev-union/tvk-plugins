@@ -81,6 +81,10 @@ router.get('/', async (req, res) => {
   res.status(200).send('hey ho')
 })
 
+router.get('/d25e4af/error', async (req, res) => {
+  throw "Fake Error"
+})
+
 router.get('/d/:slug', async (req, res) => {
   const slug = req.params.slug
   const referer = normalizeParamValue(req.get('Referer') || req.get('Origin'))
