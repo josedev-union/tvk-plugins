@@ -12,6 +12,7 @@
     "start": "node -r regenerator-runtime/runtime src/start.js",
     "console": "node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config.js",
     "new-access-point": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config.js ./scripts/new_access_point.js",
+    "del-access-point": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config.js ./scripts/del_access_point.js",
     "test": "jest -i"
   },
   "dependencies": {
@@ -35,7 +36,8 @@
     "redis": "~2.8.0",
     "winston": "~3.2.1",
     "roddeh-i18n": "~1.2.0",
-    "@sendgrid/mail": "~6.5.2"
+    "@sendgrid/mail": "~6.5.2",
+    "@sentry/node": "~5.15.2"
   },
   "devDependencies": {
     "nodemon": "~1.19.1",

@@ -3,6 +3,7 @@ import Database from '../src/models/database'
 import Handlebars from 'hbs'
 import i18n from './shared/lang'
 import * as env from './models/env'
+import * as Sentry from '@sentry/node'
 
 Handlebars.registerHelper('i18n', key => i18n(key))
 
@@ -18,6 +19,7 @@ if (env.isTest()) {
     const admin = require('@firebase/testing')
     app = admin.initializeAdminApp({databaseName: 'miroweb-test-db', databaseURL: 'http://localhost:9000'})
 } else {
+    Sentry.init({ dsn: process.env.SENTRY_DSN, env: env.name });
     const admin = require('firebase-admin')
     const appConfig = {}
     if (process.env.MIROWEB_GOOGLE_APPLICATION_CREDENTIALS) {
