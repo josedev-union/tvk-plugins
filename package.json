@@ -12,7 +12,9 @@
     "start": "node -r regenerator-runtime/runtime src/start.js",
     "console": "node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config.js",
     "new-access-point": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config.js ./scripts/new_access_point.js",
+    "prod-new-access-point": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config.js ./scripts/new_access_point.js dotenv_config_path=./.env.prod",
     "del-access-point": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config.js ./scripts/del_access_point.js",
+    "prod-del-access-point": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config.js ./scripts/del_access_point.js dotenv_config_path=./.env.prod",
     "test": "jest -i"
   },
   "dependencies": {

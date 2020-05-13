@@ -4,4 +4,5 @@ export let isStaging = () => name === 'staging'
 export let isTest = () => name === 'test'
 export let isDevelopment = () => name === 'development'
 export let isLocal = () => isTest() || isDevelopment()
+export let isNonLocal = () => !isLocal()
 export let s3Bucket = process.env.MIROWEB_S3_BUCKET

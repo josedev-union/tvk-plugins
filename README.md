@@ -10,6 +10,7 @@ Web user-friendly interface to the smile enhancement image service named Miro Sm
 ├── Dockerfile        # Dockerfile to run the application
 ├── Dockerfile.base   # Dockerfile with dependencies pre-installed to make it quicker to build new images
 ├── .env              # Env variables used by the project (development only)
+├── .env.prod         # Env variables used by production tasks
 ├── package.json
 ├── package-lock.json
 ├── webpack.config.js          # Config to compile Front-End assets (Babel, SASS, minify, uglify, etc)
@@ -56,6 +57,15 @@ AWS_ACCESS_KEY_ID=<YOUR ACCOUNT>
 AWS_SECRET_ACCESS_KEY=<YOUR ACCOUNT>
 MIROWEB_S3_BUCKET=miroweb.staging.us
 AWS_DEFAULT_REGION=us-east-1
+```
+
+## Configuring .env.prod file (FOR PRODUCTION)
+The `prod-*` tasks loads the `.env.prod` file through the `dotenv` lib. The current tasks only use those variables:
+
+```bash
+# Firebase
+MIROWEB_FIREBASE_DATABASE_URL=https://mirosmiles-us-production.firebaseio.com
+MIROWEB_GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account","project_id": "mirosmiles-us-production", ...}
 ```
 
 ## Development Tasks
@@ -110,10 +120,26 @@ $ VERSION=x.x.x make push_base    # Push the new base
 To add new access points run:
 
 ```bash
+# Staging
 $ npm run new-access-point
+
+# Production (Need to setup .env.prod)
+$ npm run prod-new-access-point
 ```
 
 It will create a template access point on firebase, you have to edit it directly on [Firebase Console (/mirosmiles-us-staging/miroweb\_data/dentist\_access\_points/)](https://console.firebase.google.com/u/0/project/mirosmiles-us-staging/database/mirosmiles-us-staging/data~2Fmiroweb_data~2Fdentist_access_points).
+
+## Deleting Access Points
+To delete an access point run:
+
+```bash
+# Staging
+$ npm run del-access-point <ACCESS_POINT_ID>
+
+# Production (Need to setup .env.prod)
+$ npm run prod-del-access-point <ACCESS_POINT_ID>
+```
+It will delete this specific access point from firebase.
 
 ## Dentist Access Point Structure
 ```

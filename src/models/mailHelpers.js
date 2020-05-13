@@ -11,7 +11,7 @@ const DEFAULT_FROM = 'support@tastytech.ca'
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY
   
 mail.setApiKey(SENDGRID_API_KEY)
-exports.send = (args) => {
+export function send(args) {
   args.from = args.from || DEFAULT_FROM;
   if (!env.isProduction() && args.subject) {
     args.subject = `[${env.name}] ${args.subject}`
@@ -19,13 +19,13 @@ exports.send = (args) => {
   return mail.send(args)
 }
 
-exports.render = async (templatePath, locals = {}) => {
+export async function render(templatePath, locals = {}) {
   let mailPath = path.join('src/views/mail', templatePath)
   let opts = locals
   opts.layout = 'layout.hbs'
   opts.settings = {
     views: [
-      path.join(__dirname, '../views/mail')
+      path.join('src/views/mail')
     ]
   }
   return await new Promise((resolve, reject) => {
