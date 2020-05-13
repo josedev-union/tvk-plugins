@@ -19,7 +19,7 @@ if (env.isTest()) {
     const admin = require('@firebase/testing')
     app = admin.initializeAdminApp({databaseName: 'miroweb-test-db', databaseURL: 'http://localhost:9000'})
 } else {
-    Sentry.init({ dsn: process.env.SENTRY_DSN, env: env.name });
+    if (env.isNonLocal()) Sentry.init({ dsn: process.env.SENTRY_DSN, env: env.name });
     const admin = require('firebase-admin')
     const appConfig = {}
     if (process.env.MIROWEB_GOOGLE_APPLICATION_CREDENTIALS) {
