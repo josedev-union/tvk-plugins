@@ -48,6 +48,9 @@ Web user-friendly interface to the smile enhancement image service named Miro Sm
 The application loads the `.env` file through the `dotenv` lib. So you need to configure the following env vars:
 
 ```bash
+# Sendgrid
+SENDGRID_API_KEY=<SENDGRID KEY (same as production or staging)>
+
 # Firebase
 MIROWEB_FIREBASE_DATABASE_URL=https://mirosmiles-us-staging.firebaseio.com
 MIROWEB_GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account","project_id": "mirosmiles-us-staging", ...}
