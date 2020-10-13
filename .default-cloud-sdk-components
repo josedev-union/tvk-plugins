@@ -1,0 +1,6 @@
+core
+pubsub-emulator
+cloud-firestore-emulator
+gsutil
+kubectl
+cloud-build-local

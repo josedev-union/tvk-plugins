@@ -1,4 +1,4 @@
-import S3PresignedCredentialsProvider from '../models/s3_presigned_credentials_provider'
+import GcloudPresignedCredentialsProvider from '../models/gcloud_presigned_credentials_provider'
 
 const EXPIRATION_IN_SECONDS = 10 * 60
 class ImageProcessingService {
@@ -7,14 +7,14 @@ class ImageProcessingService {
     }
 
     static build() {
-        return new ImageProcessingService(S3PresignedCredentialsProvider.build())
+        return new ImageProcessingService(GcloudPresignedCredentialsProvider.build())
     }
 
     credentialsFor(solicitation) {
-        const pathWithoutExtension = solicitation.filepathOriginal.replace(/[^\.]+$/, '')
+        // const pathWithoutExtension = solicitation.filepathOriginal.replace(/[^\.]+$/, '')
         const jsonUploadConstraints = {
-            keyPrefix: pathWithoutExtension,
-            contentTypePrefix: 'image/',
+            keyName: solicitation.filepathOriginal,
+            contentType: 'image/jpeg',
             maxSizeInMegabytes: 15,
             expiresInSeconds: EXPIRATION_IN_SECONDS,
         }

@@ -56,7 +56,7 @@ router.post('/image_processing_solicitation', async (req, res) => {
     presignedDownloadAfter: urlToGetProcessed,
     sessionId: solicitation.id,
     key: solicitation.filepathOriginal,
-    bucket: env.s3Bucket,
+    bucket: env.gcloudBucket,
   })
 })
 

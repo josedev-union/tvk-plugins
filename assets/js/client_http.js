@@ -2,9 +2,17 @@ const ONE_KILOBYTE = 1024
 
 class ClientHTTP {
   static post({url, data, headers = {}, onuploadprogress = () => {}}) {
+    return ClientHTTP.doRequest('POST', {url: url, data: data, headers: headers, onuploadprogress: onuploadprogress})
+  }
+
+  static put({url, data, headers = {}, onuploadprogress = () => {}}) {
+    return ClientHTTP.doRequest('PUT', {url: url, data: data, headers: headers, onuploadprogress: onuploadprogress})
+  }
+
+  static doRequest(verb, {url, data, headers = {}, onuploadprogress = () => {}}) {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest()
-      xhr.open("POST", url, true)
+      xhr.open(verb, url, true)
       for (let name in headers) {
         xhr.setRequestHeader(name, headers[name])
       }
