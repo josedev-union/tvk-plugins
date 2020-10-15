@@ -1,6 +1,6 @@
 APP_ENV?=staging
 COMMIT_HASH?=$(shell git rev-parse HEAD)
-IMAGE_NAME=tastytech/miroweb
+IMAGE_NAME=tastytech/dentrino-web
 COMMIT_IMAGE?=$(IMAGE_NAME):$(COMMIT_HASH)
 LATEST_IMAGE=$(IMAGE_NAME):latest-$(APP_ENV)
 APP_PATH?=.
@@ -45,5 +45,5 @@ define update-latest
 endef
 
 define update-cloud
-  kubectl -n$(APP_ENV) set image deployment/miroweb miroweb=$(COMMIT_IMAGE)
+  kubectl -n$(APP_ENV) set image deployment/dentrino-web dentrino-web=$(COMMIT_IMAGE)
 endef

@@ -1,5 +1,5 @@
 import * as env from './env'
-import {Storage} from '@google-cloud/storage'
+import {storageFactory} from './storageFactory'
 
 class GcloudPresignedCredentialsProvider {
     constructor(bucket) {
@@ -7,7 +7,7 @@ class GcloudPresignedCredentialsProvider {
     }
 
     static build() {
-        return new GcloudPresignedCredentialsProvider(new Storage().bucket(env.gcloudBucket))
+        return new GcloudPresignedCredentialsProvider(storageFactory().bucket(env.gcloudBucket))
     }
 
     jsonToUpload({keyName, expiresInSeconds, contentType, maxSizeInMegabytes}) {

@@ -23,8 +23,7 @@ if (env.isTest()) {
     const admin = require('firebase-admin')
     const appConfig = {}
     if (process.env.MIROWEB_GOOGLE_APPLICATION_CREDENTIALS) {
-        const rawCredentials = JSON.parse(process.env.MIROWEB_GOOGLE_APPLICATION_CREDENTIALS)
-        appConfig.credential = admin.credential.cert(rawCredentials)
+        appConfig.credential = admin.credential.cert(env.gcloudCredentials)
     }
     appConfig.databaseURL = process.env.MIROWEB_FIREBASE_DATABASE_URL || "http://localhost:9000"
     app = admin.initializeApp(appConfig)

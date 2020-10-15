@@ -1,4 +1,4 @@
-FROM tastytech/miroweb-base:latest
+FROM tastytech/dentrino-web-base:latest
 MAINTAINER support@tastytech.ca
 
 ARG BUILD_DIR=/build
