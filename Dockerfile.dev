@@ -1,4 +1,4 @@
-FROM tastytech/dentrino-web-base:latest
+FROM gcr.io/tastytech/dentrino-web-base:latest
 MAINTAINER support@tastytech.ca
 
 WORKDIR /app

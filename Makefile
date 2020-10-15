@@ -1,8 +1,8 @@
 APP_ENV?=staging
 COMMIT_HASH?=$(shell git rev-parse HEAD)
-IMAGE_NAME=tastytech/dentrino-web
+IMAGE_NAME=gcr.io/dentrino-$(APP_ENV)/dentrino-web
 COMMIT_IMAGE?=$(IMAGE_NAME):$(COMMIT_HASH)
-LATEST_IMAGE=$(IMAGE_NAME):latest-$(APP_ENV)
+LATEST_IMAGE=$(IMAGE_NAME):latest
 APP_PATH?=.
 BASE_IMAGE_NAME=$(IMAGE_NAME)-base
 
