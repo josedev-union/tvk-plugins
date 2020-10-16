@@ -1,7 +1,7 @@
 import Uploader from '../uploader.js'
 import DataForm from '../data_form.js'
-import {base64} from '../../../src/shared/simple_crypto'
-import i18n from '../../../src/shared/lang'
+import {simpleCrypto} from '../../../src/shared/simpleCrypto'
+import {i18n} from '../../../src/shared/i18n'
 
 const TIMEOUT_TO_START_PROCESSING = 20000
 const TIMEOUT_TO_FINISH_PROCESSING = 30000
@@ -33,6 +33,8 @@ class ProcessingForm {
       this.uploadToS3(response)
     })
     .catch((error) => {
+      console.log("Error")
+      console.log(error)
       const [response, httpStatus] = error
       if (httpStatus === 400) {
         this.emitError('bad-solicitation-request', {data: response, status: httpStatus})
@@ -83,7 +85,7 @@ class ProcessingForm {
     const sessionId = response.sessionId
 
     let idBase = `${bucket}/${sessionId}/`
-    let processingId = base64(idBase)
+    let processingId = simpleCrypto.base64(idBase)
     let url = `ws://${window.location.host}/ws/processings/${processingId}`
     console.log(url, idBase)
     console.log("Waiting for websockets connection")

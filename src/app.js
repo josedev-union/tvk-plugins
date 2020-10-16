@@ -10,8 +10,8 @@ const app = express()
 
 import indexRouter from './routes/index'
 import usersRouter from './routes/users'
-import './config'
-import './cron_jobs'
+import './config/config'
+import './config/cronJobs'
 import * as Sentry from '@sentry/node'
 
 app.disable('trust proxy')

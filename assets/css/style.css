@@ -2,15 +2,15 @@ body {
   padding: 50px;
 }
 
-#miroweb-component {
+#dentrino-component {
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 }
 
-#miroweb-component a {
+#dentrino-component a {
   color: #00B7FF;
 }
 
-#miroweb-component .hide {
+#dentrino-component .hide {
   display: none;
 }
 
@@ -18,53 +18,53 @@ body {
   display: inline-block;
 }
 
-#miroweb-component .progress-component .loading-dots {
+#dentrino-component .progress-component .loading-dots {
   display: inline-block;
   width: 1em;
   text-align: left;
 }
 
-#miroweb-component .progress-component .description {
+#dentrino-component .progress-component .description {
   font-weight: bold;
   text-align: center;
   padding: 0;
   margin: 0;
 }
 
-#miroweb-component .progress-component .percentage {
+#dentrino-component .progress-component .percentage {
   text-align: center;
   font-size: 3em;
   min-width: 3em;
   display: block;
 }
 
-#miroweb-component .progress-component .percentage::after {
+#dentrino-component .progress-component .percentage::after {
   content: "%";
 }
 
-#miroweb-component .error-container {
+#dentrino-component .error-container {
   font-size: 1.2rem;
   color: darkred;
 }
 
-#miroweb-component .output-container {
+#dentrino-component .output-container {
   padding: 10px;
 }
 
-#miroweb-component form fieldset {
+#dentrino-component form fieldset {
   padding: 10px 0;
   border: none;
 }
 
-#miroweb-component form input {
+#dentrino-component form input {
   padding: 5px 0;
 }
 
-#miroweb-component form label {
+#dentrino-component form label {
   display: inline-block;
   width: 175px;
 }
 
-#miroweb-component .processing-button {
+#dentrino-component .processing-button {
   padding: 20px 10px;
 }

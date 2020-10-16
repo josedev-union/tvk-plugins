@@ -20,4 +20,4 @@ i18n.translator.add({
   }
 })
 
-export default i18n
+export {i18n as i18n}

@@ -1,10 +1,10 @@
 import url from 'url'
-import {base64_decode} from '../shared/simple_crypto'
-import {newRedis} from '../models/redis_pubsub'
-import LocalWebsocketServer from './local_websocket_server'
-import logger from '../models/logger'
+import {simpleCrypto} from '../shared/simpleCrypto'
+import {redisPubsub} from './redisPubsub'
+import {LocalWebsocketServer} from './LocalWebsocketServer'
+import {logger} from '../instrumentation/logger'
 
-class WebsocketServer {
+export class WebsocketServer {
   static instance() {
     if (this.singleton === undefined) {
       this.singleton = new WebsocketServer()
@@ -14,7 +14,7 @@ class WebsocketServer {
   
   constructor() {
     this.localServers = {}
-    this.generalRedis = newRedis()
+    this.generalRedis = redisPubsub.newRedis()
     this.onReceive = null
   }
 
@@ -28,7 +28,7 @@ class WebsocketServer {
     }
 
     const processingId = match[1]
-    const processingIdBase = base64_decode(processingId)
+    const processingIdBase = simpleCrypto.base64Decode(processingId)
     logger.info(`processingIdBase: ${processingIdBase}`)
 
     if (!this.generalRedis.isOnline) {

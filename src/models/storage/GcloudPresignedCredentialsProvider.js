@@ -1,7 +1,7 @@
-import * as env from './env'
+import {env} from '../../config/env'
 import {storageFactory} from './storageFactory'
 
-class GcloudPresignedCredentialsProvider {
+export class GcloudPresignedCredentialsProvider {
     constructor(bucket) {
         this.bucket = bucket
     }
@@ -44,5 +44,3 @@ class GcloudPresignedCredentialsProvider {
         })
     }
 }
-
-export default GcloudPresignedCredentialsProvider

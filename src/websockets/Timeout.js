@@ -1,4 +1,4 @@
-class Timeout {
+export class Timeout {
   constructor(timeout) {
     this.timeout = timeout
     this.canceled = false
@@ -50,5 +50,3 @@ class Timeout {
     if (this.timeoutid !== undefined) clearTimeout(this.timeoutid)
   }
 }
-
-export default Timeout

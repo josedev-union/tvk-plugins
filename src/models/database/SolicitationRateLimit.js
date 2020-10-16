@@ -1,10 +1,10 @@
-import Database from "../models/database"
-import {base64} from "../shared/simple_crypto"
-import logger from '../models/logger'
-import { promises } from "fs"
+import {Database} from "./Database"
+import {simpleCrypto} from "../../shared/simpleCrypto"
+import {logger} from '../../instrumentation/logger'
+import {env} from "../../config/env"
 
 const NAMESPACE = 'solicitation_rate_limit'
-class SolicitationRateLimit {
+export class SolicitationRateLimit {
     constructor({limit, expiresIn}) {
         this.limit = limit
         this.expiresIn = expiresIn
@@ -18,10 +18,10 @@ class SolicitationRateLimit {
     }
 
     async add(solicitation) {
-        if (process.env.MIROWEB_RATE_LIMIT_DISABLED) return true
-        const originCode = base64(solicitation.origin, {padding: false})
-        const ipCode = base64(solicitation.ip, {padding: false})
-        const emailCode = base64(solicitation.email, {padding: false})
+        if (env.rateLimitDisabled) return true
+        const originCode = simpleCrypto.base64(solicitation.origin, {padding: false})
+        const ipCode = simpleCrypto.base64(solicitation.ip, {padding: false})
+        const emailCode = simpleCrypto.base64(solicitation.email, {padding: false})
         const ipPath = `/${NAMESPACE}/ips/${originCode}/${ipCode}`
         const emailPath = `/${NAMESPACE}/emails/${originCode}/${emailCode}`
         let [ipEntries, emailEntries] = await Promise.all([getFromDB(ipPath), getFromDB(emailPath)])
@@ -81,5 +81,3 @@ function cleanupExpiredOn(array, expires_in) {
     let now = new Date().getTime()
     return array.filter(({timestamp}) => now - timestamp <= expires_in)
 }
-
-export default SolicitationRateLimit

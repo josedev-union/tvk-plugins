@@ -1,8 +1,8 @@
 import path from 'path'
 import admin from 'firebase-admin'
-import * as env from '../models/env'
+import {env} from '../../config/env'
 
-class Database {
+export class Database {
     constructor({connection, namespace = ""}) {
         this.connection = connection
         this.namespace = namespace
@@ -59,10 +59,8 @@ class Database {
 
     async drop() {
         if (!env.isLocal()) {
-            throw `Can't drop database on ${process.env.NODE_ENV}`
+            throw `Can't drop database on ${env.name}`
         }
         return this.delete('/', true)
     }
 }
-
-export default Database

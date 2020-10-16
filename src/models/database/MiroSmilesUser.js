@@ -1,10 +1,9 @@
-import Database from '../models/database'
-import * as signer from '../shared/signer'
-import * as env from '../models/env'
+import {Database} from './Database'
+import {env} from '../../config/env'
 
 const db = () => Database.instance('mirosmiles')
 
-class MiroSmilesUser {
+export class MiroSmilesUser {
   constructor({id, email, fullName, company}) {
     this.id = id
     this.email = email
@@ -24,5 +23,3 @@ class MiroSmilesUser {
     return db().save(this, `/users/${this.id}`)
   }
 }
-
-export default MiroSmilesUser

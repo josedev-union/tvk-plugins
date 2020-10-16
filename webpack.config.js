@@ -13,6 +13,11 @@ module.exports = {
         use: {
           loader: 'babel-loader',
           options: {
+            plugins: [
+              "@babel/plugin-proposal-class-properties",
+              "@babel/plugin-proposal-private-methods",
+              "@babel/plugin-proposal-private-property-in-object"
+            ],
             presets: [
               [
                 '@babel/preset-env',

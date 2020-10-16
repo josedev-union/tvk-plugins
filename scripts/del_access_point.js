@@ -1,4 +1,4 @@
-import DentistAccessPoint from '../src/models/dentist_access_point'
+import {DentistAccessPoint} from '../src/models/DentistAccessPoint'
 
 const args = process.argv
 const id = args[args.length-1]

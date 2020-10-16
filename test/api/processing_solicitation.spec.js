@@ -1,8 +1,8 @@
 import { Factory } from 'rosie'
 import AWSMock from "aws-sdk-mock";
 import AWS from "aws-sdk"; 
-import * as signer from '../../src/shared/signer'
-import Database from '../../src/models/database'
+import {signer} from '../../src/shared/signer'
+import {Database} from '../../src/models/database/Database'
 
 import app from '../../src/app'
 app.enable('trust proxy')
@@ -157,7 +157,7 @@ function postSolicitation(json={name:"Michael Jordan", email:"michael@fgmail.com
     .post('/image_processing_solicitation')
     .set('Origin', host)
     .set('Content-Type', 'application/json')
-    .set('Miroweb-ID', signature)
+    .set('DENTRINO-ID', signature)
     .set('X-Forwarded-For', ip)
     .send(json)
 }

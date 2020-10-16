@@ -1,6 +1,6 @@
 import winston from 'winston'
 
-const logger = winston.createLogger({
+export const logger = winston.createLogger({
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.printf(({ level, message, label, timestamp }) => {
@@ -9,5 +9,3 @@ const logger = winston.createLogger({
   ),
   transports: [new winston.transports.Console()]
 })
-
-export default logger

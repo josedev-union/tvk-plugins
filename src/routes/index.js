@@ -1,12 +1,13 @@
 import express from 'express';
 const router = express.Router();
-import ImageProcessingService from '../models/image_processing_service'
-import ImageProcessingSolicitation from '../models/image_processing_solicitation'
-import DentistAccessPoint from '../models/dentist_access_point'
-import SolicitationRateLimit from '../models/solicitation_rate_limit'
-import Uri from '../models/uri'
-import i18n from '../shared/lang'
-import * as env from '../models/env'
+import {ImageProcessingService} from '../models/storage/ImageProcessingService'
+import {ImageProcessingSolicitation} from '../models/database/ImageProcessingSolicitation'
+import {DentistAccessPoint} from '../models/database/DentistAccessPoint'
+import {SolicitationRateLimit} from '../models/database/SolicitationRateLimit'
+import {Uri} from '../models/tools/Uri'
+import {i18n} from '../shared/i18n'
+import {env} from '../config/env'
+import {envShared} from '../shared/envShared'
 
 /* GET presigned post */
 router.options('/image_processing_solicitation', (req, res) => {
@@ -19,7 +20,7 @@ router.post('/image_processing_solicitation', async (req, res) => {
   for (let k in req.body) params[k] = req.body[k]
 
   const referer = getReferer(req)
-  const signature = normalizeParamValue(req.get('Miroweb-ID'))
+  const signature = normalizeParamValue(req.get(envShared.signatureHeaderName))
   if (!referer || !signature) {
     return res.status(400).send('')
   }
@@ -106,7 +107,7 @@ function setCors(req, res) {
   res.set({
     "Access-Control-Allow-Origin": new Uri(referer).toString({path: false}),
     "Access-Control-Allow-Methods": "POST",
-    "Access-Control-Allow-Headers": "MIROWEB-ID",
+    "Access-Control-Allow-Headers": envShared.signatureHeaderName,
   })
 }
 

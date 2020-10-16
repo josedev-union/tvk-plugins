@@ -1,5 +1,6 @@
 import ClientHTTP from './client_http.js'
-import * as signer from '../../src/shared/signer'
+import {signer} from '../../src/shared/signer'
+import {envShared} from '../../src/shared/envShared'
 
 class DataForm {
   static submit(form, secret) {
@@ -16,7 +17,7 @@ class DataForm {
         data: urlEncoded,
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Miroweb-ID': signer.sign(data, secret)
+          [envShared.signatureHeaderName] : signer.sign(data, secret)
         }
       }).then(([response, httpStatus]) => {
         if (typeof(response) !== 'object' || httpStatus === 0) {

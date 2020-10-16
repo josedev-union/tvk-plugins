@@ -1,5 +1,5 @@
 import { Factory } from 'rosie'
-import Database from '../../src/models/database'
+import {Database} from '../../src/models/database/Database'
 
 import app from '../../src/app'
 app.enable('trust proxy')

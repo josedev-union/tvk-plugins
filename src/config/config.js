@@ -1,31 +1,34 @@
 import AWS from 'aws-sdk'
-import Database from '../src/models/database'
+import mail from '@sendgrid/mail'
+import {Database} from '../models/database/Database'
 import Handlebars from 'hbs'
-import i18n from './shared/lang'
-import * as env from './models/env'
+import {i18n} from '../shared/i18n'
+import {env} from './env'
 import * as Sentry from '@sentry/node'
 
 Handlebars.registerHelper('i18n', key => i18n(key))
 
 AWS.config.update({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_DEFAULT_REGION,
+    accessKeyId: env.aws.accessKeyId,
+    secretAccessKey: env.aws.secretAccessKey,
+    region: env.aws.region,
     signatureVersion: 'v4',
 })
+  
+mail.setApiKey(env.sendgridKey)
 
 let app
 if (env.isTest()) {
     const admin = require('@firebase/testing')
     app = admin.initializeAdminApp({databaseName: 'miroweb-test-db', databaseURL: 'http://localhost:9000'})
 } else {
-    if (env.isNonLocal()) Sentry.init({ dsn: process.env.SENTRY_DSN, env: env.name });
+    if (env.isNonLocal()) Sentry.init({ dsn: env.sentryDsn, env: env.name });
     const admin = require('firebase-admin')
     const appConfig = {}
-    if (process.env.MIROWEB_GOOGLE_APPLICATION_CREDENTIALS) {
-        appConfig.credential = admin.credential.cert(env.gcloudCredentials)
+    if (env.firebaseCredentials) {
+      appConfig.credential = admin.credential.cert(env.firebaseCredentials)
     }
-    appConfig.databaseURL = process.env.MIROWEB_FIREBASE_DATABASE_URL || "http://localhost:9000"
+    appConfig.databaseURL = env.firebaseDatabaseUrl || "http://localhost:9000"
     app = admin.initializeApp(appConfig)
 }
 const defaultDatabase = Database.build(app.database())

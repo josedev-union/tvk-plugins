@@ -1,7 +1,7 @@
-import GcloudPresignedCredentialsProvider from '../models/gcloud_presigned_credentials_provider'
+import {GcloudPresignedCredentialsProvider} from './GcloudPresignedCredentialsProvider'
 
 const EXPIRATION_IN_SECONDS = 10 * 60
-class ImageProcessingService {
+export class ImageProcessingService {
     constructor(credentialsProvider) {
         this.credentialsProvider = credentialsProvider
     }
@@ -25,5 +25,3 @@ class ImageProcessingService {
         }
     }
 }
-
-export default ImageProcessingService

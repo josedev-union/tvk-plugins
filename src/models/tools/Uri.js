@@ -1,4 +1,4 @@
-class Uri {
+export class Uri {
     constructor(fullUri) {
         const match = fullUri.match(/^(([^:]+):\/\/)?(([^@\/]+)@)?([^\/]+)(\/.*)?$/)
         this.protocol = match[2]
@@ -20,5 +20,3 @@ class Uri {
         return str
     }
 }
-
-export default Uri

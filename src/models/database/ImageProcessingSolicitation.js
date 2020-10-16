@@ -1,13 +1,12 @@
-import Database from '../models/database'
-import {generic_uuid, base64, hmac} from '../shared/simple_crypto'
-import {newOrderedId} from '../models/id_generator'
+import {Database} from '../database/Database'
+import {idGenerator} from '../tools/idGenerator'
 import {join} from 'path'
 
 const ORIGINAL_IMAGE_FILENAME = 'pre.jpg'
 const PROCESSED_IMAGE_FILENAME = 'after.jpg'
 const SIDEBYSIDE_IMAGE_FILENAME = 'sidebyside.jpg'
 
-class ImageProcessingSolicitation {
+export class ImageProcessingSolicitation {
     constructor(attrs = {}) {
         this.id = attrs.id
         this.createdAt = attrs.createdAt
@@ -44,8 +43,6 @@ class ImageProcessingSolicitation {
     }
 
     static newId(createdAt) {
-        return newOrderedId()
+        return idGenerator.newOrderedId()
     }
 }
-
-export default ImageProcessingSolicitation

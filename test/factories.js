@@ -1,8 +1,8 @@
 import { Factory } from 'rosie'
-import DentistAccessPoint from '../src/models/dentist_access_point.js'
-import ImageProcessingSolicitation from '../src/models/image_processing_solicitation.js'
-import MiroSmilesUser from '../src/models/miro_smiles_user.js'
-import { generic_uuid, sha1 } from '../src/shared/simple_crypto'
+import {DentistAccessPoint} from '../src/models/database/DentistAccessPoint'
+import {ImageProcessingSolicitation} from '../src/models/database/ImageProcessingSolicitation'
+import {MiroSmilesUser} from '../src/models/database/MiroSmilesUser'
+import {simpleCrypto} from '../src/shared/simpleCrypto'
 
 Factory.define('dentist_access_point', DentistAccessPoint)
   .attr('id', () => DentistAccessPoint.newId())
@@ -21,7 +21,7 @@ Factory.define('image_processing_solicitation', ImageProcessingSolicitation)
   .attr('phone', '+55 21 3040-5596')
 
 Factory.define('miro_smiles_user', MiroSmilesUser)
-  .sequence('id', (i) => sha1(generic_uuid()))
+  .sequence('id', (i) => simpleCrypto.sha1(simpleCrypto.genericUUID()))
   .sequence('email', (i) => `smilesuser${i}@fgmail.com`)
   .sequence('fullName', (i) => `Smiles User${i}`)
   .sequence('company', (i) => `Company ${i}`)

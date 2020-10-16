@@ -1,5 +1,5 @@
-# Miro Web
-Web user-friendly interface to the smile enhancement image service named Miro Smiles.
+# Dentrino Web
+Web user-friendly interface to the smile enhancement image service named Dentrino Smiles.
 
 **Embeddable Web Component**: Code snippet that dentists can embed on their page to allow their potential clients to enhance a personal smile photo. (For now is the only existent component)
 
@@ -53,12 +53,12 @@ SENDGRID_API_KEY=<SENDGRID KEY (same as production or staging)>
 
 # Firebase
 MIROWEB_FIREBASE_DATABASE_URL=https://mirosmiles-us-staging.firebaseio.com
-MIROWEB_GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account","project_id": "mirosmiles-us-staging", ...}
+DENTRINO_GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account","project_id": "mirosmiles-us-staging", ...}
 
 # AWS S3
 AWS_ACCESS_KEY_ID=<YOUR ACCOUNT>
 AWS_SECRET_ACCESS_KEY=<YOUR ACCOUNT>
-MIROWEB_S3_BUCKET=miroweb.staging.us
+DENTRINO_GCLOUD_BUCKET=dentrino-staging-us
 AWS_DEFAULT_REGION=us-east-1
 ```
 
@@ -68,7 +68,7 @@ The `prod-*` tasks loads the `.env.prod` file through the `dotenv` lib. The curr
 ```bash
 # Firebase
 MIROWEB_FIREBASE_DATABASE_URL=https://mirosmiles-us-production.firebaseio.com
-MIROWEB_GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account","project_id": "mirosmiles-us-production", ...}
+DENTRINO_GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account","project_id": "mirosmiles-us-production", ...}
 ```
 
 ## Development Tasks
@@ -95,7 +95,7 @@ Deploy task will build the docker image using the current commit-hash as version
 ```bash
 $ make deploy                        # Deploy to staging
 $ APP_ENV=production make deploy     # Deploy to production
-$ kubectl -nproduction rollout status deploy miroweb # Follow deploy status
+$ kubectl -nproduction rollout status deploy dentrino-web # Follow deploy status
 ```
 
 ## Rollback
@@ -105,10 +105,10 @@ Rollback is basically deploying an old image from dockerhub.
 # 1. Look for the image you want to rollback to on: https://cloud.docker.com/u/tastytech/repository/docker/tastytech/miroweb/tags
 
 # 2. Rollback to that image
-$ COMMIT_IMAGE=tastytech/miroweb:<TAG-TO-ROLLBACK-TO> APP_ENV=production make rollback
+$ COMMIT_IMAGE=gcr.io/dentrino-production/dentrino-web:<TAG-TO-ROLLBACK-TO> APP_ENV=production make rollback
 
 # Wait the rollback to finish
-$ kubectl -nproduction rollout status deploy miroweb
+$ kubectl -nproduction rollout status deploy dentrino-web
 ```
 
 ## Base management

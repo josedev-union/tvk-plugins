@@ -2,17 +2,17 @@ import "regenerator-runtime/runtime"
 import Progress from './components/progress.js'
 import ProcessingForm from './components/processing_form.js'
 import ErrorComponent from './components/error_component.js'
-import i18n from '../../src/shared/lang'
+import {i18n} from '../../src/shared/i18n'
 
 {
-  const progressElement = document.querySelector('#miroweb-component .progress-component')
+  const progressElement = document.querySelector('#dentrino-component .progress-component')
   const progress = new Progress(progressElement)
 
-  const formElement = document.querySelector('#miroweb-component .processing-form')
+  const formElement = document.querySelector('#dentrino-component .processing-form')
   const processingForm = new ProcessingForm(formElement)
   processingForm.setup()
 
-  const errorContainerElement = document.querySelector('#miroweb-component .error-container')
+  const errorContainerElement = document.querySelector('#dentrino-component .error-container')
   const errorComponent = new ErrorComponent(errorContainerElement)
 
   processingForm.onstart = (response) => {

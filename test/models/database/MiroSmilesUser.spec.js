@@ -1,7 +1,7 @@
-import MiroSmilesUser from '../../src/models/miro_smiles_user.js'
+import {MiroSmilesUser} from '../../../src/models/database/MiroSmilesUser'
 import { Factory } from 'rosie'
-import Database from '../../src/models/database'
-import '../../src/config'
+import {Database} from '../../../src/models/database/Database'
+import '../../../src/config/config'
 
 describe('static', () => {
   test('user get by id', async () => {

@@ -16,7 +16,16 @@ module.exports = {
       {
         test: /\.(js)$/,
         include: /src/,
-        use: ['babel-loader']
+        use: {
+          loader: 'babel-loader',
+          options: {
+            plugins: [
+              "@babel/plugin-proposal-class-properties",
+              "@babel/plugin-proposal-private-methods",
+              "@babel/plugin-proposal-private-property-in-object"
+            ]
+          }
+        },
       }
     ]
   },

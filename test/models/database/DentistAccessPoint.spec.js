@@ -1,8 +1,8 @@
-import DentistAccessPoint from '../../src/models/dentist_access_point.js'
-import * as signer from '../../src/shared/signer'
+import {DentistAccessPoint} from '../../../src/models/database/DentistAccessPoint'
+import {signer} from '../../../src/shared/signer'
 import { Factory } from 'rosie'
-import Database from '../../src/models/database'
-import '../../src/config'
+import {Database} from '../../../src/models/database/Database'
+import '../../../src/config/config'
 
 const ID_PATTERN = /^[0-9A-Za-z+/]+$/
 const SECRET_PATTERN = /^[0-9A-Za-z]+$/

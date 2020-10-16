@@ -1,9 +1,10 @@
-import {newOrderedId, newSecret} from '../models/id_generator'
-import Database from '../models/database'
-import MiroSmilesUser from '../models/miro_smiles_user'
-import * as signer from '../shared/signer'
+import {idGenerator} from '../tools/idGenerator'
+import {Database} from './Database'
+import {MiroSmilesUser} from './MiroSmilesUser'
+import {signer} from '../../shared/signer'
+import {env} from '../../config/env'
 
-class DentistAccessPoint {
+export class DentistAccessPoint {
     constructor({id, userId, secret, customEmail = null, directPage = {}, hosts = [], createdAt = new Date().toISOString(), updatedAt = null}) {
         this.id = id
         this.userId = userId
@@ -133,16 +134,16 @@ class DentistAccessPoint {
     }
 
     static newId() {
-        return newOrderedId()
+        return idGenerator.newOrderedId()
     }
 
     static newSecret() {
-        return newSecret()
+        return idGenerator.newSecret()
     }
 
     static isMasterHost(host) {
       var normalizedHost = this.normalizeHost(host)
-      var masterHost = process.env.MASTER_HOST
+      var masterHost = env.masterHost
       if (!masterHost) {
         return normalizedHost.includes('localhost')
       } else {
@@ -173,5 +174,3 @@ class DentistAccessPoint {
         return filtered
     }
 }
-
-export default DentistAccessPoint

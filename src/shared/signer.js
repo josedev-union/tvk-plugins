@@ -1,12 +1,14 @@
-import { base64, hmac, sha1 } from "../shared/simple_crypto";
+import {simpleCrypto} from "./simpleCrypto";
 
-export function sign(obj, key) {
-    return hmac(sha1(base64(serialize(obj))), key)
-}
+export const signer = new (class {
+    sign (obj, key) {
+        return simpleCrypto.hmac(simpleCrypto.sha1(simpleCrypto.base64(serialize(obj))), key)
+    }
 
-export function verify(obj, key, signature) {
-    return sign(obj, key) === signature
-}
+    verify (obj, key, signature) {
+        return this.sign(obj, key) === signature
+    }
+})()
 
 function serialize(obj) {
     if (typeof(obj) === 'string') return `"${obj}"`
