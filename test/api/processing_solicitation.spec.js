@@ -1,34 +1,41 @@
 import { Factory } from 'rosie'
-import AWSMock from "aws-sdk-mock";
-import AWS from "aws-sdk"; 
 import {signer} from '../../src/shared/signer'
 import {Database} from '../../src/models/database/Database'
+import {storageFactory} from '../../src/models/storage/storageFactory'
 
 import app from '../../src/app'
 app.enable('trust proxy')
 import supertest from 'supertest'
 const request = supertest(app)
 
-const uploadJson = {presigned_post: ''}
-const imageSignedUrl = 'http://s3.presignedget.com/image'
-const processedSignedUrl = 'http://s3.presignedget.com/processed'
+const uploadSignedUrl = 'http://gcloud.presigned.com/upload'
+const imageSignedUrl = 'http://gcloud.presigned.com/inputImage'
+const processedSignedUrl = 'http://gcloud.presigned.com/afterImage'
 
-beforeEach(() => {
-  AWSMock.setSDKInstance(AWS)
-  AWSMock.mock('S3', 'createPresignedPost', (params, cb) => {
-    cb(null, uploadJson)
-  })
-  AWSMock.mock('S3', 'getSignedUrl', (verb, params, cb) => {
-    if (params.Key.includes('after')) {
-      cb(null, processedSignedUrl)
-    } else {
-      cb(null, imageSignedUrl)
-    }
-  })
+jest.mock('../../src/models/storage/storageFactory', () => {
+  return {
+    storageFactory: jest.fn().mockReturnValue({
+      bucket: jest.fn().mockReturnValue({
+        file: jest.fn().mockImplementation((keyName) => {
+          return {
+            getSignedUrl: jest.fn().mockImplementation((opts) => {
+              if (opts.action === 'write') {
+                return Promise.resolve(['http://gcloud.presigned.com/upload'])
+              } else if (keyName.includes('after')) {
+                return Promise.resolve(['http://gcloud.presigned.com/afterImage'])
+              } else {
+                return Promise.resolve(['http://gcloud.presigned.com/inputImage'])
+              }
+            })
+          }
+        })
+      })
+    })
+  }
 })
 
-afterEach(() => {
-  AWSMock.restore('S3')
+beforeEach(() => {
+  storageFactory.mockClear()
 })
 
 describe(`on a successful request`, () => {
@@ -47,7 +54,7 @@ describe(`on a successful request`, () => {
 
   test(`respond 200`, () => {
     expect(response.status).toBe(200)
-    expect(response.body.presignedUpload).toEqual(uploadJson)
+    expect(response.body.presignedUpload).toEqual(uploadSignedUrl)
     expect(response.body.presignedDownloadOriginal).toBe(imageSignedUrl)
     expect(response.body.presignedDownloadAfter).toBe(processedSignedUrl)
     expect(typeof(response.body.sessionId)).toBe('string')
