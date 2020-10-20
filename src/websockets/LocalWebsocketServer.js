@@ -1,7 +1,7 @@
 import WebSocket from 'ws'
 import {Timeout} from './Timeout'
 import {logger} from '../instrumentation/logger'
-import {redisPubsub} from './redisPubsub'
+import {redisFactory} from '../models/redisFactory'
 
 export class LocalWebsocketServer {
   constructor(socket, processingIdBase, {onTerminate = null, onReceive = null, inactiveTimeout = 30}) {
@@ -36,7 +36,7 @@ export class LocalWebsocketServer {
   }
 
   setupRedisPubSub() {
-    let redis = redisPubsub.newRedis()
+    let redis = redisFactory.newRedisPubsub()
     redis.on('error', () => this.terminate())
     redis.subscribe(this.processingIdBase)
     redis.on('message', (channel, message) => {

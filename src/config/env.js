@@ -15,6 +15,11 @@ export const env = new (class {
       port: process.env.DENTRINO_REDIS_PORT,
       db: process.env.DENTRINO_REDIS_DB,
   }
+  redisPubsub = {
+      host: process.env.DENTRINO_REDIS_HOSTNAME,
+      port: process.env.DENTRINO_REDIS_PORT,
+      db: process.env.DENTRINO_REDIS_PUBSUB_DB,
+  }
   aws = {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,

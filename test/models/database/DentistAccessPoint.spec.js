@@ -3,6 +3,7 @@ import {signer} from '../../../src/shared/signer'
 import { Factory } from 'rosie'
 import {Database} from '../../../src/models/database/Database'
 import '../../../src/config/config'
+import admin from 'firebase-admin'
 
 const ID_PATTERN = /^[0-9A-Za-z+/]+$/
 const SECRET_PATTERN = /^[0-9A-Za-z]+$/
@@ -48,14 +49,6 @@ test('change updatedAt when saving', async () => {
 test('get configured slug to the website', async () => {
     var access = Factory.build('dentist_access_point', {directPage: {slug: 'my-host', disabled: false}})
     expect(access.slug()).toBe('my-host')
-})
-
-test('verify slug matching', async () => {
-    var access = Factory.build('dentist_access_point', {directPage: {slug: 'My-Host', disabled: false}})
-    expect(access.matchSlug('My-Host')).toBe(true)
-    expect(access.matchSlug('my-host')).toBe(true)
-    expect(access.matchSlug('MY-HOST')).toBe(true)
-    expect(access.matchSlug('myhost')).toBe(false)
 })
 
 test(`get email from mirosmiles user if customEmail wasn't set`, async () => {
@@ -186,7 +179,7 @@ describe('static', () => {
 
     test('find an access point by slug', async () => {
       await Database.instance().drop()
-      const access1 = Factory.build('dentist_access_point', {directPage: {slug: 'access-1', disabled: false}})
+      const access1 = Factory.build('dentist_access_point', {directPage: {slug: 'ACcess-1', disabled: false}})
       const access2 = Factory.build('dentist_access_point', {directPage: {slug: 'access-2', disabled: false}})
       const access3 = Factory.build('dentist_access_point', {directPage: {slug: 'access-3', disabled: false}})
       await access1.save()
@@ -196,7 +189,7 @@ describe('static', () => {
       const accessFound1 = await DentistAccessPoint.findOneBySlug('access-2')
       expect(accessFound1.id).toBe(access2.id)
 
-      const accessFound2 = await DentistAccessPoint.findOneBySlug('access-1')
+      const accessFound2 = await DentistAccessPoint.findOneBySlug('aCCEss-1')
       expect(accessFound2.id).toBe(access1.id)
 
       const accessNotFound1 = await DentistAccessPoint.findOneBySlug('access-unknown')

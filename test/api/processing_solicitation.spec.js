@@ -2,6 +2,7 @@ import { Factory } from 'rosie'
 import {signer} from '../../src/shared/signer'
 import {Database} from '../../src/models/database/Database'
 import {storageFactory} from '../../src/models/storage/storageFactory'
+import {clearRedis} from '../../src/config/redis'
 
 import app from '../../src/app'
 app.enable('trust proxy')
@@ -34,15 +35,16 @@ jest.mock('../../src/models/storage/storageFactory', () => {
   }
 })
 
-beforeEach(() => {
+beforeEach(async () => {
   storageFactory.mockClear()
+  await Database.instance().drop()
+  await clearRedis()
 })
 
 describe(`on a successful request`, () => {
   let response
 
   beforeEach(async () => {
-    await Database.instance().drop()
     var access = Factory.build('dentist_access_point')
     access.addHost('http://myhost.com:8080/')
     await access.save()
@@ -66,7 +68,6 @@ describe(`when host doesn't belong to any client`, () => {
   let response
 
   beforeEach(async () => {
-    await Database.instance().drop()
     const json = {name: "Michael Jordan", email: "michael@fgmail.com", phone: "+5521912341234"}
     response = await postSolicitation(json, 'https://myhost.com', signer.sign(json, "abcd"))
   })
@@ -99,7 +100,6 @@ describe(`when email reached rate limit`, () => {
   let response, resp1, resp2, resp3, resp4, resp5
 
   beforeEach(async () => {
-    await Database.instance().drop()
     const host = 'http://myhost.com:8080/'
     const json = {name: "Michael Jordan", email: "michael@fgmail.com", phone: "+5521912341234"}
     var access = Factory.build('dentist_access_point')
@@ -130,7 +130,6 @@ describe(`when ip reached rate limit`, () => {
   let response, resp1, resp2, resp3, resp4, resp5
 
   beforeEach(async () => {
-    await Database.instance().drop()
     const host = 'http://myhost.com:8080/'
     const json = {name: "Michael Jordan", email: "michael@fgmail.com", phone: "+5521912341234"}
     var access = Factory.build('dentist_access_point')

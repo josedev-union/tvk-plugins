@@ -1,6 +1,6 @@
 import url from 'url'
 import {simpleCrypto} from '../shared/simpleCrypto'
-import {redisPubsub} from './redisPubsub'
+import {redisFactory} from '../models/redisFactory'
 import {LocalWebsocketServer} from './LocalWebsocketServer'
 import {logger} from '../instrumentation/logger'
 
@@ -14,7 +14,7 @@ export class WebsocketServer {
   
   constructor() {
     this.localServers = {}
-    this.generalRedis = redisPubsub.newRedis()
+    this.generalRedis = redisFactory.newRedisPubsub()
     this.onReceive = null
   }
 

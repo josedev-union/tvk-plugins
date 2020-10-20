@@ -7,6 +7,8 @@ const PROCESSED_IMAGE_FILENAME = 'after.jpg'
 const SIDEBYSIDE_IMAGE_FILENAME = 'sidebyside.jpg'
 
 export class ImageProcessingSolicitation {
+    static get COLLECTION_NAME() { return 'image_processing_solicitations' }
+
     constructor(attrs = {}) {
         this.id = attrs.id
         this.createdAt = attrs.createdAt
@@ -22,7 +24,7 @@ export class ImageProcessingSolicitation {
     }
 
     static build(attrs) {
-        const createdAt = attrs.createdAt || new Date().toISOString()
+        const createdAt = attrs.createdAt || Database.toTimestamp(new Date())
         const id = attrs.id || ImageProcessingSolicitation.newId()
         return new ImageProcessingSolicitation(Object.assign({
            id: id,
@@ -34,11 +36,11 @@ export class ImageProcessingSolicitation {
     }
 
     save() {
-        return Database.instance().save(this, `/image_processing_solicitations/${this.id}`)
+        return Database.instance().save(this, `${ImageProcessingSolicitation.COLLECTION_NAME}/${this.id}`)
     }
 
     static async get(id) {
-        const data = await Database.instance().get(`/image_processing_solicitations/${id}`)
+        const data = await Database.instance().get(`${ImageProcessingSolicitation.COLLECTION_NAME}/${id}`)
         return new ImageProcessingSolicitation(data)
     }
 

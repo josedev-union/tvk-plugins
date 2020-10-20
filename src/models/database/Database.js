@@ -1,6 +1,8 @@
 import path from 'path'
 import admin from 'firebase-admin'
 import {env} from '../../config/env'
+import {DentistAccessPoint} from '../../models/database/DentistAccessPoint'
+import {ImageProcessingSolicitation} from '../../models/database/ImageProcessingSolicitation'
 
 export class Database {
     constructor({connection, namespace = ""}) {
@@ -8,7 +10,7 @@ export class Database {
         this.namespace = namespace
     }
 
-    static build(db = admin.database(), namespace = 'miroweb_data') {
+    static build(db = admin.firestore(), namespace = 'dentrino-web') {
         return new Database({
             connection: db,
             namespace: namespace
@@ -26,41 +28,103 @@ export class Database {
       return instance
     }
 
-    save(obj, obj_path) {
-        return this.getRef(obj_path).set(obj)
+    static toTimestamp(date) {
+        return admin.firestore.Timestamp.fromDate(date)
     }
 
-    transaction(obj_path, cb) {
-        return this.getRef(obj_path).transaction(cb)
+    save(obj, objPath) {
+        return this.#getRef(objPath).set(adaptObj(obj))
     }
 
-    getAll(objs_path) {
-        return this.get(objs_path)
+    startQuery(collectionName) {
+        return this.connection.collection(collectionName)
     }
 
-    async get(objs_path) {
-        const all = await this.getRef(objs_path).once("value")
-        return all.val()
+    async getResults(constructor, query) {
+        const rawResults = await query.get()
+        let results = []
+        rawResults.forEach(raw => results.push(new constructor(raw.data())))
+        return results
     }
 
-    set(obj_path, value) {
-        return this.getRef(obj_path).set(value)
+    async get(objsPath) {
+      const ref = this.#getRef(normalizePath(objsPath))
+      if (ref.once) {
+          const all = await ref.once('value')
+          return all.val()
+      } else {
+          const got = await ref.get()
+          return got.data()
+      }
     }
 
-    async delete(obj_path, allow_root = false) {
-        if (!allow_root && (obj_path === '/' || obj_path === '' || !obj_path)) throw "Can't delete root"
-        return this.getRef(obj_path).remove()
+    set(objPath, value) {
+        return this.#getRef(objPath).set(value)
     }
 
-    getRef(obj_path) {
-        const full_path = path.join(this.namespace, obj_path)
-        return this.connection.ref(full_path)
+    async delete(objPath, allow_root = false) {
+        if (!allow_root && (objPath === '/' || objPath === '' || !objPath)) throw "Can't delete root"
+        return this.#getRef(objPath).delete()
     }
 
     async drop() {
-        if (!env.isLocal()) {
+        if (!env.isTest()) {
             throw `Can't drop database on ${env.name}`
         }
-        return this.delete('/', true)
+
+        if (this.connection.clearPersistence) {
+            // await this.connection.clearPersistence()
+            let batch = this.connection.batch()
+            var collects = [
+              DentistAccessPoint.COLLECTION_NAME,
+              ImageProcessingSolicitation.COLLECTION_NAME,
+            ]
+            for (var i = 0; i < collects.length; i++) {
+                batch = await this.#dropCollection(collects[i], batch)
+            }
+            await batch.commit()
+        } else {
+            return await this.delete('/', true)
+        }
     }
+
+    #getRef(objPath) {
+        if (this.connection.doc) {
+            return this.connection.doc(objPath)
+        } else {
+            const full_path = path.join(this.namespace, objPath)
+            return this.connection.ref(full_path)
+        }
+    }
+
+    async #dropCollection(collectionName, batch) {
+        const snapshot = await this.startQuery(collectionName).get()
+        snapshot.docs.forEach(doc => batch.delete(doc.ref))
+        return batch
+    }
+}
+
+function adaptObj(value) {
+    if (typeof(value) !== 'object') return value
+    var obj = Object.assign({}, value)
+    Object.keys(obj).forEach(key => {
+        if (obj[key] instanceof admin.firestore.Timestamp) {
+            obj[key] = obj[key].toDate()
+        }
+    })
+    return obj
+    // var obj = {}
+    // Object.keys(value).forEach(key => {
+    //     obj[key] = value[key]
+    // })
+    // return obj
+}
+
+function normalizePath(objPath) {
+    let parts = []
+    objPath.split('/').forEach(part => {
+        const trimmed = part.trim()
+        if (trimmed !== '') parts.push(part)
+    })
+    return parts.join('/')
 }
