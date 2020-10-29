@@ -28,7 +28,6 @@
     "compression": "~1.7.4",
     "helmet": "~3.20.0",
     "@godaddy/terminus": "~4.1.2",
-    "aws-sdk": "~2.509.0",
     "@google-cloud/storage": "~5.3.0",
     "firebase-admin": "~8.3.0",
     "regenerator-runtime": "~0.13.3",
@@ -62,8 +61,7 @@
     "jest": "~24.9.0",
     "rosie": "~2.0.1",
     "supertest": "~4.0.2",
-    "@firebase/testing": "~0.13.3",
-    "aws-sdk-mock": "~4.5.0"
+    "@firebase/testing": "~0.13.3"
   },
   "babel": {
     "presets": [

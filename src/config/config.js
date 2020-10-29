@@ -1,4 +1,3 @@
-import AWS from 'aws-sdk'
 import mail from '@sendgrid/mail'
 import {Database} from '../models/database/Database'
 import Handlebars from 'hbs'
@@ -8,13 +7,6 @@ import * as Sentry from '@sentry/node'
 
 Handlebars.registerHelper('i18n', key => i18n(key))
 
-AWS.config.update({
-    accessKeyId: env.aws.accessKeyId,
-    secretAccessKey: env.aws.secretAccessKey,
-    region: env.aws.region,
-    signatureVersion: 'v4',
-})
-  
 mail.setApiKey(env.sendgridKey)
 
 let app

@@ -1,6 +1,5 @@
 export const env = new (class {
   name = process.env.NODE_ENV || 'development'
-  s3Bucket = process.env.MIROWEB_S3_BUCKET
   gcloudBucket = process.env.DENTRINO_GCLOUD_BUCKET
   firebaseCredentials = getEnvJson(process.env.MIROWEB_GOOGLE_APPLICATION_CREDENTIALS)
   gcloudCredentials = getEnvJson(process.env.DENTRINO_GOOGLE_APPLICATION_CREDENTIALS)
@@ -19,11 +18,6 @@ export const env = new (class {
       host: process.env.DENTRINO_REDIS_HOSTNAME,
       port: process.env.DENTRINO_REDIS_PORT,
       db: process.env.DENTRINO_REDIS_PUBSUB_DB,
-  }
-  aws = {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      region: process.env.AWS_DEFAULT_REGION,
   }
 
   isProduction() { return this.name === 'production' }
