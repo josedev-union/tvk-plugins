@@ -50,7 +50,7 @@ export class Database {
     async get(objsPath) {
         const ref = this.#getRef(normalizePath(objsPath))
         const got = await ref.get()
-        return got.data()
+        return got.exists ? got.data() : null
     }
 
     set(objPath, value) {

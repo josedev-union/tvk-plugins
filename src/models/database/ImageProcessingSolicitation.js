@@ -3,8 +3,9 @@ import {idGenerator} from '../tools/idGenerator'
 import {join} from 'path'
 
 const ORIGINAL_IMAGE_FILENAME = 'pre.jpg'
-const PROCESSED_IMAGE_FILENAME = 'after.jpg'
+const PROCESSED_IMAGE_FILENAME = 'pre_fa6b3c85_after.png'
 const SIDEBYSIDE_IMAGE_FILENAME = 'sidebyside.jpg'
+const FOLDER_NAMESPACE = 'ml-images'
 
 export class ImageProcessingSolicitation {
     static get COLLECTION_NAME() { return 'image_processing_solicitations' }
@@ -29,9 +30,9 @@ export class ImageProcessingSolicitation {
         return new ImageProcessingSolicitation(Object.assign({
            id: id,
            createdAt: createdAt,
-           filepathOriginal: join(id, ORIGINAL_IMAGE_FILENAME),
-           filepathProcessed: join(id, PROCESSED_IMAGE_FILENAME),
-           filepathSideBySide: join(id, SIDEBYSIDE_IMAGE_FILENAME),
+           filepathOriginal: join(FOLDER_NAMESPACE, id, ORIGINAL_IMAGE_FILENAME),
+           filepathProcessed: join(FOLDER_NAMESPACE, id, PROCESSED_IMAGE_FILENAME),
+           filepathSideBySide: join(FOLDER_NAMESPACE, id, SIDEBYSIDE_IMAGE_FILENAME),
         }, attrs))
     }
 

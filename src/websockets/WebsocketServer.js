@@ -1,6 +1,6 @@
 import url from 'url'
-import {simpleCrypto} from '../shared/simpleCrypto'
 import {redisFactory} from '../models/redisFactory'
+import {ImageProcessingSolicitation} from '../models/database/ImageProcessingSolicitation'
 import {LocalWebsocketServer} from './LocalWebsocketServer'
 import {logger} from '../instrumentation/logger'
 
@@ -18,7 +18,7 @@ export class WebsocketServer {
     this.onReceive = null
   }
 
-  onUpgrade(request, socket, head) {
+  async onUpgrade(request, socket, head) {
     const pathname = url.parse(request.url).pathname
 
     const match = pathname.match(/^\/ws\/processings\/(.*)$/)
@@ -27,42 +27,45 @@ export class WebsocketServer {
       return
     }
 
-    const processingId = match[1]
-    const processingIdBase = simpleCrypto.base64Decode(processingId)
-    logger.info(`processingIdBase: ${processingIdBase}`)
+    const solicitationId = match[1]
+    logger.info(`solicitationId: ${solicitationId}`)
+
+    const solicitation = await ImageProcessingSolicitation.get(solicitationId)
+    if (!solicitation) {
+      logger.warn(`WebSocket [DENIED] ${pathname} - Solicitation ${solicitationId} not found`)
+      socket.destroy()
+      return
+    }
+    const key = solicitation.filepathOriginal
+    logger.info(`Solicitation ${solicitationId} found`)
+    logger.info(`key: ${key}`)
 
     if (!this.generalRedis.isOnline) {
       logger.warn(`WebSocket [DENIED] ${pathname} - Redis is offline`)
       socket.destroy()
       return
     }
-    this.generalRedis.get(`progress:ws:${processingIdBase}`, (err, value) => {
-      if (value === null) {
-        logger.info(`WebSocket [DENIED] ${pathname} - No redis key for ${processingIdBase}, probably it did not started processing`)
-        socket.destroy()
-      } else {
-        const wsServer = this.findOrCreateLocalServer(socket, processingIdBase)
-        wsServer.upgradeRequestToWSConnection(request, head)
-        logger.info(`WebSocket [SUCCESS] ${pathname}`)
-      }
-    })
+
+    const wsServer = this.findOrCreateLocalServer(socket, key)
+    wsServer.upgradeRequestToWSConnection(request, head)
+    logger.info(`WebSocket [SUCCESS] ${pathname}`)
   }
 
-  findOrCreateLocalServer(socket, processingIdBase) {
-    let wsServer = this.localServers[processingIdBase]
+  findOrCreateLocalServer(socket, key) {
+    let wsServer = this.localServers[key]
     if (wsServer !== undefined) {
       return wsServer
     }
 
-    wsServer = new LocalWebsocketServer(socket, processingIdBase, {
+    wsServer = new LocalWebsocketServer(socket, key, {
       onTerminate: () => {
-        delete this.localServers[processingIdBase]
+        delete this.localServers[key]
       },
       onReceive: (message) => {
-        if (this.onReceive) this.onReceive(processingIdBase, message)
+        if (this.onReceive) this.onReceive(key, message)
       }
     })
-    this.localServers[processingIdBase] = wsServer
+    this.localServers[key] = wsServer
     return wsServer
   }
 }
