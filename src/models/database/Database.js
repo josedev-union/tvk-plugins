@@ -48,14 +48,9 @@ export class Database {
     }
 
     async get(objsPath) {
-      const ref = this.#getRef(normalizePath(objsPath))
-      if (ref.once) {
-          const all = await ref.once('value')
-          return all.val()
-      } else {
-          const got = await ref.get()
-          return got.data()
-      }
+        const ref = this.#getRef(normalizePath(objsPath))
+        const got = await ref.get()
+        return got.data()
     }
 
     set(objPath, value) {
@@ -72,29 +67,19 @@ export class Database {
             throw `Can't drop database on ${env.name}`
         }
 
-        if (this.connection.clearPersistence) {
-            // await this.connection.clearPersistence()
-            let batch = this.connection.batch()
-            var collects = [
-              DentistAccessPoint.COLLECTION_NAME,
-              ImageProcessingSolicitation.COLLECTION_NAME,
-            ]
-            for (var i = 0; i < collects.length; i++) {
-                batch = await this.#dropCollection(collects[i], batch)
-            }
-            await batch.commit()
-        } else {
-            return await this.delete('/', true)
+        let batch = this.connection.batch()
+        var collects = [
+          DentistAccessPoint.COLLECTION_NAME,
+          ImageProcessingSolicitation.COLLECTION_NAME,
+        ]
+        for (var i = 0; i < collects.length; i++) {
+            batch = await this.#dropCollection(collects[i], batch)
         }
+        await batch.commit()
     }
 
     #getRef(objPath) {
-        if (this.connection.doc) {
-            return this.connection.doc(objPath)
-        } else {
-            const full_path = path.join(this.namespace, objPath)
-            return this.connection.ref(full_path)
-        }
+        return this.connection.doc(objPath)
     }
 
     async #dropCollection(collectionName, batch) {

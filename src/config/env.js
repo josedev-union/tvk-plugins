@@ -1,14 +1,11 @@
 export const env = new (class {
   name = process.env.NODE_ENV || 'development'
   gcloudBucket = process.env.DENTRINO_GCLOUD_BUCKET
-  firebaseCredentials = getEnvJson(process.env.MIROWEB_GOOGLE_APPLICATION_CREDENTIALS)
-  gcloudCredentials = getEnvJson(process.env.DENTRINO_GOOGLE_APPLICATION_CREDENTIALS)
   port = normalizePort(process.env.PORT || '3000')
   masterHost = process.env.MASTER_HOST
   sendgridKey = process.env.SENDGRID_API_KEY
   rateLimitDisabled = process.env.DENTRINO_RATE_LIMIT_DISABLED
   sentryDsn = process.env.SENTRY_DSN
-  firebaseDatabaseUrl = process.env.MIROWEB_FIREBASE_DATABASE_URL
   redis = {
       host: process.env.DENTRINO_REDIS_HOSTNAME,
       port: process.env.DENTRINO_REDIS_PORT,
@@ -27,10 +24,6 @@ export const env = new (class {
   isLocal() { return this.isTest() || this.isDevelopment() }
   isNonLocal() { return !this.isLocal() }
 })()
-
-function getEnvJson(envValue) {
-    return (envValue ? JSON.parse(envValue) : null)
-}
 
 function normalizePort(val) {
   var port = parseInt(val, 10);
