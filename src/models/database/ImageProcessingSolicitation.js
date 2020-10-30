@@ -2,8 +2,8 @@ import {Database} from '../database/Database'
 import {idGenerator} from '../tools/idGenerator'
 import {join} from 'path'
 
-const ORIGINAL_IMAGE_FILENAME = 'pre.jpg'
-const PROCESSED_IMAGE_FILENAME = 'pre_fa6b3c85_after.png'
+const ORIGINAL_IMAGE_FILENAME = 'smile.jpg'
+const PROCESSED_IMAGE_FILENAME = 'smile_after.png'
 const SIDEBYSIDE_IMAGE_FILENAME = 'sidebyside.jpg'
 const FOLDER_NAMESPACE = 'ml-images'
 
