@@ -42,10 +42,9 @@ server.on('upgrade', (request, socket, head) => {
   WebsocketServer.instance().onUpgrade(request, socket, head);
 });
 
-WebsocketServer.instance().onReceive = (processingIdBase, message) => {
-  if (message['event'] === 'end') {
-    let [bucket, solicitationId] = processingIdBase.replace(/^\//g, '').replace(/\/$/g, '').split('/')
-    wsCallbacks.onProcessingComplete(bucket, solicitationId)
+WebsocketServer.instance().onReceive = (message, solicitation) => {
+  if (message['event'] === 'finished') {
+    wsCallbacks.onProcessingComplete(solicitation)
   }
 }
 

@@ -10,7 +10,7 @@ Handlebars.registerHelper('i18n', key => i18n(key))
 mail.setApiKey(env.sendgridKey)
 
 let app
-if (env.isLocal()) {
+if (env.isTest()) {
     const admin = require('@firebase/testing')
     app = admin.initializeAdminApp({
       projectId: 'dentrino-test-us'

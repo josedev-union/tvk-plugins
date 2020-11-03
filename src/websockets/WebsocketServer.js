@@ -46,12 +46,12 @@ export class WebsocketServer {
       return
     }
 
-    const wsServer = this.findOrCreateLocalServer(socket, key)
+    const wsServer = this.findOrCreateLocalServer(socket, key, solicitation)
     wsServer.upgradeRequestToWSConnection(request, head)
     logger.info(`WebSocket [SUCCESS] ${pathname}`)
   }
 
-  findOrCreateLocalServer(socket, key) {
+  findOrCreateLocalServer(socket, key, solicitation) {
     let wsServer = this.localServers[key]
     if (wsServer !== undefined) {
       return wsServer
@@ -62,7 +62,7 @@ export class WebsocketServer {
         delete this.localServers[key]
       },
       onReceive: (message) => {
-        if (this.onReceive) this.onReceive(key, message)
+        if (this.onReceive) this.onReceive(message, solicitation)
       }
     })
     this.localServers[key] = wsServer

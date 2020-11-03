@@ -6,7 +6,7 @@ import {simpleCrypto} from '../src/shared/simpleCrypto'
 
 Factory.define('dentist_access_point', DentistAccessPoint)
   .attr('id', () => DentistAccessPoint.newId())
-  .attr('userId', () => "user-external-id")
+  .sequence('userId', (i) => simpleCrypto.sha1(simpleCrypto.genericUUID()))
   .attr('secret', () => DentistAccessPoint.newSecret())
   .attr('customEmail', null)
   .attr('directPage', () => {

@@ -1,6 +1,7 @@
 import { Factory } from 'rosie'
 import {signer} from '../../src/shared/signer'
 import {Database} from '../../src/models/database/Database'
+import {ImageProcessingSolicitation} from '../../src/models/database/ImageProcessingSolicitation'
 import {storageFactory} from '../../src/models/storage/storageFactory'
 import {clearRedis} from '../../src/config/redis'
 
@@ -54,13 +55,16 @@ describe(`on a successful request`, () => {
     response = await postSolicitation(json, 'https://myhost.com:8080', signature)
   })
 
-  test(`respond 200`, () => {
+  test(`respond 200`, async () => {
     expect(response.status).toBe(200)
+    expect(typeof(response.body.solicitationId)).toBe('string')
+    const solicitation = await ImageProcessingSolicitation.get(response.body.solicitationId)
+    expect(solicitation).toBeTruthy()
+
     expect(response.body.presignedUpload).toEqual(uploadSignedUrl)
     expect(response.body.presignedDownloadOriginal).toBe(imageSignedUrl)
     expect(response.body.presignedDownloadAfter).toBe(processedSignedUrl)
-    expect(typeof(response.body.sessionId)).toBe('string')
-    expect(typeof(response.body.key)).toBe('string')
+    // expect(typeof(response.body.bucket)).toBe('string')
   })
 })
 

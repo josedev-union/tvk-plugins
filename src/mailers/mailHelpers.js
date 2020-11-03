@@ -15,6 +15,10 @@ export const mailHelpers = new (class {
       args.subject = `[${env.name}] ${args.subject}`
     }
     return mail.send(args)
+      .catch(error => {
+        console.error(`Error sending email: ${error.code} - ${error.message} - ${JSON.stringify(error.response)}`)
+        Promise.reject(error)
+      })
   }
 
   async render(templatePath, locals = {}) {
