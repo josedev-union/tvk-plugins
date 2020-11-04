@@ -5,6 +5,7 @@ export const env = new (class {
   masterHost = process.env.MASTER_HOST
   sendgridKey = process.env.SENDGRID_API_KEY
   rateLimitDisabled = process.env.DENTRINO_RATE_LIMIT_DISABLED
+  mailerDisabled = process.env.DENTRINO_MAILER_DISABLED
   sentryDsn = process.env.SENTRY_DSN
   redis = {
       host: process.env.DENTRINO_REDIS_HOSTNAME,
