@@ -42,7 +42,7 @@ export const dentistMailer = new (class {
     .catch(error => {
       console.error("Error sending email via Sendgrid: ", error.message)
     })
-    logger.debug(`===========>  SENDING EMAIL TO: ${email}`)
+    logger.debug(`SENDING DENTIST EMAIL TO: ${email}`)
     logger.debug(emailBody)
   }
 })()

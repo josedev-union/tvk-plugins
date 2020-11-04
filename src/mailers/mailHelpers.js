@@ -11,8 +11,8 @@ const DEFAULT_FROM = 'support@tastytech.ca'
 export const mailHelpers = new (class {
   send(args) {
     if (env.mailerDisabled) {
-      console.log(`Mailer is Disabled - Blocked email ${JSON.stringify(args)}`)
-      return new Promise()
+      console.log(`Mailer is Disabled - Canceled email "${args.subject}" to ${args.to}`)
+      return new Promise((resolve, reject) => resolve())
     }
     args.from = args.from || DEFAULT_FROM;
     if (!env.isProduction() && args.subject) {

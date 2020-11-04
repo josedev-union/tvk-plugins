@@ -38,7 +38,7 @@ export const patientMailer = new (class {
     .catch(error => {
       console.error("Error sending email via Sendgrid: ", error.message)
     })
-    logger.debug(`===========>  SENDING EMAIL TO: ${email}`)
+    logger.debug(`SENDING PATIENT EMAIL TO: ${solicitation.email}`)
     logger.debug(emailBody)
   }
 })()
