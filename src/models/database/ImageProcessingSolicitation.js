@@ -3,7 +3,7 @@ import {idGenerator} from '../tools/idGenerator'
 import {join} from 'path'
 
 const ORIGINAL_IMAGE_FILENAME = 'smile.jpg'
-const PROCESSED_IMAGE_FILENAME = 'smile_after.png'
+const PROCESSED_IMAGE_FILENAME = 'smile_after.jpg'
 const SIDEBYSIDE_IMAGE_FILENAME = 'sidebyside.jpg'
 const FOLDER_NAMESPACE = 'ml-images'
 
