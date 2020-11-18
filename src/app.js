@@ -9,7 +9,8 @@ import helmet from 'helmet'
 const app = express()
 
 import indexRouter from './routes/index'
-import usersRouter from './routes/users'
+import webSolicitationsRouter from './routes/image_processing_solicitations'
+import apiSolicitationsRouter from './routes/api/image_processing_solicitations'
 import './config/config'
 import * as Sentry from '@sentry/node'
 
@@ -29,7 +30,8 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/d/', webSolicitationsRouter);
+app.use('/api/image_processing_solicitations', apiSolicitationsRouter);
 
 app.use(Sentry.Handlers.errorHandler());
 

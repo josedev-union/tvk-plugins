@@ -21,7 +21,7 @@ export class WebsocketServer {
   async onUpgrade(request, socket, head) {
     const pathname = url.parse(request.url).pathname
 
-    const match = pathname.match(/^\/ws\/processings\/(.*)$/)
+    const match = pathname.match(/^\/ws\/image_processing_solicitations\/(.*)$/)
     if (match === null) {
       socket.destroy()
       return
