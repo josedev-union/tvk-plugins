@@ -1,4 +1,4 @@
-FROM gcr.io/tastytech/dentrino-web-base:latest
+FROM gcr.io/dentrino-staging/dentrino-web-base:latest
 MAINTAINER support@tastytech.ca
 
 ARG BUILD_DIR=/build
