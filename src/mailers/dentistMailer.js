@@ -11,7 +11,7 @@ export const dentistMailer = new (class {
     const email = await accessPoint.email()
     const dentist = await accessPoint.cacheableUser()
     const emailBody = await mailHelpers.render('dentist_notification.hbs', {
-      solicitation: solicitation,
+      patient: solicitation.requester.info,
       accessPoint: accessPoint,
       email: email,
       dentist: dentist

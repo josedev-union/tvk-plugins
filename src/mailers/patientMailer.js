@@ -9,7 +9,7 @@ export const patientMailer = new (class {
     const accessPoint = await DentistAccessPoint.get(solicitation.accessPointId)
     const dentist = await accessPoint.cacheableUser()
     const emailBody = await mailHelpers.render('patient_notification.hbs', {
-      solicitation: solicitation,
+      patient: solicitation.requester.info,
       dentist: dentist
     })
     let [originalImage, processedImage] = await Promise.all([
@@ -17,7 +17,7 @@ export const patientMailer = new (class {
       downloader.download(solicitation.filepathProcessed),
     ])
     mailHelpers.send({
-      to: solicitation.email,
+      to: solicitation.requester.info.email,
       subject: 'Your smile is ready',
       html: emailBody,
       attachments: [
@@ -38,7 +38,7 @@ export const patientMailer = new (class {
     .catch(error => {
       console.error("Error sending email via Sendgrid: ", error.message)
     })
-    logger.debug(`SENDING PATIENT EMAIL TO: ${solicitation.email}`)
+    logger.debug(`SENDING PATIENT EMAIL TO: ${solicitation.requester.info.email}`)
     logger.debug(emailBody)
   }
 })()

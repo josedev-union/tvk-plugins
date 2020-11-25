@@ -30,13 +30,13 @@ router.post('/', async (req, res) => {
     return res.status(403).send('')
   }
 
-  const solicitation = ImageProcessingSolicitation.build(Object.assign({
+  const solicitation = ImageProcessingSolicitation.requestedByPatient(Object.assign({
     ip: req.ip,
     origin: referer,
     accessPointId: access.id
   }, params))
 
-  let hasFreeSlot = await SolicitationRateLimit.build().add(solicitation)
+  let hasFreeSlot = await SolicitationRateLimit.build().addPatientSlots(solicitation)
   if (!hasFreeSlot) {
     return res.status(403).send('')
   }

@@ -1,12 +1,14 @@
 import {simpleCrypto} from "./simpleCrypto";
 
 export const signer = new (class {
-    sign (obj, key) {
-        return simpleCrypto.hmac(simpleCrypto.sha1(simpleCrypto.base64(serialize(obj))), key)
+    sign (obj, key, apiKey) {
+        let finalKey = simpleCrypto.sha1(key + apiKey)
+        let text = simpleCrypto.base64(serialize(obj))
+        return simpleCrypto.hmac(text, finalKey)
     }
 
-    verify (obj, key, signature) {
-        return this.sign(obj, key) === signature
+    verify (obj, key, apiKey, signature) {
+        return this.sign(obj, key, apiKey) === signature
     }
 })()
 

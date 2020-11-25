@@ -1,5 +1,6 @@
 const CopyPlugin = require('copy-webpack-plugin');
 const RemovePlugin = require('remove-files-webpack-plugin');
+const Dotenv = require('dotenv-webpack');
 
 module.exports = {
   entry: {
@@ -40,6 +41,12 @@ module.exports = {
     filename: 'js/bundle.js'
   },
   plugins: [
+    new Dotenv({
+      safe: true,
+      allowEmptyValues: true,
+      systemvars: true,
+      silent: true
+    }),
     new RemovePlugin({ before: {include: ['public/assets']}}),
     new CopyPlugin([
       { from: './assets/css/*', to: '.', transformPath(target, abs) { return target.replace("assets", ""); } }

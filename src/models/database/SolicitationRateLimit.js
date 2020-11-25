@@ -21,21 +21,30 @@ export class SolicitationRateLimit {
         })
     }
 
-    async add(solicitation) {
+    async addPatientSlots(solicitation) {
         if (env.rateLimitDisabled) return true
-        const originCode = simpleCrypto.base64(solicitation.origin, {padding: false})
-        const ipCode = simpleCrypto.base64(solicitation.ip, {padding: false})
-        const emailCode = simpleCrypto.base64(solicitation.email, {padding: false})
-        const ipPath = [NAMESPACE, 'ips', originCode, ipCode].join(':')
-        const emailPath = [NAMESPACE, 'emails', originCode, emailCode].join(':')
-        const [allowedByIp, allowedByEmail] = await Promise.all([
-            this.#haveAvailableSlotsOn(ipPath),
-            this.#haveAvailableSlotsOn(emailPath),
-        ])
-        const allowed = allowedByIp && allowedByEmail
+        const originCode = simpleCrypto.base64(solicitation.requester.info.origin, {padding: false})
+        var ipKey = this.#buildKey(`ips:{originCode}`, solicitation.requester.info.ip)
+        var emailKey = this.#buildKey(`emails:{originCode}`, solicitation.requester.info.email)
+        return this.#addKeys([ipKey, emailKey])
+    }
+
+    async addDentistSlots(solicitation) {
+        if (env.rateLimitDisabled) return true
+        const accessPointKey = this.#buildKey('access-points', solicitation.accessPointId)
+        return this.#addKeys([accessPointKey])
+    }
+
+    #buildKey(keyCategory, keyIdBase) {
+        const keyId = simpleCrypto.base64(keyIdBase, {padding: false})
+        return [NAMESPACE, keyCategory, keyId].join(':')
+    }
+
+    async #addKeys(keys) {
+        const results = await Promise.all(keys.map(key => this.#haveAvailableSlotsOn(key)))
+        const allowed = !results.includes(false)
         if (allowed) {
-            this.#addSlot(ipPath, solicitation.id)
-            this.#addSlot(emailPath, solicitation.id)
+            keys.forEach(key => this.#addSlot(key, solicitation.id))
         }
         return allowed
     }

@@ -3,6 +3,7 @@ import {Database} from './Database'
 import {MiroSmilesUser} from './MiroSmilesUser'
 import {signer} from '../../shared/signer'
 import {env} from '../../config/env'
+import {envShared} from '../../shared/envShared'
 
 export class DentistAccessPoint {
     static get COLLECTION_NAME() {return 'dentist_access_points'}
@@ -102,7 +103,7 @@ export class DentistAccessPoint {
     static async findOne(params, referer, signature) {
         const accessPoints = await this.allForHost(referer)
         const access = accessPoints.find((access) => {
-            return signer.verify(params, access.secret, signature)
+            return signer.verify(params, access.secret, envShared.apiSecretToken, signature)
         })
         return access
     }
