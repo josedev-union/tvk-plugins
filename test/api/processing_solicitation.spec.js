@@ -164,10 +164,10 @@ describe(`when ip reached rate limit`, () => {
 
 function postSolicitation(json={name:"Michael Jordan", email:"michael@fgmail.com", phone:"+5521912341234"}, host="localhost:3000", signature='', ip='127.0.0.0') {
   return request
-    .post('/image_processing_solicitation')
+    .post('/api/image-processing-solicitations/by-patient')
     .set('Origin', host)
     .set('Content-Type', 'application/json')
-    .set('DENTRINO-ID', signature)
+    .set('Authorization', `Bearer ${signature}`)
     .set('X-Forwarded-For', ip)
     .send(json)
 }

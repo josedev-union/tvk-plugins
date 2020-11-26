@@ -11,6 +11,7 @@ const app = express()
 import indexRouter from './routes/index'
 import webSolicitationsRouter from './routes/image_processing_solicitations'
 import apiSolicitationsRouter from './routes/api/image_processing_solicitations'
+import apiAccessPointsRouter from './routes/api/access_points'
 import './config/config'
 import * as Sentry from '@sentry/node'
 
@@ -31,7 +32,8 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 app.use('/', indexRouter);
 app.use('/d/', webSolicitationsRouter);
-app.use('/api/image_processing_solicitations', apiSolicitationsRouter);
+app.use('/api/image-processing-solicitations', apiSolicitationsRouter);
+app.use('/api/access-points/', apiAccessPointsRouter);
 
 app.use(Sentry.Handlers.errorHandler());
 

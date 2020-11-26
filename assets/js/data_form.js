@@ -17,7 +17,7 @@ class DataForm {
         data: urlEncoded,
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          [envShared.signatureHeaderName] : signer.sign(data, secret, envShared.apiSecretToken)
+          [envShared.signatureHeaderName] : `Bearer ${signer.sign(data, secret, envShared.apiSecretToken)}`
         }
       }).then(([response, httpStatus]) => {
         if (typeof(response) !== 'object' || httpStatus === 0) {

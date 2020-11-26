@@ -9,14 +9,14 @@ const PROCESSED_IMAGE_FILENAME = 'smile_after.jpg'
 const SIDEBYSIDE_IMAGE_FILENAME = 'sidebyside.jpg'
 const FOLDER_NAMESPACE = 'ml-images'
 
-const SolicitationRequesterType = new Enum([
+export const SolicitationRequesterType = new Enum([
     'dentist',
     'patient',
 ])
 
 const INFO_FIELDS = {
-  [SolicitationRequesterType.dentist()]: ['ip', 'origin', 'email', 'name', 'phone'],
-  [SolicitationRequesterType.patient()]: ['ip', 'origin', 'deviceId'],
+  [SolicitationRequesterType.patient()]: ['ip', 'origin', 'email', 'name', 'phone'],
+  [SolicitationRequesterType.dentist()]: ['ip', 'deviceId'],
 }
 
 export class ImageProcessingSolicitation {

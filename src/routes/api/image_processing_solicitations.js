@@ -4,23 +4,23 @@ import {ImageProcessingService} from '../../models/storage/ImageProcessingServic
 import {ImageProcessingSolicitation} from '../../models/database/ImageProcessingSolicitation'
 import {DentistAccessPoint} from '../../models/database/DentistAccessPoint'
 import {SolicitationRateLimit} from '../../models/database/SolicitationRateLimit'
-import {Uri} from '../../models/tools/Uri'
 import {env} from '../../config/env'
 import {envShared} from '../../shared/envShared'
+import {signer} from '../../shared/signer'
 import {helpers} from '../helpers'
 
 /* GET presigned post */
-router.options('/', (req, res) => {
-  setCors(req, res)
+router.options('/by-patient', (req, res) => {
+  helpers.setCors(req, res)
   res.status(200).send('')
 })
 
-router.post('/', async (req, res) => {
+router.post('/by-patient', async (req, res) => {
   let params = {}
   for (let k in req.body) params[k] = req.body[k]
 
   const referer = helpers.getReferer(req)
-  const signature = helpers.normalizeParamValue(req.get(envShared.signatureHeaderName))
+  const signature = helpers.getSignature(req)
   if (!referer || !signature) {
     return res.status(400).send('')
   }
@@ -50,7 +50,7 @@ router.post('/', async (req, res) => {
   ]
   let [_, uploadJson, urlToGetOriginal, urlToGetProcessed] = await Promise.all(tasks)
 
-  setCors(req, res)
+  helpers.setCors(req, res)
   return res.json({
     presignedUpload: uploadJson,
     presignedDownloadOriginal: urlToGetOriginal,
@@ -59,14 +59,5 @@ router.post('/', async (req, res) => {
     bucket: env.gcloudBucket,
   })
 })
-
-function setCors(req, res) {
-  const referer = req.get('Referer') || req.get('Origin') || req.get('Host')
-  res.set({
-    "Access-Control-Allow-Origin": new Uri(referer).toString({path: false}),
-    "Access-Control-Allow-Methods": "POST",
-    "Access-Control-Allow-Headers": envShared.signatureHeaderName,
-  })
-}
 
 export default router
