@@ -1,8 +1,17 @@
 import express from 'express';
+import {DentistAccessPoint} from '../../models/database/DentistAccessPoint'
 const router = express.Router();
 
 router.get('/for-user/:userId', async (req, res) => {
-  res.status(200).send('')
+  let access = DentistAccessPoint.findOneByUserId(req.params.userId)
+  if (!access) {
+    return res.status(404).send('')
+  }
+
+  return res.json({
+    id: access.id,
+    secret: access.secret
+  })
 })
 
 router.post(':id/image-processing-solicitations', async (req, res) => {

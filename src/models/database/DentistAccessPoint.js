@@ -121,6 +121,14 @@ export class DentistAccessPoint {
         return (all.length > 0 ? all[0] : null)
     }
 
+    static async findOneByUserId(userId) {
+        const db = Database.instance()
+        const query = db.startQuery(DentistAccessPoint.COLLECTION_NAME)
+          .where('userId', '==', userId)
+        const all = await db.getResults(DentistAccessPoint, query) 
+        return (all.length > 0 ? all[0] : null)
+    }
+
     static build({hosts = [], directPage = {}, userId}) {
         return new DentistAccessPoint({
             id: this.newId(),
