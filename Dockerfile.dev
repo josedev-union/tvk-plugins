@@ -1,10 +1,12 @@
-FROM gcr.io/tastytech/dentrino-web-base:latest
+FROM gcr.io/dentrino-staging/dentrino-web-base:latest
 MAINTAINER support@tastytech.ca
-
-WORKDIR /app
 
 # Adding Files
 ADD . /app
+
+WORKDIR /app
+
+RUN npm install
 
 # Booting
 CMD ["npm", "run", "dev-start"]

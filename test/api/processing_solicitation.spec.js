@@ -1,41 +1,51 @@
 import { Factory } from 'rosie'
-import AWSMock from "aws-sdk-mock";
-import AWS from "aws-sdk"; 
 import {signer} from '../../src/shared/signer'
 import {Database} from '../../src/models/database/Database'
+import {ImageProcessingSolicitation} from '../../src/models/database/ImageProcessingSolicitation'
+import {storageFactory} from '../../src/models/storage/storageFactory'
+import {clearRedis} from '../../src/config/redis'
 
 import app from '../../src/app'
 app.enable('trust proxy')
 import supertest from 'supertest'
 const request = supertest(app)
 
-const uploadJson = {presigned_post: ''}
-const imageSignedUrl = 'http://s3.presignedget.com/image'
-const processedSignedUrl = 'http://s3.presignedget.com/processed'
+const uploadSignedUrl = 'http://gcloud.presigned.com/upload'
+const imageSignedUrl = 'http://gcloud.presigned.com/inputImage'
+const processedSignedUrl = 'http://gcloud.presigned.com/afterImage'
 
-beforeEach(() => {
-  AWSMock.setSDKInstance(AWS)
-  AWSMock.mock('S3', 'createPresignedPost', (params, cb) => {
-    cb(null, uploadJson)
-  })
-  AWSMock.mock('S3', 'getSignedUrl', (verb, params, cb) => {
-    if (params.Key.includes('after')) {
-      cb(null, processedSignedUrl)
-    } else {
-      cb(null, imageSignedUrl)
-    }
-  })
+jest.mock('../../src/models/storage/storageFactory', () => {
+  return {
+    storageFactory: jest.fn().mockReturnValue({
+      bucket: jest.fn().mockReturnValue({
+        file: jest.fn().mockImplementation((keyName) => {
+          return {
+            getSignedUrl: jest.fn().mockImplementation((opts) => {
+              if (opts.action === 'write') {
+                return Promise.resolve(['http://gcloud.presigned.com/upload'])
+              } else if (keyName.includes('after')) {
+                return Promise.resolve(['http://gcloud.presigned.com/afterImage'])
+              } else {
+                return Promise.resolve(['http://gcloud.presigned.com/inputImage'])
+              }
+            })
+          }
+        })
+      })
+    })
+  }
 })
 
-afterEach(() => {
-  AWSMock.restore('S3')
+beforeEach(async () => {
+  storageFactory.mockClear()
+  await Database.instance().drop()
+  await clearRedis()
 })
 
 describe(`on a successful request`, () => {
   let response
 
   beforeEach(async () => {
-    await Database.instance().drop()
     var access = Factory.build('dentist_access_point')
     access.addHost('http://myhost.com:8080/')
     await access.save()
@@ -45,13 +55,16 @@ describe(`on a successful request`, () => {
     response = await postSolicitation(json, 'https://myhost.com:8080', signature)
   })
 
-  test(`respond 200`, () => {
+  test(`respond 200`, async () => {
     expect(response.status).toBe(200)
-    expect(response.body.presignedUpload).toEqual(uploadJson)
+    expect(typeof(response.body.solicitationId)).toBe('string')
+    const solicitation = await ImageProcessingSolicitation.get(response.body.solicitationId)
+    expect(solicitation).toBeTruthy()
+
+    expect(response.body.presignedUpload).toEqual(uploadSignedUrl)
     expect(response.body.presignedDownloadOriginal).toBe(imageSignedUrl)
     expect(response.body.presignedDownloadAfter).toBe(processedSignedUrl)
-    expect(typeof(response.body.sessionId)).toBe('string')
-    expect(typeof(response.body.key)).toBe('string')
+    // expect(typeof(response.body.bucket)).toBe('string')
   })
 })
 
@@ -59,7 +72,6 @@ describe(`when host doesn't belong to any client`, () => {
   let response
 
   beforeEach(async () => {
-    await Database.instance().drop()
     const json = {name: "Michael Jordan", email: "michael@fgmail.com", phone: "+5521912341234"}
     response = await postSolicitation(json, 'https://myhost.com', signer.sign(json, "abcd"))
   })
@@ -92,7 +104,6 @@ describe(`when email reached rate limit`, () => {
   let response, resp1, resp2, resp3, resp4, resp5
 
   beforeEach(async () => {
-    await Database.instance().drop()
     const host = 'http://myhost.com:8080/'
     const json = {name: "Michael Jordan", email: "michael@fgmail.com", phone: "+5521912341234"}
     var access = Factory.build('dentist_access_point')
@@ -123,7 +134,6 @@ describe(`when ip reached rate limit`, () => {
   let response, resp1, resp2, resp3, resp4, resp5
 
   beforeEach(async () => {
-    await Database.instance().drop()
     const host = 'http://myhost.com:8080/'
     const json = {name: "Michael Jordan", email: "michael@fgmail.com", phone: "+5521912341234"}
     var access = Factory.build('dentist_access_point')
@@ -154,10 +164,10 @@ describe(`when ip reached rate limit`, () => {
 
 function postSolicitation(json={name:"Michael Jordan", email:"michael@fgmail.com", phone:"+5521912341234"}, host="localhost:3000", signature='', ip='127.0.0.0') {
   return request
-    .post('/image_processing_solicitation')
+    .post('/api/image-processing-solicitations/by-patient')
     .set('Origin', host)
     .set('Content-Type', 'application/json')
-    .set('DENTRINO-ID', signature)
+    .set('Authorization', `Bearer ${signature}`)
     .set('X-Forwarded-For', ip)
     .send(json)
 }

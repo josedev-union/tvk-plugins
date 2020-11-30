@@ -10,11 +10,19 @@ const DEFAULT_FROM = 'support@tastytech.ca'
 
 export const mailHelpers = new (class {
   send(args) {
+    if (env.mailerDisabled) {
+      console.log(`Mailer is Disabled - Canceled email "${args.subject}" to ${args.to}`)
+      return new Promise((resolve, reject) => resolve())
+    }
     args.from = args.from || DEFAULT_FROM;
     if (!env.isProduction() && args.subject) {
       args.subject = `[${env.name}] ${args.subject}`
     }
     return mail.send(args)
+      .catch(error => {
+        console.error(`Error sending email: ${error.code} - ${error.message} - ${JSON.stringify(error.response)}`)
+        Promise.reject(error)
+      })
   }
 
   async render(templatePath, locals = {}) {

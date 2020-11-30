@@ -5,7 +5,7 @@ import '../../../src/config/config'
 
 describe('static', () => {
   test('user get by id', async () => {
-    await Database.instance('mirosmiles').drop()
+    await Database.instance().drop()
     const user = Factory.build('miro_smiles_user')
     user.save()
 

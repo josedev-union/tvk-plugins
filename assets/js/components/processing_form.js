@@ -82,12 +82,10 @@ class ProcessingForm {
 
   openWebsocketsConnection(response) {
     const bucket = response.bucket
-    const sessionId = response.sessionId
+    const solicitationId = response.solicitationId
 
-    let idBase = `${bucket}/${sessionId}/`
-    let processingId = simpleCrypto.base64(idBase)
-    let url = `ws://${window.location.host}/ws/processings/${processingId}`
-    console.log(url, idBase)
+    let url = `ws://${window.location.host}/ws/image_processing_solicitations/${solicitationId}`
+    console.log('url', url)
     console.log("Waiting for websockets connection")
 
     const promise = waitFor((resolve, reject) => {
@@ -113,13 +111,12 @@ class ProcessingForm {
     const promise = timeoutFor((resolve, reject) => {
       console.log("Waiting for messages...")
       ws.onmessage = (msg) => {
+        console.log(`Message Received: ${msg}`)
         const data = JSON.parse(msg.data)
-        if (data.event === 'progress') {
+        if (data.event === 'processing_step') {
           const percent = parseInt(data.percent * 100)
-          this.emitProgress(i18n('progress:stages:processing'), percent)
-        } else if (data.event === 'start') {
-          this.emitProgress(i18n('progress:stages:processing'), 0)
-        } else if (data.event === 'end') {
+          this.emitProgress(i18n('progress:stages:processing-step', {number: data.inx+1, maxNumber: data.maxInx+1}), 0)
+        } else if (data.event === 'finished') {
           resolve()
         } else {
           reject({error: 'unexpected-websockets-error', data: data})

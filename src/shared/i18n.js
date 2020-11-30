@@ -11,7 +11,7 @@ i18n.translator.add({
     'progress:polling-fallback': 'Trying to download image. (Retries: %{count}/%{max})',
     'progress:stages:uploading': 'Uploading',
     'progress:stages:pre-processing': 'Waiting processing start',
-    'progress:stages:processing': 'Processing',
+    'progress:stages:processing-step': 'Processing %{number}/%{maxNumber}',
     'form:user:name': 'Full Name',
     'form:user:email': 'Email',
     'form:user:telephone-number': 'Telephone Number',

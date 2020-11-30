@@ -9,9 +9,10 @@ import helmet from 'helmet'
 const app = express()
 
 import indexRouter from './routes/index'
-import usersRouter from './routes/users'
+import webSolicitationsRouter from './routes/image_processing_solicitations'
+import apiSolicitationsRouter from './routes/api/image_processing_solicitations'
+import apiAccessPointsRouter from './routes/api/access_points'
 import './config/config'
-import './config/cronJobs'
 import * as Sentry from '@sentry/node'
 
 app.disable('trust proxy')
@@ -30,7 +31,9 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/d/', webSolicitationsRouter);
+app.use('/api/image-processing-solicitations', apiSolicitationsRouter);
+app.use('/api/access-points/', apiAccessPointsRouter);
 
 app.use(Sentry.Handlers.errorHandler());
 

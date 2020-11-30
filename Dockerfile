@@ -1,8 +1,7 @@
-FROM gcr.io/tastytech/dentrino-web-base:latest
+FROM gcr.io/dentrino-staging/dentrino-web-base:latest
 MAINTAINER support@tastytech.ca
 
-ARG BUILD_DIR=/build
-WORKDIR $BUILD_DIR
+WORKDIR /app
 
 # Adding Files
 ADD webpack.config.js ./webpack.config.js
@@ -16,12 +15,7 @@ ADD public ./public
 # Preparing for distribution
 RUN npm install && \
     npm run build-backend && \
-    npm prune --production && \
-    cp -rf $BUILD_DIR/dist/ /app/ && \
-    cp -rf $BUILD_DIR/package.json /app/ && \
-    cp -rf $BUILD_DIR/node_modules /app/ && \
-    rm -rf $BUILD_DIR
+    cp -rf ./dist/* ./
 
 # Booting
-WORKDIR /app
 CMD ["npm", "start"]

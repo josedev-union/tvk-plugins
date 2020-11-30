@@ -16,6 +16,7 @@ const debug = build_debug('dentrino-web:server')
  */
 
 app.set('port', env.port);
+app.set('host', env.host);
 
 /**
  * Create HTTP server.
@@ -35,17 +36,16 @@ createTerminus(server, {
     }
   }
 });
-server.listen(env.port);
+server.listen(env.port, env.host);
 server.on('error', onError);
 server.on('listening', onListening);
 server.on('upgrade', (request, socket, head) => {
   WebsocketServer.instance().onUpgrade(request, socket, head);
 });
 
-WebsocketServer.instance().onReceive = (processingIdBase, message) => {
-  if (message['event'] === 'end') {
-    let [bucket, solicitationId] = processingIdBase.replace(/^\//g, '').replace(/\/$/g, '').split('/')
-    wsCallbacks.onProcessingComplete(bucket, solicitationId)
+WebsocketServer.instance().onReceive = (message, solicitation) => {
+  if (message['event'] === 'finished') {
+    wsCallbacks.onProcessingComplete(solicitation)
   }
 }
 
@@ -85,6 +85,6 @@ function onListening() {
   var addr = server.address();
   var bind = typeof addr === 'string'
     ? 'pipe ' + addr
-    : 'port ' + addr.port;
-  debug('Listening on ' + bind);
+    :  addr.address + ':' + addr.port;
+  console.log('Listening on ' + bind);
 }

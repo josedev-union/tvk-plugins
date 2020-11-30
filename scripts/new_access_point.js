@@ -1,4 +1,4 @@
-import {DentistAccessPoint} from '../src/models/DentistAccessPoint'
+import {DentistAccessPoint} from '../src/models/database/DentistAccessPoint'
 
 let point = DentistAccessPoint.build({
   userId: '!!!replace-it!!!',

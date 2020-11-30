@@ -51,25 +51,17 @@ The application loads the `.env` file through the `dotenv` lib. So you need to c
 # Sendgrid
 SENDGRID_API_KEY=<SENDGRID KEY (same as production or staging)>
 
-# Firebase
-MIROWEB_FIREBASE_DATABASE_URL=https://mirosmiles-us-staging.firebaseio.com
-DENTRINO_GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account","project_id": "mirosmiles-us-staging", ...}
+# Application
+DENTRINO_REDIS_PUBSUB_DB=1
+DENTRINO_GCLOUD_BUCKET=dentrino-dev-us
+DENTRINO_RATE_LIMIT_DISABLED=true
+DENTRINO_MAILER_DISABLED=true
 
-# AWS S3
-AWS_ACCESS_KEY_ID=<YOUR ACCOUNT>
-AWS_SECRET_ACCESS_KEY=<YOUR ACCOUNT>
-DENTRINO_GCLOUD_BUCKET=dentrino-staging-us
-AWS_DEFAULT_REGION=us-east-1
+# Google Cloud
+GOOGLE_APPLICATION_CREDENTIALS=./keys/dentrino-staging.json
+DENTRINO_API_SECRET_TOKEN=ff5da5e257233200e1c0a902bbce0c3f
 ```
 
-## Configuring .env.prod file (FOR PRODUCTION)
-The `prod-*` tasks loads the `.env.prod` file through the `dotenv` lib. The current tasks only use those variables:
-
-```bash
-# Firebase
-MIROWEB_FIREBASE_DATABASE_URL=https://mirosmiles-us-production.firebaseio.com
-DENTRINO_GOOGLE_APPLICATION_CREDENTIALS={"type": "service_account","project_id": "mirosmiles-us-production", ...}
-```
 
 ## Development Tasks
 
@@ -79,7 +71,9 @@ $ npm run dev-up    # Compile assets and start server
 $ npm run dev-build # Compile assets
 $ npm run db-up     # Start local database
 $ npm test          # Run the tests (Need to start local database before)
+$ npm run seed      # Seed db with a default access point (access it with /d/dentrino
 ```
+
 
 ## Production Tasks
 
