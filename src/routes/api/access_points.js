@@ -34,7 +34,7 @@ router.post('/:id/image-processing-solicitations', async (req, res) => {
     return res.status(403).send('')
   }
 
-  let signatureMatches = signer.verify([accessPointId, deviceId], access.secret, envShared.apiSecretToken, signature)
+  let signatureMatches = signer.apiVerify([accessPointId, deviceId], access.secret, signature)
   if (!signatureMatches) {
     return res.status(403).send('')
   }

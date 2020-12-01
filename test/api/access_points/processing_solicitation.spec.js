@@ -4,7 +4,6 @@ import {Database} from '../../../src/models/database/Database'
 import {ImageProcessingSolicitation} from '../../../src/models/database/ImageProcessingSolicitation'
 import {storageFactory} from '../../../src/models/storage/storageFactory'
 import {clearRedis} from '../../../src/config/redis'
-import {envShared} from '../../../src/shared/envShared'
 
 import app from '../../../src/app'
 app.enable('trust proxy')
@@ -54,7 +53,7 @@ beforeEach(async () => {
   let pointResp = await getAccessPointByUser(userId)
   access = pointResp.body
   signatureData = [access.id, deviceId]
-  signature = signer.sign(signatureData, access.secret, envShared.apiSecretToken)
+  signature = signer.apiSign(signatureData, access.secret)
 })
 
 describe(`on a successful request`, () => {
@@ -103,7 +102,7 @@ describe(`when access point reached rate limit`, () => {
     let access2 = Factory.build('dentist_access_point')
     await access2.save()
 
-    let signature2 = signer.sign([access2.id, deviceId], access2.secret, envShared.apiSecretToken)
+    let signature2 = signer.apiSign([access2.id, deviceId], access2.secret)
     response2 = await postSolicitation(access2.id, signature2, deviceId)
   })
 

@@ -8,6 +8,7 @@
     "dev-up": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime src/boot.js",
     "dev-start": "nodemon --exec 'npm run dev-up'",
     "seed": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config/config.js ./scripts/quick_seed.js",
+    "sign": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config/config.js ./scripts/sign.js",
     "build": "webpack --config ./webpack.config.js --mode production",
     "build-backend": "webpack --config ./webpack.config.server.js --mode production",
     "start": "npm run build && rm -rf ./assets && cp -rf ./dist/* ./ && node -r regenerator-runtime/runtime src/start.js",

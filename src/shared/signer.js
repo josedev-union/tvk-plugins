@@ -1,18 +1,27 @@
 import {simpleCrypto} from "./simpleCrypto";
+import {envShared} from "./envShared";
 
 export const signer = new (class {
-    sign (obj, key, apiKey) {
-        const finalKey = key + apiKey
+    sign (obj, key) {
         const text = this.serialize(obj)
-        return simpleCrypto.hmac(text, finalKey)
+        const pass = this.serialize(key)
+        return simpleCrypto.hmac(text, pass)
     }
 
-    verify (obj, key, apiKey, signature) {
-        return this.sign(obj, key, apiKey) === signature
+    verify (obj, key, signature) {
+        return this.sign(obj, key) === signature
+    }
+
+    apiSign(obj, secret) {
+        return this.sign(obj, [secret, envShared.apiSecretToken])
+    }
+
+    apiVerify(obj, secret, signature) {
+        return this.verify(obj, [secret, envShared.apiSecretToken], signature)
     }
 
     serialize (obj) {
-        if (typeof(obj) === 'string') return `"${obj}"`
+        if (typeof(obj) === 'string') return obj
         else if (typeof(obj) === 'number') return obj.toString()
         else if (Array.isArray(obj)) {
           return obj.map(v => this.serialize(v)).join(':')

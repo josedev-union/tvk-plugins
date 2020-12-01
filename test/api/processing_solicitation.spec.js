@@ -51,7 +51,7 @@ describe(`on a successful request`, () => {
     await access.save()
 
     let json = {name: "Michael Jordan", email: "michael@fgmail.com", phone: "+5521912341234"}
-    let signature = signer.sign(json, access.secret)
+    let signature = signer.apiSign(json, access.secret)
     response = await postSolicitation(json, 'https://myhost.com:8080', signature)
   })
 
@@ -91,7 +91,7 @@ describe(`when the body doesn't match the signature`, () => {
     access.addHost('http://myhost.com:8080/')
     await access.save()
 
-    const signature = signer.sign(json2, access.secret)
+    const signature = signer.apiSign(json2, access.secret)
     response = await postSolicitation(json, 'http://myhost.com:8080', signature)
   })
 
@@ -110,7 +110,7 @@ describe(`when email reached rate limit`, () => {
     access.addHost(host)
     await access.save()
 
-    let signature = signer.sign(json, access.secret)
+    let signature = signer.apiSign(json, access.secret)
     resp1 = await postSolicitation(json, host, signature)
     resp2 = await postSolicitation(json, host, signature)
     resp3 = await postSolicitation(json, host, signature)
@@ -140,7 +140,7 @@ describe(`when ip reached rate limit`, () => {
     access.addHost(host)
     await access.save()
 
-    let signature = signer.sign(json, access.secret)
+    let signature = signer.apiSign(json, access.secret)
     resp1 = await postSolicitation(json, host, signature)
     resp2 = await postSolicitation(json, host, signature)
     resp3 = await postSolicitation(json, host, signature)
@@ -148,7 +148,7 @@ describe(`when ip reached rate limit`, () => {
     resp5 = await postSolicitation(json, host, signature)
 
     json.email = "michael2@fgmail.com"
-    signature = signer.sign(json, access.secret)
+    signature = signer.apiSign(json, access.secret)
     response = await postSolicitation(json, host, signature)
   })
 
