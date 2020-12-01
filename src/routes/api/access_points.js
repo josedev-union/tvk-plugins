@@ -1,9 +1,16 @@
 import express from 'express';
-import {DentistAccessPoint} from '../../models/database/DentistAccessPoint'
 const router = express.Router();
+import {ImageProcessingService} from '../../models/storage/ImageProcessingService'
+import {ImageProcessingSolicitation} from '../../models/database/ImageProcessingSolicitation'
+import {DentistAccessPoint} from '../../models/database/DentistAccessPoint'
+import {SolicitationRateLimit} from '../../models/database/SolicitationRateLimit'
+import {env} from '../../config/env'
+import {envShared} from '../../shared/envShared'
+import {signer} from '../../shared/signer'
+import {helpers} from '../helpers'
 
 router.get('/for-user/:userId', async (req, res) => {
-  let access = DentistAccessPoint.findOneByUserId(req.params.userId)
+  const access = await DentistAccessPoint.findOneByUserId(req.params.userId)
   if (!access) {
     return res.status(404).send('')
   }
@@ -14,7 +21,7 @@ router.get('/for-user/:userId', async (req, res) => {
   })
 })
 
-router.post(':id/image-processing-solicitations', async (req, res) => {
+router.post('/:id/image-processing-solicitations', async (req, res) => {
   const signature = helpers.getSignature(req)
   const accessPointId = helpers.normalizeParamValue(req.params.id)
   const deviceId = helpers.normalizeParamValue(req.get(envShared.deviceIdHeaderName))
@@ -27,18 +34,18 @@ router.post(':id/image-processing-solicitations', async (req, res) => {
     return res.status(403).send('')
   }
 
-  let signatureMatches = signer.verify([accessPointId, deviceId], access.secret, envShared.apiSecretToken, signature)
+  let signatureMatches = signer.apiVerify([accessPointId, deviceId], access.secret, signature)
   if (!signatureMatches) {
     return res.status(403).send('')
   }
 
-  const solicitation = ImageProcessingSolicitation.requestedByDentist(Object.assign({
+  const solicitation = ImageProcessingSolicitation.requestedByDentist({
     ip: req.ip,
     deviceId: deviceId,
     accessPointId: accessPointId
-  }, params))
+  })
 
-  let hasFreeSlot = await SolicitationRateLimit.build().addDentistSlots(solicitation)
+  let hasFreeSlot = await SolicitationRateLimit.buildForDentist().addDentistSlots(solicitation)
   if (!hasFreeSlot) {
     return res.status(403).send('')
   }

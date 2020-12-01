@@ -14,10 +14,17 @@ export class SolicitationRateLimit {
         this.expiresIn = expiresIn
     }
 
-    static build() {
+    static buildForPatient() {
         return new SolicitationRateLimit({
             limit: 5,
             expiresIn: 24 * 60 * 60 * 1000 // milliseconds
+        })
+    }
+
+    static buildForDentist() {
+        return new SolicitationRateLimit({
+            limit: 10,
+            expiresIn: 5 * 60 * 1000 // milliseconds
         })
     }
 

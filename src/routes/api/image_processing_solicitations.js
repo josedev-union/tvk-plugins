@@ -36,7 +36,7 @@ router.post('/by-patient', async (req, res) => {
     accessPointId: access.id
   }, params))
 
-  let hasFreeSlot = await SolicitationRateLimit.build().addPatientSlots(solicitation)
+  let hasFreeSlot = await SolicitationRateLimit.buildForPatient().addPatientSlots(solicitation)
   if (!hasFreeSlot) {
     return res.status(403).send('')
   }

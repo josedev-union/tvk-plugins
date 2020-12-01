@@ -172,7 +172,7 @@ describe('static', () => {
       await access2.save()
       await access3.save()
       const params = {user: {name: 'Dr. Suresh', telephone: '+5521999999999'}}
-      const access2signature = signer.sign(params, access2.secret)
+      const access2signature = signer.apiSign(params, access2.secret)
       const accessFound = await DentistAccessPoint.findOne(params, 'http://xpto.com/random/page', access2signature)
       expect(accessFound.id).toBe(access2.id)
     })

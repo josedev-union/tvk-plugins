@@ -70,8 +70,8 @@ $ npm run dev-start # Start server with nodemon
 $ npm run dev-up    # Compile assets and start server
 $ npm run dev-build # Compile assets
 $ npm run db-up     # Start local database
+$ npm run seed      # Seed db with a default access point (access it on /d/dentrino)
 $ npm test          # Run the tests (Need to start local database before)
-$ npm run seed      # Seed db with a default access point (access it with /d/dentrino
 ```
 
 
@@ -151,4 +151,60 @@ secret: Secret key to be used on internal API communication.
 userId: The related dentist id on miro-smiles database
 createdAt: Creation date
 updatedAt: Last update date
+```
+
+## API: Editor Workflow
+### Get access point information
+If the client has only the user id it'll need to request the API to get the access point data.
+```
+# Request
+GET /api/access-points/for-user/<USER-ID>
+
+# Response
+{"id": "id123", "secret": "secret123"}
+```
+
+### Generate the signature token
+Before the client request the image processing it'll generate a signature token with the following method:
+```
+# Recipe
+str = accessPointId + ':' + deviceId       # e.g. "id123:deviceid123"
+pass = accessPointSecret + ':' + apiSecret # e.g. "accesssecret123:apisecret123"
+
+token = sha256_hmac(str, pass) # e.g. "7154d5e5d45dfed3c519fdc2c52fc5d31797ee85ec796a56adfd9fedd4d3319f"
+```
+
+Bash call to generate the signature:
+```
+$ echo -n "id123:deviceid123" | openssl dgst -sha256 -hex -hmac "accesssecret123:apisecret123"
+```
+
+### Request the image processing
+```
+# Request
+POST /api/access-points/<ACCESS-POINT-ID>/image-processing-solicitations
+Authorization: Bearer <signature-token>
+X-DEVICE-ID: <device-id>   # Any string the client wants to use to identify the device
+
+# Response
+{
+    "presignedUpload": "https://storage.googleapis.com/ODM5MzE0OTQ0MDY/smile.jpg?...",
+    "presignedDownloadOriginal": "https://storage.googleapis.com/ODM5MzE0OTQ0MDY/smile.jpg?...",
+    "presignedDownloadAfter": "https://storage.googleapis.com/ODM5MzE0OTQ0MDY/smile_after.jpg?...",
+    "solicitationId": "sol-id123",
+    "bucket": "dentrino-us-staging"
+}
+```
+
+### Track progress through websockets
+```
+Connect WebSocket: /ws/image-processing-solicitations/<SOLICITATION-ID>
+# Events Sample:
+=> {"event": "processing_step", "step" : "Step 0 Name", "inx" : 0, "maxInx" : 2}
+=> {"event": "processing_step", "step" : "Step 1 Name", "inx" : 1, "maxInx" : 2}
+=> {"event": "processing_step", "step" : "Step 2 Name", "inx" : 2, "maxInx" : 2}
+=> {"event": "finished"}
+
+# Error Event Sample
+=> {"event": "error", "error_msg": "Error Message"}
 ```

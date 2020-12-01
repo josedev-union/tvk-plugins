@@ -84,7 +84,7 @@ class ProcessingForm {
     const bucket = response.bucket
     const solicitationId = response.solicitationId
 
-    let url = `ws://${window.location.host}/ws/image_processing_solicitations/${solicitationId}`
+    let url = `ws://${window.location.host}/ws/image-processing-solicitations/${solicitationId}`
     console.log('url', url)
     console.log("Waiting for websockets connection")
 
