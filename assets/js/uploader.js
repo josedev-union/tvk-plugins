@@ -5,11 +5,17 @@ class Uploader {
     this.onprogress = () => {}
   }
 
-  uploadFile(file, key, presignedUrl) {
-      return ClientHTTP.put({
-        url: presignedUrl,
-        data: file,
-        headers: {'Content-Type': 'application/octet-stream'},
+  uploadFile(file, key, presignedUploadData) {
+      let data = new FormData()
+      let headers = {}
+      Object.keys(presignedUploadData.fields).forEach(key => {
+          data.append(key, presignedUploadData.fields[key])
+      })
+      data.append('file', file)
+      return ClientHTTP.post({
+        url: presignedUploadData.url,
+        data: data,
+        headers: headers,
         onuploadprogress: this.onprogress
       }).then(([response, status]) => {
           return new Promise((resolve, reject) => {

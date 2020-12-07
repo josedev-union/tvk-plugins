@@ -1,5 +1,6 @@
 import {env} from '../../config/env'
 import {storageFactory} from './storageFactory'
+import path from 'path'
 
 export class GcloudPresignedCredentialsProvider {
     constructor(bucket) {
@@ -10,23 +11,19 @@ export class GcloudPresignedCredentialsProvider {
         return new GcloudPresignedCredentialsProvider(storageFactory().bucket(env.gcloudBucket))
     }
 
-    jsonToUpload({keyName, expiresInSeconds, contentType, maxSizeInMegabytes}) {
+    jsonToUpload({keyName, expiresInSeconds, contentTypePrefix, maxSizeInMegabytes}) {
         const options = {
-            version: 'v4',
-            action: 'write',
-            contentType: 'application/octet-stream',
             expires: Date.now() + expiresInSeconds * 1000,
-            // contentType: contentType,
-            // conditions: [
-            //     ['content-length-range', 0, maxSizeInMegabytes * 1024 * 1024],
-            //     //['starts-with', '$Content-Type', contentTypePrefix],
-            //     // ['eq', '$Content-Type', contentType],
-            //     // ['starts-with', '$key', keyPrefix],
-            // ]
+            conditions: [
+                ['content-length-range', 0, maxSizeInMegabytes * 1024 * 1024],
+                // ['starts-with', '$Content-Type', contentTypePrefix],
+            ]
         }
         return new Promise((resolve, reject) => {
-            this.bucket.file(keyName).getSignedUrl(options)
-            .then(([url]) => resolve(url))
+            this.bucket.file(keyName).generateSignedPostPolicyV4(options)
+            .then(([response]) => {
+                resolve(response)
+            })
             .catch((err) => reject(err))
         })
     }

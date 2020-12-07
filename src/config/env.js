@@ -18,6 +18,7 @@ export const env = new (class {
       port: process.env.DENTRINO_REDIS_PORT,
       db: process.env.DENTRINO_REDIS_PUBSUB_DB,
   }
+  maxUploadSizeMb = process.env.DENTRINO_MAX_UPLOAD_SIZE_MB || 15
 
   isProduction() { return this.name === 'production' }
   isStaging() { return this.name === 'staging' }

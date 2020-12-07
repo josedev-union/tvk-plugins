@@ -1,4 +1,5 @@
 import {GcloudPresignedCredentialsProvider} from './GcloudPresignedCredentialsProvider'
+import {env} from '../../config/env'
 
 const EXPIRATION_IN_SECONDS = 10 * 60
 export class ImageProcessingService {
@@ -11,11 +12,10 @@ export class ImageProcessingService {
     }
 
     credentialsFor(solicitation) {
-        // const pathWithoutExtension = solicitation.filepathOriginal.replace(/[^\.]+$/, '')
         const jsonUploadConstraints = {
             keyName: solicitation.filepathOriginal,
-            contentType: 'image/jpeg',
-            maxSizeInMegabytes: 15,
+            contentTypePrefix: 'image/',
+            maxSizeInMegabytes: env.maxUploadSizeMb,
             expiresInSeconds: EXPIRATION_IN_SECONDS,
         }
         return {

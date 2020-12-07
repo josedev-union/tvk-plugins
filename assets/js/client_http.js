@@ -13,9 +13,9 @@ class ClientHTTP {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest()
       xhr.open(verb, url, true)
-      for (let name in headers) {
+      Object.keys(headers).forEach(name => {
         xhr.setRequestHeader(name, headers[name])
-      }
+      })
       const onResponse = () => {
         const contentType = xhr.getResponseHeader('Content-Type');
         const isJsonResponse = typeof(contentType) === 'string' && contentType.toLowerCase().includes('json');
