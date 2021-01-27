@@ -20,6 +20,10 @@ jest.mock('../../src/models/storage/storageFactory', () => {
       bucket: jest.fn().mockReturnValue({
         file: jest.fn().mockImplementation((keyName) => {
           return {
+            generateSignedPostPolicyV4: jest.fn().mockImplementation((opts) => {
+              return Promise.resolve(['http://gcloud.presigned.com/upload'])
+            }),
+
             getSignedUrl: jest.fn().mockImplementation((opts) => {
               if (opts.action === 'write') {
                 return Promise.resolve(['http://gcloud.presigned.com/upload'])
