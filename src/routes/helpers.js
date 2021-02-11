@@ -1,4 +1,5 @@
 import {envShared} from '../shared/envShared'
+import {simpleCrypto} from '../shared/simpleCrypto'
 import {Uri} from '../models/tools/Uri'
 
 export const helpers = new (class {
@@ -9,9 +10,18 @@ export const helpers = new (class {
   getSignature(req) {
     const signatureHeader = this.normalizeParamValue(req.get(envShared.signatureHeaderName))
     if (!signatureHeader) return null
+
     const match = signatureHeader.match(/^Bearer\s+(.*)\s*$/)
     if (!match) return null;
-    else return match[1]
+
+    const decoded = simpleCrypto.base64Decode(match[1])
+    if (!decoded) return null;
+
+    return decoded;
+  }
+
+  respondError(res, status, message) {
+    return res.status(status).send(JSON.stringify({error: message}))
   }
 
   setCors(req, res) {

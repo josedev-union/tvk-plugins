@@ -1,24 +1,19 @@
-import {ImageProcessingSolicitation} from '../models/database/ImageProcessingSolicitation'
-import {DentistAccessPoint} from '../models/database/DentistAccessPoint'
+import {User} from '../models/database/User'
 import {mailHelpers} from './mailHelpers'
 import {downloader} from '../models/storage/downloader'
 import {logger} from '../instrumentation/logger'
 
 export const dentistMailer = new (class {
-  async notifyProcessingComplete(solicitation) {
-    // const solicitation = await ImageProcessingSolicitation.get(solicitationId)
-    const accessPoint = await DentistAccessPoint.get(solicitation.accessPointId)
-    const email = await accessPoint.email()
-    const dentist = await accessPoint.cacheableUser()
+  async notifyProcessingComplete(smileTask) {
+    const dentist = await User.get(smileTask.userId)
+    const email = dentist.email
     const emailBody = await mailHelpers.render('dentist_notification.hbs', {
-      patient: solicitation.requester.info,
-      accessPoint: accessPoint,
       email: email,
       dentist: dentist
     })
     let [originalImage, processedImage] = await Promise.all([
-      downloader.download(solicitation.filepathOriginal),
-      downloader.download(solicitation.filepathProcessed),
+      downloader.download(smileTask.filepathUploaded),
+      downloader.download(smileTask.filepathResult),
     ])
     mailHelpers.send({
       to: email,

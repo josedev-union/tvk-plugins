@@ -1,10 +1,10 @@
 import path from 'path'
 import admin from 'firebase-admin'
 import {env} from '../../config/env'
-import {DentistAccessPoint} from '../../models/database/DentistAccessPoint'
-import {ImageProcessingSolicitation} from '../../models/database/ImageProcessingSolicitation'
 
 export class Database {
+    static #collections = []
+
     constructor({connection, namespace = ""}) {
         this.connection = connection
         this.namespace = namespace
@@ -26,6 +26,10 @@ export class Database {
       let instance = this.instances[key]
       if (!instance) throw `Couldn't find database named ${key}`
       return instance
+    }
+
+    static registerCollection(collectionName) {
+      Database.#collections.push(collectionName)
     }
 
     static toTimestamp(date) {
@@ -68,12 +72,9 @@ export class Database {
         }
 
         let batch = this.connection.batch()
-        var collects = [
-          DentistAccessPoint.COLLECTION_NAME,
-          ImageProcessingSolicitation.COLLECTION_NAME,
-        ]
-        for (var i = 0; i < collects.length; i++) {
-            batch = await this.#dropCollection(collects[i], batch)
+        let collections = Database.#collections
+        for (var i = 0; i < collections.length; i++) {
+            batch = await this.#dropCollection(collections[i], batch)
         }
         await batch.commit()
     }

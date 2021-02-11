@@ -12,12 +12,12 @@ export const signer = new (class {
         return this.sign(obj, key) === signature
     }
 
-    apiSign(obj, secret) {
-        return this.sign(obj, [secret, envShared.apiSecretToken])
+    apiSign(userId, imageMD5, clientSecret) {
+        return this.sign([userId, imageMD5], [clientSecret, envShared.apiSecretToken])
     }
 
-    apiVerify(obj, secret, signature) {
-        return this.verify(obj, [secret, envShared.apiSecretToken], signature)
+    apiVerify(userId, imageMD5, clientSecret, signature) {
+        return this.verify([userId, imageMD5], [clientSecret, envShared.apiSecretToken], signature)
     }
 
     serialize (obj) {
