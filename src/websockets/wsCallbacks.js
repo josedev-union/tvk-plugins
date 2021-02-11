@@ -1,11 +1,9 @@
 import {dentistMailer} from '../mailers/dentistMailer'
-import {patientMailer} from '../mailers/patientMailer'
 
 export const wsCallbacks = new (class {
-  onProcessingComplete(solicitation) {
+  onProcessingComplete(smileTask) {
     return Promise.all([
-      dentistMailer.notifyProcessingComplete(solicitation),
-      // patientMailer.notifyProcessingComplete(solicitation),
+      dentistMailer.notifyProcessingComplete(smileTask),
     ])
   }
 })()

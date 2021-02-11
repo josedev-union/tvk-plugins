@@ -38,7 +38,8 @@ export class LocalWebsocketServer {
   setupRedisPubSub() {
     let redis = redisFactory.newRedisPubsub()
     redis.on('error', () => this.terminate())
-    redis.subscribe(`worker-progress:${this.key}`)
+    const pubsubKey = `worker-progress:${this.key}`
+    redis.subscribe(pubsubKey)
     redis.on('message', (channel, message) => {
       logger.info(`WebsocketServer ${this.key} - Received message from redis ${channel} ${message}`)
       if (message === '#QUIT#') {
