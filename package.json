@@ -6,7 +6,7 @@
     "db-up": "firebase emulators:start",
     "dev-build": "webpack --config ./webpack.config.js --mode development",
     "dev-up": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime src/boot.js",
-    "dev-start": "nodemon --exec 'npm run dev-up'",
+    "dev-start": "nodemon --inspect --exec 'npm run dev-up'",
     "seed": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config/config.js ./scripts/quick_seed.js",
     "sign": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config/config.js ./scripts/sign.js",
     "build": "webpack --config ./webpack.config.js --mode production",
@@ -88,7 +88,9 @@
   "nodemonConfig": {
     "ignore": [
       "test/*",
-      "public/*"
+      "public/*",
+      "tmp/*",
+      "*.log"
     ],
     "delay": "2500"
   }

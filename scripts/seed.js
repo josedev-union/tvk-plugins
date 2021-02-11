@@ -1,12 +1,12 @@
 import {DentistAccessPoint} from '../src/models/database/DentistAccessPoint'
-import {MiroSmilesUser} from '../src/models/database/MiroSmilesUser'
+import {User} from '../src/models/database/User'
 
 const nick = process.env.SLUG
 if (!nick) {
   throw 'You need to set the env var SLUG'
 }
 async function seed() {
-  const user = new MiroSmilesUser({
+  const user = new User({
     id: `${nick}-id`,
     email: `${nick}@gmail.com`,
     company: 'ShinySmile Dentists',

@@ -1,4 +1,4 @@
-import {MiroSmilesUser} from '../src/models/database/MiroSmilesUser'
+import {User} from '../src/models/database/User'
 import {DentistAccessPoint} from '../src/models/database/DentistAccessPoint'
 
 const USER_EMAIL = 'dentrino@fgmail.com'
@@ -25,11 +25,11 @@ const ACCESS_POINT_ATTRS = {
 }
 
 async function main() {
-  let user = await MiroSmilesUser.getByEmail(USER_EMAIL)
+  let user = await User.getByEmail(USER_EMAIL)
   if (user) {
     Object.assign(user, USER_ATTRS)
   } else {
-    user = new MiroSmilesUser(USER_ATTRS)
+    user = new User(USER_ATTRS)
   }
   await user.save()
   console.log("User ID", user.id)
