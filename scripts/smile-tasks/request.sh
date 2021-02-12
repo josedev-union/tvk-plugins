@@ -1,6 +1,7 @@
 #!/bin/bash
+HERE=$(dirname "$0")
 USER_ID=anuserid
-MD5_B64=$(cat ../new-ml/teethmlserver/images/testface1.jpg | openssl md5 -binary | base64 -w0)
+MD5_B64=$(cat $HERE/faceimage.jpg | openssl md5 -binary | base64 -w0)
 CLIENT_ID=ODM4Njg0MDQ3NjQxNGM0eVBoeVlRaFktfXpaWg
 CLIENT_SECRET=MDgzZWY2ZWZiNGZkNGRhN2Q3ZmMxMzVkMWEyMjQwNWNmYzRlOWU1Nzc4NGQzNTI5N2I0MDc0NjRkMTNkNWRjNw
 API_SECRET=ff5da5e257233200e1c0a902bbce0c3f

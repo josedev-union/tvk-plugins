@@ -1,11 +1,12 @@
 #!/bin/bash
+HERE=$(dirname "$0")
 CONTENT_MD5="d147VHnubHq4bHFdV4ObPA=="
 CONTENT_TYPE="image/jpeg"
 LENGTH_RANGE="0,1048576"
-URL="https://storage.googleapis.com/dentrino-dev-us/ml-images/ODM4NjgzODkyMTI4N2tpLlI%2BY1NT/smile.jpg?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=dentrino-staging%40appspot.gserviceaccount.com%2F20210212%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20210212T201758Z&X-Goog-Expires=601&X-Goog-SignedHeaders=content-md5%3Bcontent-type%3Bhost%3Bx-goog-content-length-range&X-Goog-Signature=5c6d2d27b68602b57d5f7245b72e259f262606e786f238ae3304475a1259c9b15e7f60584ef02a9a165e553d0d21735e0dfe2adb04f6cd368a5e9cc5d170b44e87ac77533139a2f706ab60937fa318f33bdf77685b85171d2f54caa774551499bfd9273df3dec0d5a48390062061c21f813751da14f9dc7b61fd54a71adb835940dcb34a22d1b7ff919562d128e165bd3a341eeb9bfcbc13520a7c6990606585ab5e8a8a614ea48b9fb1105e5a90c3b11540d2f84f8c30403af25dfc492b87a4f253b797677b3c7d861419fc9364360f8ce33c7596127dda7fbb0a11ae8123398e8c89a9de937b8db213287e99ff75920f5089d4218ead2e8cf0cb2821a69b97"
+URL="https://storage.googleapis.com/dentrino-dev-us/ml-images/ODM4NjgzNTExMjYyMXs%2BOVRZNzVD/smile.jpg?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=dentrino-staging%40appspot.gserviceaccount.com%2F20210212%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20210212T212127Z&X-Goog-Expires=600&X-Goog-SignedHeaders=content-md5%3Bcontent-type%3Bhost%3Bx-goog-content-length-range&X-Goog-Signature=7f3d6e5e14469e97da541f303d6ccb136aeb4adf1a8a1a69fada2a1f7e33732757324c2f5d738f3093247370670d5f0b5d0e539cc9c5e353e57e439024d4d99bfa88795755502b5a998900d198c81e76d75e45439cbf4da6a4652680cab7807f4fe7597c2797d34347543d935e94e98c8adcbf3655e241f78902745a45b766057471d3b900b1ec2d027900bcd89d64159103fe0720564edc6df17f8673f69b95638de0a583521167825177e61ddf605c611921e15e1be1f7c86e6716491204f417594d71d8499d4c2f2c3d7628f76f22b71601690d9f99a73336e142422fa06f6c58b2c664e28f6e0685fb3f6210ab046d7f1a991067fa335d364004f9f6f87e"
 
 curl -XPUT \
-  --upload-file ../new-ml/teethmlserver/images/testface1.jpg \
+  --upload-file $HERE/faceimage.jpg \
   -H "Content-Type: $CONTENT_TYPE" \
   -H "Content-MD5: $CONTENT_MD5" \
   -H "x-goog-content-length-range: $LENGTH_RANGE" \
