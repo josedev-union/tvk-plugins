@@ -114,6 +114,50 @@ $ VERSION=x.x.x make push_base    # Push the new base
 ```
 
 ## API: On-Demand Workflow
+### Overview
+**Introduction**
+
+An important point is that `Dentrino Simulations API` **doesn't receive the images**, the images will be uploaded directly to google cloud storage (although it's interface could work with any other storage service), the upload will fire events that will trigger the simulation workers automatically. What the API does is acting like a gateway by describing what request the authorized client shall do to upload it's image.
+
+Besides that, there's also a WebSockets interface so the client can track the simulation progress and show it to the final user.
+
+
+**Authorization Token**
+
+The client will need to generate a Digest Token using:
+- `Client ID` & `Client Secret`: Pair keys generated specifically for your application.
+- `API Secret`: Secret key shared between API and Client.
+- `User ID`: Dentist firebase user id requesting the simulation
+- `Image MD5`: Image MD5 encoded in base64, only the image that matches this MD5 will be authorized to be uploaded.
+
+
+**Response**
+
+The API generates a request descriptor that will allow the application to upload to the storage service a specific image.
+```
+# Request Descriptor Sample
+{
+    "verb": "put",
+    "url": "https://storage.googleapis.com/dentrino-dev-us/ml-images/ODM4NzA...",
+    "headers": {
+      "Content-MD5": "d147VHnubHq4bHFdV4ObPA==",
+      "Content-Type": "image/jpeg",
+      "x-goog-content-length-range": "0,1048576"
+    }
+  }
+}
+```
+
+Only applications who were authorized by the API will be able to upload to it. Here's a few verifications the API does:
+- Check if the user exist (the dentist firebase user)
+- Check if the Client ID and Secret match
+- Do Rate Limiting (although it'll be disabled on staging)
+- Limit the maximum size of the image
+- Limit the image that can be uploaded (via Content-MD5)
+
+
+Read below exactly how to implement the full workflow.
+
 ### Generate the authorization token
 Before the client requests the smile-tasks routes it needs to generate an authorization token following this recipe:
 ```
