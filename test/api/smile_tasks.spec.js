@@ -98,6 +98,72 @@ describe(`on a successful request`, () => {
   })
 })
 
+describe(`when rate limit is checked`, () => {
+  let apiClients = []
+  let users = []
+  const ips = [
+    '127.0.0.1',
+    '127.0.0.2',
+    '127.0.0.3',
+    '127.0.0.4',
+    '127.0.0.5',
+  ]
+
+  beforeEach(async () => {
+    apiClients = []
+    users = []
+    let promises = []
+
+    for (let i = 0; i < 5; i++) {
+      users.push(Factory.build('user'))
+      apiClients.push(Factory.build('api_client'))
+      promises.push(users[i].save())
+      promises.push(apiClients[i].save())
+    }
+
+    await Promise.all(promises)
+  })
+
+  test(`don't limit if all request has different client, ip and user`, async () => {
+    const resp1 = await simplePostTask({user: users[0], client: apiClients[0], ip: ips[0]})
+    const resp2 = await simplePostTask({user: users[1], client: apiClients[1], ip: ips[1]})
+    const resp3 = await simplePostTask({user: users[2], client: apiClients[2], ip: ips[2]})
+    expect(resp1.status).toBe(200)
+    expect(resp2.status).toBe(200)
+    expect(resp3.status).toBe(200)
+  })
+
+  test(`limits access by client`, async () => {
+    const apiClient = apiClients[0]
+    const resp1 = await simplePostTask({user: users[0], client: apiClient, ip: ips[0]})
+    const resp2 = await simplePostTask({user: users[1], client: apiClient, ip: ips[1]})
+    const resp3 = await simplePostTask({user: users[2], client: apiClient, ip: ips[2]})
+    expect(resp1.status).toBe(200)
+    expect(resp2.status).toBe(200)
+    expect(resp3.status).toBe(429)
+  })
+
+  test(`limits access by user`, async () => {
+    const user = users[0]
+    const resp1 = await simplePostTask({user: user, client: apiClients[0], ip: ips[0]})
+    const resp2 = await simplePostTask({user: user, client: apiClients[1], ip: ips[1]})
+    const resp3 = await simplePostTask({user: user, client: apiClients[2], ip: ips[2]})
+    expect(resp1.status).toBe(200)
+    expect(resp2.status).toBe(200)
+    expect(resp3.status).toBe(429)
+  })
+
+  test(`limits access by ip`, async () => {
+    const ip = ips[0]
+    const resp1 = await simplePostTask({user: users[0], client: apiClients[0], ip: ip})
+    const resp2 = await simplePostTask({user: users[1], client: apiClients[1], ip: ip})
+    const resp3 = await simplePostTask({user: users[2], client: apiClients[2], ip: ip})
+    expect(resp1.status).toBe(200)
+    expect(resp2.status).toBe(200)
+    expect(resp3.status).toBe(429)
+  })
+})
+
 describe(`when authorization token is invalid`, () => {
   let apiClient
   let user
@@ -163,4 +229,11 @@ function postSolicitation(json={imageMD5, contentType}, userId, token, ip='127.0
     .set('Authorization', `Bearer ${token}`)
     .set('X-Forwarded-For', ip)
     .send(json)
+}
+
+async function simplePostTask({user, client, ip='127.0.0.1'}) {
+    const json = {imageMD5: IMAGE_MD5, contentType: CONTENT_TYPE}
+    const signature = signer.apiSign(user.id, IMAGE_MD5, client.secret)
+    const token = simpleCrypto.base64(`${client.id}:${signature}`)
+    return await postSolicitation(json, user.id, token, ip)
 }

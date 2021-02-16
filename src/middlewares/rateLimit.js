@@ -5,7 +5,7 @@ export function rateLimit({limit, expiresIn, lookup = (req, res) => req.ip}) {
   return async function (req, res, next) {
     const limitObj = new RateLimit({limit: limit, expiresIn: expiresIn})
     const ids = lookup.apply(limitObj, [req, res])
-    const allowed = await limitObj.addSlot(ids)
+    const allowed = await limitObj.useSlotFrom(ids)
     if (allowed) {
       return next()
     } else {
