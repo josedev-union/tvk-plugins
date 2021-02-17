@@ -34,6 +34,7 @@ export class SmileTask {
         this.userId = attrs.userId
         this.clientId = attrs.clientId
         this.contentType = attrs.contentType
+        this.status = attrs.status || 'pending'
         this.filepathUploaded = attrs.filepathUploaded
         this.filepathResult = attrs.filepathResult
         this.filepathSideBySide = attrs.filepathSideBySide

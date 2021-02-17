@@ -3,7 +3,6 @@ import {redisFactory} from '../models/redisFactory'
 import {SmileTask} from '../models/database/SmileTask'
 import {LocalWebsocketServer} from './LocalWebsocketServer'
 import {logger} from '../instrumentation/logger'
-import {wsCallbacks} from './wsCallbacks'
 
 export class WebsocketServer {
   static instance() {
@@ -23,12 +22,6 @@ export class WebsocketServer {
     server.on('upgrade', (request, socket, head) => {
       WebsocketServer.instance().onUpgrade(request, socket, head);
     });
-
-    WebsocketServer.instance().onReceive = (message, smileTask) => {
-      if (message['event'] === 'finished') {
-        wsCallbacks.onProcessingComplete(smileTask)
-      }
-    }
   }
 
   async onUpgrade(request, socket, head) {

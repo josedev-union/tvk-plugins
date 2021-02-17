@@ -20,14 +20,6 @@ const server = http.createServer();
 server.listen(9876, '0.0.0.0')
 WebsocketServer.upgradeRequestsOn(server)
 
-jest.mock('../../src/mailers/dentistMailer', () => {
-  return {
-    dentistMailer: {
-      notifyProcessingComplete: jest.fn()
-    }
-  }
-})
-
 describe(`full event sequence`, () => {
   let user
   let smileTask
