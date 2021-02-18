@@ -187,3 +187,11 @@ module.exports = {
   // Whether to use watchman for file crawling
   // watchman: true,
 };
+process.env = Object.assign(process.env, {
+  DENTRINO_USER_RATE_LIMIT_AMOUNT:   '2',
+  DENTRINO_IP_RATE_LIMIT_AMOUNT:     '2',
+  DENTRINO_CLIENT_RATE_LIMIT_AMOUNT: '2',
+  DENTRINO_USER_RATE_LIMIT_TIME:   '500',
+  DENTRINO_IP_RATE_LIMIT_TIME:     '500',
+  DENTRINO_CLIENT_RATE_LIMIT_TIME: '500',
+});

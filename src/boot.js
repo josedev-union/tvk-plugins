@@ -7,7 +7,6 @@ import build_debug from 'debug'
 import http from 'http'
 import { createTerminus, HealthCheckError } from '@godaddy/terminus'
 import {WebsocketServer} from './websockets/WebsocketServer'
-import {wsCallbacks} from './websockets/wsCallbacks'
 import {env} from './config/env'
 const debug = build_debug('dentrino-web:server')
 
@@ -39,15 +38,7 @@ createTerminus(server, {
 server.listen(env.port, env.host);
 server.on('error', onError);
 server.on('listening', onListening);
-server.on('upgrade', (request, socket, head) => {
-  WebsocketServer.instance().onUpgrade(request, socket, head);
-});
-
-WebsocketServer.instance().onReceive = (message, solicitation) => {
-  if (message['event'] === 'finished') {
-    wsCallbacks.onProcessingComplete(solicitation)
-  }
-}
+WebsocketServer.upgradeRequestsOn(server)
 
 /**
  * Event listener for HTTP server "error" event.

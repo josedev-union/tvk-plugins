@@ -1,6 +1,6 @@
 import url from 'url'
 import {redisFactory} from '../models/redisFactory'
-import {ImageProcessingSolicitation} from '../models/database/ImageProcessingSolicitation'
+import {SmileTask} from '../models/database/SmileTask'
 import {LocalWebsocketServer} from './LocalWebsocketServer'
 import {logger} from '../instrumentation/logger'
 
@@ -18,26 +18,32 @@ export class WebsocketServer {
     this.onReceive = null
   }
 
+  static upgradeRequestsOn(server) {
+    server.on('upgrade', (request, socket, head) => {
+      WebsocketServer.instance().onUpgrade(request, socket, head);
+    });
+  }
+
   async onUpgrade(request, socket, head) {
     const pathname = url.parse(request.url).pathname
 
-    const match = pathname.match(/^\/ws\/image-processing-solicitations\/(.*)$/)
+    const match = pathname.match(/^\/ws\/smile-tasks\/(.*)$/)
     if (match === null) {
       socket.destroy()
       return
     }
 
-    const solicitationId = match[1]
-    logger.info(`solicitationId: ${solicitationId}`)
+    const taskId = match[1]
+    logger.info(`taskId: ${taskId}`)
 
-    const solicitation = await ImageProcessingSolicitation.get(solicitationId)
-    if (!solicitation) {
-      logger.warn(`WebSocket [DENIED] ${pathname} - Solicitation ${solicitationId} not found`)
+    const task = await SmileTask.get(taskId)
+    if (!task) {
+      logger.warn(`WebSocket [DENIED] ${pathname} - SmileTask ${taskId} not found`)
       socket.destroy()
       return
     }
-    const key = solicitation.filepathOriginal
-    logger.info(`Solicitation ${solicitationId} found`)
+    const key = task.filepathUploaded
+    logger.info(`SmileTask ${taskId} found`)
     logger.info(`key: ${key}`)
 
     if (!this.generalRedis.isOnline) {
@@ -46,12 +52,12 @@ export class WebsocketServer {
       return
     }
 
-    const wsServer = this.findOrCreateLocalServer(socket, key, solicitation)
+    const wsServer = this.findOrCreateLocalServer(socket, key, task)
     wsServer.upgradeRequestToWSConnection(request, head)
     logger.info(`WebSocket [SUCCESS] ${pathname}`)
   }
 
-  findOrCreateLocalServer(socket, key, solicitation) {
+  findOrCreateLocalServer(socket, key, task) {
     let wsServer = this.localServers[key]
     if (wsServer !== undefined) {
       return wsServer
@@ -62,7 +68,7 @@ export class WebsocketServer {
         delete this.localServers[key]
       },
       onReceive: (message) => {
-        if (this.onReceive) this.onReceive(message, solicitation)
+        if (this.onReceive) this.onReceive(message, task)
       }
     })
     this.localServers[key] = wsServer

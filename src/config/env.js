@@ -6,7 +6,7 @@ export const env = new (class {
   masterHost = process.env.MASTER_HOST 
   sendgridKey = process.env.SENDGRID_API_KEY
   rateLimitDisabled = process.env.DENTRINO_RATE_LIMIT_DISABLED
-  mailerDisabled = process.env.DENTRINO_MAILER_DISABLED
+  mailerDisabled = process.env.DENTRINO_MAILER_DISABLED || true
   sentryDsn = process.env.SENTRY_DSN
   redis = {
       host: process.env.DENTRINO_REDIS_HOSTNAME,
@@ -19,6 +19,18 @@ export const env = new (class {
       db: process.env.DENTRINO_REDIS_PUBSUB_DB,
   }
   maxUploadSizeMb = process.env.DENTRINO_MAX_UPLOAD_SIZE_MB || 15
+  userRateLimit = {
+    amount:     parseFloat(process.env.DENTRINO_USER_RATE_LIMIT_AMOUNT || 5),
+    timeWindow: parseFloat(process.env.DENTRINO_USER_RATE_LIMIT_TIME || 1 * 60 * 1000),
+  }
+  ipRateLimit = {
+    amount:     parseFloat(process.env.DENTRINO_IP_RATE_LIMIT_AMOUNT || 5),
+    timeWindow: parseFloat(process.env.DENTRINO_IP_RATE_LIMIT_TIME || 1 * 60 * 1000),
+  }
+  clientRateLimit = {
+    amount:     parseFloat(process.env.DENTRINO_CLIENT_RATE_LIMIT_AMOUNT || 100),
+    timeWindow: parseFloat(process.env.DENTRINO_CLIENT_RATE_LIMIT_TIME || 1 * 60 * 1000),
+  }
 
   isProduction() { return this.name === 'production' }
   isStaging() { return this.name === 'staging' }

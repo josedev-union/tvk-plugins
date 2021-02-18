@@ -11,33 +11,44 @@ export class GcloudPresignedCredentialsProvider {
         return new GcloudPresignedCredentialsProvider(storageFactory().bucket(env.gcloudBucket))
     }
 
-    jsonToUpload({keyName, expiresInSeconds, contentTypePrefix, maxSizeInMegabytes}) {
-        const options = {
-            expires: Date.now() + expiresInSeconds * 1000,
-            conditions: [
-                ['content-length-range', 0, maxSizeInMegabytes * 1024 * 1024],
-                // ['starts-with', '$Content-Type', contentTypePrefix],
-            ]
+    async jsonToUpload({keyName, expiresInSeconds, contentType, contentMD5, maxSizeInMegabytes}) {
+        const extensionHeaders = {
+          'x-goog-content-length-range': `0,${maxSizeInMegabytes*1024*1024}`
         }
-        return new Promise((resolve, reject) => {
-            this.bucket.file(keyName).generateSignedPostPolicyV4(options)
-            .then(([response]) => {
-                resolve(response)
-            })
-            .catch((err) => reject(err))
-        })
+        const options = {
+            version: 'v4',
+            action: 'write',
+            contentType: contentType,
+            expires: Date.now() + expiresInSeconds * 1000,
+            contentMd5: contentMD5,
+            extensionHeaders: extensionHeaders,
+        }
+
+        const [url] = await this.bucket.file(keyName).getSignedUrl(options)
+
+        const uploadHeaders = Object.assign({
+          "Content-MD5": contentMD5,
+          "Content-Type": contentType,
+        }, extensionHeaders)
+        return this.#buildRequestDescriptor('put', url, uploadHeaders)
     }
 
-    urlToGet(keyName, {expiresInSeconds}) {
+    async urlToGet(keyName, {expiresInSeconds}) {
         const options = {
             version: 'v4',
             action: 'read',
             expires: Date.now() + expiresInSeconds * 1000,
         }
-        return new Promise((resolve, reject) => {
-            this.bucket.file(keyName).getSignedUrl(options)
-            .then(([url]) => resolve(url))
-            .catch((err) => reject(err))
-        })
+        const [url] = await this.bucket.file(keyName).getSignedUrl(options)
+
+        return this.#buildRequestDescriptor('get', url)
+    }
+
+    #buildRequestDescriptor(verb, url, headers={}) {
+      return {
+        verb: verb,
+        url: url,
+        headers: headers,
+      }
     }
 }

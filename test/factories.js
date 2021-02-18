@@ -1,41 +1,35 @@
 import { Factory } from 'rosie'
-import {DentistAccessPoint} from '../src/models/database/DentistAccessPoint'
-import {ImageProcessingSolicitation, SolicitationRequesterType} from '../src/models/database/ImageProcessingSolicitation'
-import {MiroSmilesUser} from '../src/models/database/MiroSmilesUser'
+import {User} from '../src/models/database/User'
+import {Database} from '../src/models/database/Database'
+import {ApiClient} from '../src/models/database/ApiClient'
+import {SmileTask} from '../src/models/database/SmileTask'
 import {simpleCrypto} from '../src/shared/simpleCrypto'
 import {idGenerator} from '../src/models/tools/idGenerator'
+import uuid from 'uuid/v4'
 
-Factory.define('dentist_access_point', DentistAccessPoint)
-  .attr('id', () => DentistAccessPoint.newId())
-  .sequence('userId', (i) => simpleCrypto.sha1(simpleCrypto.genericUUID()))
-  .attr('secret', () => DentistAccessPoint.newSecret())
-  .attr('customEmail', null)
-  .attr('directPage', () => {
-    return {slug: 'dr-suresh', disabled: false}
-  })
-
-Factory.define('patient_info')
-  .attr('ip', '127.0.0.1')
-  .attr('origin', 'dentist-website.com')
-  .attr('phone', '+55 21 3040-5596')
-  .sequence('email', (i) => `an-email${i}@fgmail.com`)
-  .sequence('name', (i) => `User Name ${i}`)
-
-Factory.define('dentist_info')
-  .attr('ip', '127.0.0.1')
-  .attr('deviceId', () => idGenerator.newOrderedId())
-
-Factory.define('image_processing_solicitation', ImageProcessingSolicitation)
-  .option('requesterType', SolicitationRequesterType.patient())
-  .attr('requester', ['requesterType'], (requesterType) => {
-    return {
-      type: requesterType,
-      info: Factory.attributes(`${requesterType}_info`)
-    }
-  })
-
-Factory.define('miro_smiles_user', MiroSmilesUser)
+Factory.define('user', User)
   .sequence('id', (i) => simpleCrypto.sha1(simpleCrypto.genericUUID()))
   .sequence('email', (i) => `smilesuser${i}@fgmail.com`)
   .sequence('fullName', (i) => `Smiles User${i}`)
   .sequence('company', (i) => `Company ${i}`)
+
+Factory.define('api_client', ApiClient)
+  .sequence('id', (i) => simpleCrypto.sha1(simpleCrypto.genericUUID()))
+  .sequence('secret', (i) => simpleCrypto.sha1(simpleCrypto.genericUUID() + "abcdef"))
+
+Factory.define('smile_task', SmileTask)
+  .sequence('id', (i) => simpleCrypto.sha1(simpleCrypto.genericUUID()))
+  .sequence('userId', (i) => Factory.build('user').id)
+  .sequence('clientId', (i) => Factory.build('api_client').id)
+  .sequence('createdAt', (i) => Database.toTimestamp(new Date()))
+  .sequence('filepathUploaded', ['userId'], (i, userId) => `ml-images/${userId}/smile.jpg`)
+  .sequence('filepathResult', ['userId'], (i, userId) => `ml-images/${userId}/smile_after.png`)
+  .sequence('filepathSideBySide', ['userId'], (i, userId) => `ml-images/${userId}/sidebyside.jpg`)
+  .attrs({
+    'imageMD5': 'fba3cbecf7f5ed9fdd4a24021ca1928c',
+    'contentType': "image/jpeg",
+    'requester': {
+      'type': SmileTask.RequesterType.inhouseClient(),
+      'info': {'ip': '127.0.0.1'}
+    }
+  })

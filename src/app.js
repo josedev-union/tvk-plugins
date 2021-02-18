@@ -9,10 +9,10 @@ import helmet from 'helmet'
 const app = express()
 
 import indexRouter from './routes/index'
-import webSolicitationsRouter from './routes/image_processing_solicitations'
-import apiSolicitationsRouter from './routes/api/image_processing_solicitations'
-import apiAccessPointsRouter from './routes/api/access_points'
+import apiSmileTasks from './routes/api/smile_tasks'
+import webhooksSmileTasks from './routes/webhooks/smile_tasks'
 import './config/config'
+import {getModel} from './middlewares/getModel'
 import * as Sentry from '@sentry/node'
 
 app.disable('trust proxy')
@@ -31,9 +31,8 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.use('/', indexRouter);
-app.use('/d/', webSolicitationsRouter);
-app.use('/api/image-processing-solicitations', apiSolicitationsRouter);
-app.use('/api/access-points/', apiAccessPointsRouter);
+app.use('/api/users/:userId/smile-tasks/', getModel.user, apiSmileTasks);
+app.use('/webhooks/828ffbc/smile-tasks/', webhooksSmileTasks);
 
 app.use(Sentry.Handlers.errorHandler());
 
