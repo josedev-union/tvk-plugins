@@ -47,7 +47,7 @@ export class SmileTask {
         return new SmileTask(finalAttrs)
     }
 
-    save() {
+    async save() {
         return Database.instance().save(this, `${SmileTask.COLLECTION_NAME}/${this.id}`)
     }
 
