@@ -45,15 +45,16 @@ async (req, res) => {
   })
 
   const resources = SmileResourcesGuide.build()
-  let [_, uploadDescriptor, resultDescriptorGet] = await Promise.all([
+  let [_, uploadDescriptor] = await Promise.all([
     smileTask.save(),
     resources.uploadDescriptor(smileTask),
-    resources.resultDescriptorGet(smileTask),
   ])
 
   return res.json({
     uploadDescriptor: uploadDescriptor,
-    resultDescriptorGet: resultDescriptorGet,
+    originalPath: smileTask.filepathUploaded,
+    resultPath: smileTask.filepathResult,
+    smileTaskId: smileTask.id,
     progressWebsocket: `/ws/smile-tasks/${smileTask.id}`,
   })
 })

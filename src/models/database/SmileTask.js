@@ -7,16 +7,21 @@ import {join} from 'path'
 const UPLOADED_IMAGE_FILENAME = 'smile.jpg'
 const RESULT_IMAGE_FILENAME = 'smile_after.jpg'
 const SIDEBYSIDE_IMAGE_FILENAME = 'sidebyside.jpg'
-const FOLDER_NAMESPACE = 'ml-images'
 
 const RequesterType = new Enum([
     'patient',
     'inhouseClient',
 ])
 
-const INFO_FIELDS = {
-  [RequesterType.patient()]: ['ip', 'accessPointId', 'origin', 'email', 'name', 'phone'],
-  [RequesterType.inhouseClient()]: ['ip'],
+const REQUESTER_METADATA = {
+  [RequesterType.patient()]: {
+    fields: ['ip', 'accessPointId', 'origin', 'email', 'name', 'phone'],
+    pathPattern: 'ml-images/{clientId}/{id}/{filename}',
+  },
+  [RequesterType.inhouseClient()]: {
+    fields: ['ip'],
+    pathPattern: '{userId}/on_demand/{id}/{filename}',
+  },
 }
 
 function afterClassDefinition() {
@@ -37,7 +42,6 @@ export class SmileTask {
         this.status = attrs.status || 'pending'
         this.filepathUploaded = attrs.filepathUploaded
         this.filepathResult = attrs.filepathResult
-        this.filepathSideBySide = attrs.filepathSideBySide
 
         this.requester = attrs.requester
     }
@@ -62,18 +66,28 @@ export class SmileTask {
     }
 
     static #prepareBuildAttrs(requesterType, attrs) {
+        const metadata = REQUESTER_METADATA[requesterType]
         const id = attrs.id || SmileTask.newId()
-        return Object.assign({
+        attrs = Object.assign({
           id: id,
           createdAt: attrs.createdAt || Database.toTimestamp(new Date()),
           requester: {
             type: requesterType,
-            info: sanitizer.onlyKeys(attrs, INFO_FIELDS[requesterType]),
+            info: sanitizer.onlyKeys(attrs, metadata.fields),
           },
-          filepathUploaded: join(FOLDER_NAMESPACE, id, UPLOADED_IMAGE_FILENAME),
-          filepathResult: join(FOLDER_NAMESPACE, id, RESULT_IMAGE_FILENAME),
-          filepathSideBySide: join(FOLDER_NAMESPACE, id, SIDEBYSIDE_IMAGE_FILENAME),
+        }, attrs)
+        return Object.assign({
+          filepathUploaded:   SmileTask.#buildPath(metadata.pathPattern, attrs, UPLOADED_IMAGE_FILENAME),
+          filepathResult:     SmileTask.#buildPath(metadata.pathPattern, attrs, RESULT_IMAGE_FILENAME),
         }, attrs)
     }
+
+  static #buildPath(pattern, attrs, filename) {
+      let path = pattern.replace('{filename}', filename)
+      Object.keys(attrs).forEach(k => {
+          path = path.replace('{'+k+'}', attrs[k])
+      })
+      return path
+  }
 }
 afterClassDefinition()
