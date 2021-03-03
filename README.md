@@ -48,14 +48,10 @@ Web user-friendly interface to the smile enhancement image service named Dentrin
 The application loads the `.env` file through the `dotenv` lib. So you need to configure the following env vars:
 
 ```bash
-# Sendgrid
-SENDGRID_API_KEY=<SENDGRID KEY (same as production or staging)>
-
 # Application
 DENTRINO_REDIS_PUBSUB_DB=1
 DENTRINO_GCLOUD_BUCKET=dentrino-dev-us
 DENTRINO_RATE_LIMIT_DISABLED=true
-DENTRINO_MAILER_DISABLED=true
 
 # Google Cloud
 GOOGLE_APPLICATION_CREDENTIALS=./keys/dentrino-staging.json
