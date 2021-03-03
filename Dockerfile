@@ -1,4 +1,4 @@
-FROM gcr.io/dentrino-staging/dentrino-web-base:latest
+FROM gcr.io/dentrino-production/dentrino-simulations-api-base:latest
 MAINTAINER support@tastytech.ca
 
 WORKDIR /app

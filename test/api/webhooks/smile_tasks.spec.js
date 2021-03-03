@@ -1,21 +1,12 @@
 import { Factory } from 'rosie'
 import {Database} from '../../../src/models/database/Database'
 import {SmileTask} from '../../../src/models/database/SmileTask'
-import {dentistMailer} from '../../../src/mailers/dentistMailer'
 import {helpers} from '../../helpers'
 
 import app from '../../../src/app'
 app.enable('trust proxy')
 import supertest from 'supertest'
 const request = supertest(app)
-
-jest.mock('../../../src/mailers/dentistMailer', () => {
-  return {
-    dentistMailer: {
-      notifyProcessingComplete: jest.fn()
-    }
-  }
-})
 
 describe(`Webhooks Smile Tasks`, () => {
   let smileTask
@@ -75,11 +66,6 @@ describe(`Webhooks Smile Tasks`, () => {
     test(`update SmileTask.status to finished`, async () => {
       const task = await SmileTask.get(smileTask.id)
       expect(task.status).toEqual('finished')
-    })
-
-    test(`send email to dentist`, async () => {
-      const task = await SmileTask.get(smileTask.id)
-      expect(dentistMailer.notifyProcessingComplete).toHaveBeenCalledWith(task)
     })
   })
 })

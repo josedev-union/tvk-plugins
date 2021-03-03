@@ -1,4 +1,3 @@
-import mail from '@sendgrid/mail'
 import {Database} from '../models/database/Database'
 import Handlebars from 'hbs'
 import {i18n} from '../shared/i18n'
@@ -6,8 +5,6 @@ import {env} from './env'
 import * as Sentry from '@sentry/node'
 
 Handlebars.registerHelper('i18n', key => i18n(key))
-
-mail.setApiKey(env.sendgridKey)
 
 let app
 if (env.isTest()) {

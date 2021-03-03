@@ -24,7 +24,6 @@
   "dependencies": {
     "@godaddy/terminus": "~4.1.2",
     "@google-cloud/storage": "~5.3.0",
-    "@sendgrid/mail": "^6.5.5",
     "@sentry/node": "^5.15.5",
     "compression": "~1.7.4",
     "cookie-parser": "^1.4.5",
@@ -58,7 +57,6 @@
     "copy-webpack-plugin": "^5.0.5",
     "dotenv": "~8.0.0",
     "dotenv-webpack": "~5.1.0",
-    "firebase-tools": "~8.16.2",
     "jest": "~24.9.0",
     "nodemon": "^1.19.4",
     "remove-files-webpack-plugin": "~1.1.3",
@@ -66,7 +64,8 @@
     "supertest": "~4.0.2",
     "webpack": "^4.39.3",
     "webpack-cli": "^3.3.12",
-    "webpack-node-externals": "~1.7.2"
+    "webpack-node-externals": "~1.7.2",
+    "firebase-tools": "~9.4.0"
   },
   "babel": {
     "presets": [

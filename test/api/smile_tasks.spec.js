@@ -82,18 +82,31 @@ describe(`on a successful request`, () => {
     })
   })
 
-  test(`response json has a descriptor on how to download the result`, async () => {
-    const descriptor = response.body.resultDescriptorGet
-    expect(descriptor.verb).toBe('get')
-    expect(descriptor.url).toBe(RESULT_SIGNED_URL)
+  test(`response json has smile task id`, async () => {
+    const smileTaskId = response.body.smileTaskId
+    const smileTask = await SmileTask.get(smileTaskId)
+    expect(smileTask.id).toEqual(smileTaskId)
+  })
+
+  test(`response json has smile task id`, async () => {
+    const smileTaskId = response.body.smileTaskId
+    const smileTask = await SmileTask.get(smileTaskId)
+    expect(smileTask.id).toEqual(smileTaskId)
+  })
+
+  test(`response json has result and original images path`, async () => {
+    const smileTaskId = response.body.smileTaskId
+    const smileTask = await SmileTask.get(smileTaskId)
+    expect(response.body.resultPath).toEqual(smileTask.filepathResult)
+    expect(response.body.originalPath).toEqual(smileTask.filepathUploaded)
   })
 
   test(`response json has the websockets path to track the progress`, async () => {
     const wsPath = response.body.progressWebsocket
-    const smileTaskId = wsPath.match(/.*ws\/.*smile-tasks\/([^\/]+)/)[1]
+    const smileTaskId = response.body.smileTaskId
     const smileTask = await SmileTask.get(smileTaskId)
 
-    expect(wsPath.startsWith('/ws/smile-tasks/')).toBe(true)
+    expect(wsPath).toEqual(`/ws/smile-tasks/${smileTask.id}`)
     expect(smileTask).toBeTruthy()
   })
 })
