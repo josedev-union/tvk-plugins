@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser'
 import morgan from 'morgan'
 import compression from 'compression'
 import helmet from 'helmet'
+import {env} from './config/env'
 
 const app = express()
 
@@ -14,6 +15,25 @@ import webhooksSmileTasks from './routes/webhooks/smile_tasks'
 import './config/config'
 import {getModel} from './middlewares/getModel'
 import * as Sentry from '@sentry/node'
+import * as Tracing from '@sentry/tracing'
+
+if (env.isNonLocal()) {
+  Sentry.init({
+    dsn: env.sentryDsn,
+    env: env.name,
+    integrations: [
+      // enable HTTP calls tracing
+      new Sentry.Integrations.Http({ tracing: true }),
+      // enable Express.js middleware tracing
+      new Tracing.Integrations.Express({
+        // to trace all requests to the default router
+        app,
+        // alternatively, you can specify the routes you want to trace:
+        // router: someRouter,
+      }),
+    ],
+  });
+}
 
 app.disable('trust proxy')
 
