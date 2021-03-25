@@ -36,8 +36,8 @@ export class Database {
         return admin.firestore.Timestamp.fromDate(date)
     }
 
-    save(obj, objPath) {
-        return this.#getRef(objPath).set(adaptObj(obj))
+    save(obj, objPath, overwrite=false) {
+        return this.#getRef(objPath).set(adaptObj(obj), {merge: !overwrite})
     }
 
     startQuery(collectionName) {
