@@ -48,8 +48,6 @@ async (req, res) => {
 
   const resources = SmileResourcesGuide.build()
   let uploadDescriptorTask
-  console.log(req.body)
-  console.log(`Manual Review: ${manualReview}  ${!!manualReview}`)
   if (manualReview) {
     uploadDescriptorTask = resources.uploadDescriptor(smileTask, {overwriteImageName: 'smile_review_pending'})
   } else {
