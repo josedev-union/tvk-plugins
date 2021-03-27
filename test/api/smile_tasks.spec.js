@@ -25,14 +25,15 @@ jest.mock('../../src/models/storage/storageFactory', () => {
     storageFactory: jest.fn().mockReturnValue({
       bucket: jest.fn().mockReturnValue({
         file: jest.fn().mockImplementation((keyName) => {
+          const imageName = keyName.match(/[^\/]+\..*$/)
           return {
             generateSignedPostPolicyV4: jest.fn().mockImplementation((opts) => {
-              return Promise.resolve(['http://gcloud.presigned.com/upload'])
+              return Promise.resolve([`http://gcloud.presigned.com/upload/${imageName}`])
             }),
 
             getSignedUrl: jest.fn().mockImplementation((opts) => {
               if (opts.action === 'write') {
-                return Promise.resolve(['http://gcloud.presigned.com/upload'])
+                return Promise.resolve([`http://gcloud.presigned.com/upload/${imageName}`])
               } else {
                 return Promise.resolve(['http://gcloud.presigned.com/afterImage'])
               }
@@ -73,19 +74,13 @@ describe(`on a successful request`, () => {
   test(`response json has a descriptor on how to upload the image`, async () => {
     expect(response.body.uploadDescriptor).toEqual({
       verb: 'put',
-      url: UPLOAD_SIGNED_URL,
+      url: `${UPLOAD_SIGNED_URL}/smile.jpg`,
       headers: {
         'Content-Type': CONTENT_TYPE,
         'Content-MD5': IMAGE_MD5,
         'x-goog-content-length-range': `0,${UPLOAD_MAX_SIZE}`
       }
     })
-  })
-
-  test(`response json has smile task id`, async () => {
-    const smileTaskId = response.body.smileTaskId
-    const smileTask = await SmileTask.get(smileTaskId)
-    expect(smileTask.id).toEqual(smileTaskId)
   })
 
   test(`response json has smile task id`, async () => {
@@ -108,6 +103,56 @@ describe(`on a successful request`, () => {
 
     expect(wsPath).toEqual(`/ws/smile-tasks/${smileTask.id}`)
     expect(smileTask).toBeTruthy()
+  })
+})
+
+
+describe(`on a manual review request`, () => {
+  let response
+
+  beforeEach(async () => {
+    const apiClient = Factory.build('api_client')
+    const user = Factory.build('user')
+
+    await Promise.all([apiClient.save(), user.save()])
+
+    const json = {imageMD5: IMAGE_MD5, contentType: CONTENT_TYPE, manualReview: true}
+    const signature = signer.apiSign(user.id, IMAGE_MD5, apiClient.secret)
+    const token = simpleCrypto.base64(`${apiClient.id}:${signature}`)
+    response = await postSolicitation(json, user.id, token)
+  })
+
+  test(`respond 200`, async () => {
+    expect(response.status).toBe(200)
+  })
+
+  test(`response json has a descriptor on how to upload the pending review image`, async () => {
+    expect(response.body.uploadDescriptor).toEqual({
+      verb: 'put',
+      url: `${UPLOAD_SIGNED_URL}/smile_review_pending.jpg`,
+      headers: {
+        'Content-Type': CONTENT_TYPE,
+        'Content-MD5': IMAGE_MD5,
+        'x-goog-content-length-range': `0,${UPLOAD_MAX_SIZE}`
+      }
+    })
+  })
+
+  test(`response json has smile task id`, async () => {
+    const smileTaskId = response.body.smileTaskId
+    const smileTask = await SmileTask.get(smileTaskId)
+    expect(smileTask.id).toEqual(smileTaskId)
+  })
+
+  test(`response json has result and original images path`, async () => {
+    const smileTaskId = response.body.smileTaskId
+    const smileTask = await SmileTask.get(smileTaskId)
+    expect(response.body.resultPath).toEqual(smileTask.filepathResult)
+    expect(response.body.originalPath).toEqual(smileTask.filepathUploaded)
+  })
+
+  test(`response json haven't websockets path`, async () => {
+    expect(response.body.progressWebsocket).toBeUndefined()
   })
 })
 
@@ -237,7 +282,7 @@ describe(`when authorization token is invalid`, () => {
 
 function postSolicitation(json={imageMD5, contentType}, userId, token, ip='127.0.0.0') {
   return request
-    .post(`/api/users/${userId}/smile-tasks/solicitation`)
+    .post(`/api/users/${userId}/smile-tasks/solicitation?manual_review={manualReview}`)
     .set('Content-Type', 'application/json')
     .set('Authorization', `Bearer ${token}`)
     .set('X-Forwarded-For', ip)

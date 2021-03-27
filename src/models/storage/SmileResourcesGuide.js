@@ -11,9 +11,13 @@ export class SmileResourcesGuide {
         return new SmileResourcesGuide(GcloudPresignedCredentialsProvider.build())
     }
 
-    async uploadDescriptor(smileTask) {
+    async uploadDescriptor(smileTask, {overwriteImageName=false}={}) {
+        let keyName = smileTask.filepathUploaded
+        if (overwriteImageName) {
+          keyName = keyName.replace(/[^\/]+(\..*)$/, `${overwriteImageName}$1`)
+        }
         return await this.credentialsProvider.jsonToUpload({
-            keyName: smileTask.filepathUploaded,
+            keyName: keyName,
             contentType: smileTask.contentType,
             contentMD5: smileTask.imageMD5,
             maxSizeInMegabytes: env.maxUploadSizeMb,

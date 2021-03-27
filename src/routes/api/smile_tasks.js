@@ -36,6 +36,8 @@ userRateLimit,
 ipRateLimit,
 clientRateLimit,
 async (req, res) => {
+  const manualReview = req.body.manualReview
+
   const smileTask = SmileTask.build(SmileTask.RequesterType.inhouseClient(), {
     ip: req.ip,
     userId: res.locals.dentUser.id,
@@ -45,18 +47,31 @@ async (req, res) => {
   })
 
   const resources = SmileResourcesGuide.build()
+  let uploadDescriptorTask
+  console.log(req.body)
+  console.log(`Manual Review: ${manualReview}  ${!!manualReview}`)
+  if (manualReview) {
+    uploadDescriptorTask = resources.uploadDescriptor(smileTask, {overwriteImageName: 'smile_review_pending'})
+  } else {
+    uploadDescriptorTask = resources.uploadDescriptor(smileTask)
+  }
   let [_, uploadDescriptor] = await Promise.all([
     smileTask.save(),
-    resources.uploadDescriptor(smileTask),
+    uploadDescriptorTask,
   ])
 
-  return res.json({
+  let response = {
     uploadDescriptor: uploadDescriptor,
     originalPath: smileTask.filepathUploaded,
     resultPath: smileTask.filepathResult,
     smileTaskId: smileTask.id,
-    progressWebsocket: `/ws/smile-tasks/${smileTask.id}`,
-  })
+  }
+
+  if (!manualReview) {
+    response.progressWebsocket = `/ws/smile-tasks/${smileTask.id}`
+  }
+
+  return res.json(response)
 })
 
 export default router
