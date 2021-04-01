@@ -11,6 +11,22 @@ export const simpleCrypto = new (class {
         return Buffer.from(str, 'base64').toString()
     }
 
+    urlSafeBase64(str) {
+      return encodeURIComponent(
+        this.base64(str)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+      )
+    }
+
+    urlSafeBase64Decode(str) {
+      return this.base64Decode(
+        decodeURIComponent(str)
+          .replace(/-/g, '+')
+          .replace(/_/g, '/')
+      )
+    }
+
     sha1(str) {
         const s1 = _sha1.create()
         s1.update(str)
