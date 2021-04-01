@@ -11,6 +11,7 @@ const app = express()
 
 import indexRouter from './routes/index'
 import apiSmileTasks from './routes/api/smile_tasks'
+import internalApiSmileTasks from './routes/internal_api/smile_tasks'
 import webhooksSmileTasks from './routes/webhooks/smile_tasks'
 import './config/config'
 import {getModel} from './middlewares/getModel'
@@ -52,6 +53,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 app.use('/', indexRouter);
 app.use('/api/users/:userId/smile-tasks/', getModel.user, apiSmileTasks);
+app.use('/api/67a4abe/smile-tasks/:smileTaskId/', getModel.smileTask, internalApiSmileTasks);
 app.use('/webhooks/828ffbc/smile-tasks/', webhooksSmileTasks);
 
 app.use(Sentry.Handlers.errorHandler());
