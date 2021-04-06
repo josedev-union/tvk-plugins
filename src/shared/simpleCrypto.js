@@ -4,7 +4,7 @@ import sha256 from 'js-sha256'
 export const simpleCrypto = new (class {
     base64(str, params = {padding: true}) {
         var b64 = Buffer.from(str).toString('base64')
-        return params.padding ? b64 : b64.replace(/=+/g, '')
+        return params.padding ? b64 : b64.replace(/=+$/g, '')
     }
 
     base64Decode(str) {
@@ -13,7 +13,7 @@ export const simpleCrypto = new (class {
 
     urlSafeBase64(str) {
       return encodeURIComponent(
-        this.base64(str)
+        this.base64(str, {padding: false})
         .replace(/\+/g, '-')
         .replace(/\//g, '_')
       )
