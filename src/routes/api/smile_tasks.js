@@ -7,6 +7,7 @@ import {getModel} from "../../middlewares/getModel"
 import {rateLimit} from "../../middlewares/rateLimit"
 import {SmileResourcesGuide} from "../../models/storage/SmileResourcesGuide"
 import {env} from "../../config/env"
+import {helpers} from '../helpers'
 
 const userRateLimit = rateLimit({
   limit: env.userRateLimit.amount,
@@ -35,7 +36,7 @@ security.verifySignature,
 userRateLimit,
 ipRateLimit,
 clientRateLimit,
-async (req, res) => {
+helpers.asyncCatchError(async (req, res) => {
   const manualReview = req.body.manualReview
 
   const smileTask = SmileTask.build(SmileTask.RequesterType.inhouseClient(), {
@@ -70,6 +71,6 @@ async (req, res) => {
   }
 
   return res.json(response)
-})
+}))
 
 export default router

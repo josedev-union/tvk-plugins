@@ -43,7 +43,11 @@ export const helpers = new (class {
 
   asyncCatchError(func) {
     return (req, res, next) => {
-      return func(req, res).catch(next)
+      return func(req, res, next).catch(next)
     }
+  }
+
+  redirectCatch(catchCallback, behaviour) {
+    behaviour().catch(catchCallback)
   }
 })()
