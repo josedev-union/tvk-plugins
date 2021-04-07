@@ -13,6 +13,7 @@ import indexRouter from './routes/index'
 import apiSmileTasks from './routes/api/smile_tasks'
 import internalApiSmileTasks from './routes/internal_api/smile_tasks'
 import webhooksSmileTasks from './routes/webhooks/smile_tasks'
+import {helpers} from './routes/helpers'
 import './config/config'
 import {getModel} from './middlewares/getModel'
 import * as Sentry from '@sentry/node'
@@ -66,12 +67,13 @@ app.use(function(req, res, next) {
 // error handler
 app.use(function(err, req, res, next) {
   // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+  const message = err.message || err.error || `Unexpected Error: ${JSON.stringify(err)}`
+  const statusCode = err.status || 500
+  res.locals.message = message
+  res.locals.error = req.app.get('env') === 'development' ? err : {}
 
   // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+  return helpers.respondError(res, statusCode, message)
 });
 
 export default app

@@ -21,7 +21,7 @@ export const helpers = new (class {
   }
 
   respondError(res, status, message) {
-    return res.status(status).send(JSON.stringify({error: message}))
+    return res.status(status).json({error: message})
   }
 
   setCors(req, res) {
@@ -39,5 +39,11 @@ export const helpers = new (class {
 
   isSet(value) {
     return typeof(value) === 'string' && value !== '' && typeof(value) !== 'undefined'
+  }
+
+  asyncCatchError(func) {
+    return (req, res, next) => {
+      return func(req, res).catch(next)
+    }
   }
 })()

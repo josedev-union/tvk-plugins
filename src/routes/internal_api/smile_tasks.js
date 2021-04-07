@@ -6,7 +6,7 @@ import {smileTaskStorage} from "../../models/storage/smileTaskStorage"
 import {helpers} from '../helpers'
 import {env} from "../../config/env"
 
-router.put('/promote-uploaded', async (req, res) => {
+router.put('/promote-uploaded', helpers.asyncCatchError(async (req, res) => {
   const smileTask = res.locals.dentSmileTask
 
   const {exist} = await smileTaskStorage.renameReviewedImage(smileTask)
@@ -15,9 +15,9 @@ router.put('/promote-uploaded', async (req, res) => {
   }
 
   return res.status(200).json({"promoted": true})
-})
+}))
 
-router.get('/result-candidates', async (req, res) => {
+router.get('/result-candidates', helpers.asyncCatchError(async (req, res) => {
   const smileTask = res.locals.dentSmileTask
   if (!smileTask.hasFinished()) {
       return helpers.respondError(res, 423, "The simulation haven't finished yet.")
@@ -26,9 +26,9 @@ router.get('/result-candidates', async (req, res) => {
   const candidates = await smileTaskStorage.listResultCandidates(smileTask)
 
   return res.status(200).json({"candidates": candidates})
-})
+}))
 
-router.put('/result-candidates/:resultId/promote', async (req, res) => {
+router.put('/result-candidates/:resultId/promote', helpers.asyncCatchError(async (req, res) => {
   const smileTask = res.locals.dentSmileTask
   if (!smileTask.hasFinished()) {
       return helpers.respondError(res, 423, "The simulation haven't finished yet.")
@@ -42,6 +42,6 @@ router.put('/result-candidates/:resultId/promote', async (req, res) => {
 
 
   return res.status(200).json({"promoted": true})
-})
+}))
 
 export default router

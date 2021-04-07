@@ -24,10 +24,10 @@ Factory.define('smile_task', SmileTask)
   .sequence('createdAt', (i) => Database.toTimestamp(new Date()))
   .sequence('filepathUploaded', ['userId'], (i, userId) => `ml-images/${userId}/smile.jpg`)
   .sequence('filepathResult', ['userId'], (i, userId) => `ml-images/${userId}/smile_after.png`)
-  .sequence('filepathSideBySide', ['userId'], (i, userId) => `ml-images/${userId}/sidebyside.jpg`)
   .attrs({
     'imageMD5': 'fba3cbecf7f5ed9fdd4a24021ca1928c',
     'contentType': "image/jpeg",
+    'status': 'finished',
     'requester': {
       'type': SmileTask.RequesterType.inhouseClient(),
       'info': {'ip': '127.0.0.1'}

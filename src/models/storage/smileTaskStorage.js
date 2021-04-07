@@ -64,7 +64,7 @@ export const smileTaskStorage = new (class {
         if (error.code === 404) {
           resolve({exist: false})
         } else {
-          reject(error)
+          reject({source: `smileTaskStorage.move("${filepath}","${newFilepath}")`, error: error})
         }
       })
     })
