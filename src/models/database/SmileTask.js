@@ -6,6 +6,7 @@ import * as path from 'path'
 
 const UPLOADED_IMAGE_FILENAME = 'smile.jpg'
 const RESULT_IMAGE_FILENAME = 'smile_after.jpg'
+const PREPROCESSED_IMAGE_FILENAME = 'smile_before.jpg'
 const UPLOADED_TO_REVIEW_NAME = 'smile_review_pending'
 
 const RequesterType = new Enum([
@@ -43,6 +44,7 @@ export class SmileTask {
     this.status = attrs.status || 'pending'
     this.filepathUploaded = attrs.filepathUploaded
     this.filepathResult = attrs.filepathResult
+    this.filepathPreprocessed = attrs.filepathPreprocessed
 
     this.requester = attrs.requester
   }
@@ -96,8 +98,9 @@ export class SmileTask {
       },
     }, attrs)
     return Object.assign({
-      filepathUploaded:   SmileTask.#buildPath(metadata.pathPattern, attrs, UPLOADED_IMAGE_FILENAME),
-      filepathResult:     SmileTask.#buildPath(metadata.pathPattern, attrs, RESULT_IMAGE_FILENAME),
+      filepathUploaded:      SmileTask.#buildPath(metadata.pathPattern, attrs, UPLOADED_IMAGE_FILENAME),
+      filepathResult:        SmileTask.#buildPath(metadata.pathPattern, attrs, RESULT_IMAGE_FILENAME),
+      filepathPreprocessed:  SmileTask.#buildPath(metadata.pathPattern, attrs, PREPROCESSED_IMAGE_FILENAME),
     }, attrs)
   }
 

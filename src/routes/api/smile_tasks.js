@@ -63,6 +63,7 @@ helpers.asyncCatchError(async (req, res) => {
     uploadDescriptor: uploadDescriptor,
     originalPath: smileTask.filepathUploaded,
     resultPath: smileTask.filepathResult,
+    preprocessedPath: smileTask.filepathPreprocessed,
     smileTaskId: smileTask.id,
   }
 

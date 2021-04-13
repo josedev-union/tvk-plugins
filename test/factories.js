@@ -24,6 +24,7 @@ Factory.define('smile_task', SmileTask)
   .sequence('createdAt', (i) => Database.toTimestamp(new Date()))
   .sequence('filepathUploaded', ['userId'], (i, userId) => `ml-images/${userId}/smile.jpg`)
   .sequence('filepathResult', ['userId'], (i, userId) => `ml-images/${userId}/smile_after.png`)
+  .sequence('filepathPreprocessed', ['userId'], (i, userId) => `ml-images/${userId}/smile_before.png`)
   .attrs({
     'imageMD5': 'fba3cbecf7f5ed9fdd4a24021ca1928c',
     'contentType': "image/jpeg",
