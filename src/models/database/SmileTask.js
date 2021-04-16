@@ -46,6 +46,7 @@ export class SmileTask {
     this.filepathUploaded = attrs.filepathUploaded
     this.filepathResult = attrs.filepathResult
     this.filepathPreprocessed = attrs.filepathPreprocessed
+    this.filepathSideBySide = attrs.filepathSideBySide
 
     this.requester = attrs.requester
   }
