@@ -7,6 +7,7 @@ import * as path from 'path'
 const UPLOADED_IMAGE_FILENAME = 'smile.jpg'
 const RESULT_IMAGE_FILENAME = 'smile_after.jpg'
 const PREPROCESSED_IMAGE_FILENAME = 'smile_before.jpg'
+const SIDEBYSIDE_IMAGE_FILENAME = 'smile_sidebyside.jpg'
 const UPLOADED_TO_REVIEW_NAME = 'smile_review_pending'
 
 const RequesterType = new Enum([
@@ -101,6 +102,7 @@ export class SmileTask {
       filepathUploaded:      SmileTask.#buildPath(metadata.pathPattern, attrs, UPLOADED_IMAGE_FILENAME),
       filepathResult:        SmileTask.#buildPath(metadata.pathPattern, attrs, RESULT_IMAGE_FILENAME),
       filepathPreprocessed:  SmileTask.#buildPath(metadata.pathPattern, attrs, PREPROCESSED_IMAGE_FILENAME),
+      filepathSideBySide:    SmileTask.#buildPath(metadata.pathPattern, attrs, SIDEBYSIDE_IMAGE_FILENAME),
     }, attrs)
   }
 

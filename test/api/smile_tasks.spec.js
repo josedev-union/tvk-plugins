@@ -95,6 +95,7 @@ describe(`on a successful request`, () => {
     expect(response.body.resultPath).toEqual(smileTask.filepathResult)
     expect(response.body.originalPath).toEqual(smileTask.filepathUploaded)
     expect(response.body.preprocessedPath).toEqual(smileTask.filepathPreprocessed)
+    expect(response.body.sideBySidePath).toEqual(smileTask.filepathSideBySide)
   })
 
   test(`response json has the websockets path to track the progress`, async () => {
