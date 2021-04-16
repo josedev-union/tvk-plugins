@@ -37,6 +37,7 @@ Web user-friendly interface to the smile enhancement image service named Dentrin
         └── views
 ```
 
+
 ## Preparing Environment
 
 1. Install nodejs 12.8.0 (I suggest using [asdf](https://github.com/asdf-vm/asdf) / [asdf-nodejs](https://github.com/asdf-vm/asdf-nodejs))
