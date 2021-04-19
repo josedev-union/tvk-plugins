@@ -8,6 +8,7 @@ const UPLOADED_IMAGE_FILENAME = 'smile.jpg'
 const RESULT_IMAGE_FILENAME = 'smile_after.jpg'
 const PREPROCESSED_IMAGE_FILENAME = 'smile_before.jpg'
 const SIDEBYSIDE_IMAGE_FILENAME = 'smile_sidebyside.jpg'
+const SIDEBYSIDE_SMALL_IMAGE_FILENAME = 'smile_sidebyside_small.jpg'
 const UPLOADED_TO_REVIEW_NAME = 'smile_review_pending'
 
 const RequesterType = new Enum([
@@ -47,6 +48,7 @@ export class SmileTask {
     this.filepathResult = attrs.filepathResult
     this.filepathPreprocessed = attrs.filepathPreprocessed
     this.filepathSideBySide = attrs.filepathSideBySide
+    this.filepathSideBySideSmall = attrs.filepathSideBySideSmall
 
     this.requester = attrs.requester
   }
@@ -100,10 +102,11 @@ export class SmileTask {
       },
     }, attrs)
     return Object.assign({
-      filepathUploaded:      SmileTask.#buildPath(metadata.pathPattern, attrs, UPLOADED_IMAGE_FILENAME),
-      filepathResult:        SmileTask.#buildPath(metadata.pathPattern, attrs, RESULT_IMAGE_FILENAME),
-      filepathPreprocessed:  SmileTask.#buildPath(metadata.pathPattern, attrs, PREPROCESSED_IMAGE_FILENAME),
-      filepathSideBySide:    SmileTask.#buildPath(metadata.pathPattern, attrs, SIDEBYSIDE_IMAGE_FILENAME),
+      filepathUploaded:        SmileTask.#buildPath(metadata.pathPattern, attrs, UPLOADED_IMAGE_FILENAME),
+      filepathResult:          SmileTask.#buildPath(metadata.pathPattern, attrs, RESULT_IMAGE_FILENAME),
+      filepathPreprocessed:    SmileTask.#buildPath(metadata.pathPattern, attrs, PREPROCESSED_IMAGE_FILENAME),
+      filepathSideBySide:      SmileTask.#buildPath(metadata.pathPattern, attrs, SIDEBYSIDE_IMAGE_FILENAME),
+      filepathSideBySideSmall: SmileTask.#buildPath(metadata.pathPattern, attrs, SIDEBYSIDE_SMALL_IMAGE_FILENAME),
     }, attrs)
   }
 

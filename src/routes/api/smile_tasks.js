@@ -65,6 +65,7 @@ helpers.asyncCatchError(async (req, res) => {
     resultPath: smileTask.filepathResult,
     preprocessedPath: smileTask.filepathPreprocessed,
     sideBySidePath: smileTask.filepathSideBySide,
+    sideBySideSmallPath: smileTask.filepathSideBySideSmall,
     smileTaskId: smileTask.id,
   }
 

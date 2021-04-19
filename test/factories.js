@@ -23,8 +23,10 @@ Factory.define('smile_task', SmileTask)
   .sequence('clientId', (i) => Factory.build('api_client').id)
   .sequence('createdAt', (i) => Database.toTimestamp(new Date()))
   .sequence('filepathUploaded', ['userId'], (i, userId) => `ml-images/${userId}/smile.jpg`)
-  .sequence('filepathResult', ['userId'], (i, userId) => `ml-images/${userId}/smile_after.png`)
-  .sequence('filepathPreprocessed', ['userId'], (i, userId) => `ml-images/${userId}/smile_before.png`)
+  .sequence('filepathResult', ['userId'], (i, userId) => `ml-images/${userId}/smile_after.jpg`)
+  .sequence('filepathPreprocessed', ['userId'], (i, userId) => `ml-images/${userId}/smile_before.jpg`)
+  .sequence('filepathSideBySide', ['userId'], (i, userId) => `ml-images/${userId}/smile_sidebyside.jpg`)
+  .sequence('filepathSideBySideSmall', ['userId'], (i, userId) => `ml-images/${userId}/smile_sidebyside_small.jpg`)
   .attrs({
     'imageMD5': 'fba3cbecf7f5ed9fdd4a24021ca1928c',
     'contentType': "image/jpeg",
