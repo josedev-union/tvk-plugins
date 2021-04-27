@@ -11,30 +11,10 @@ Web user-friendly interface to the smile enhancement image service named Dentrin
 ├── Dockerfile.base   # Dockerfile with dependencies pre-installed to make it quicker to build new images
 ├── .env              # Env variables used by the project (development only)
 ├── .env.prod         # Env variables used by production tasks
-├── package.json
-├── package-lock.json
 ├── webpack.config.js          # Config to compile Front-End assets (Babel, SASS, minify, uglify, etc)
 ├── webpack.config.server.js   # Config to compile Back-end javascripts (with Babel)
-├── README.md
-├── assets        # Front-end assets
-│   ├── css
-│   └── js
 ├── public        # Public folder
-│   └── assets    # Compiled assets (created by webpack)
-│       ├── css
-│       └── js
-├── src           # Back-end javascript files
-│   ├── app.js
-│   ├── boot.js
-│   ├── config.js
-│   ├── models    # Models
-│   ├── routes    # Routes / Controllers
-│   └── views     # Handlebars templates
-└── dist                 # Folder with server compiled to be deployed (created by webpack)
-    ├── public
-    └── src
-        ├── start.js     # All back-end JS compiled
-        └── views
+└── src           # Back-end javascript files
 ```
 
 
@@ -51,8 +31,9 @@ The application loads the `.env` file through the `dotenv` lib. So you need to c
 ```bash
 # Application
 DENTRINO_REDIS_PUBSUB_DB=1
-DENTRINO_GCLOUD_BUCKET=dentrino-dev-us
+DENTRINO_GCLOUD_BUCKET=dentrino-dev-appspot-com
 DENTRINO_RATE_LIMIT_DISABLED=true
+FIRESTORE_EMULATOR_HOST=localhost:8080
 
 # Google Cloud
 GOOGLE_APPLICATION_CREDENTIALS=./keys/dentrino-staging.json
@@ -67,8 +48,10 @@ $ npm run dev-start # Start server with nodemon
 $ npm run dev-up    # Compile assets and start server
 $ npm run dev-build # Compile assets
 $ npm run db-up     # Start local database
-$ npm run seed      # Seed db with a default access point (access it on /d/dentrino)
 $ npm test          # Run the tests (Need to start local database before)
+$ SCRIPT=new_user npm run script          # Create a new test user
+$ SCRIPT=new_api_client npm run script    # Create a new api client
+$ SCRIPT=seed_tasks npm run script        # Create smile tasks for testing
 ```
 
 
@@ -81,7 +64,8 @@ $ npm start              # Start the server (once the backend was built)
 ```
 
 ## Deploy
-Deploy task will build the docker image using the current commit-hash as version and deploy it to kubernetes pod.
+Deploy task will build the docker image using the current commit-hash as version and deploy it to kubernetes pod.  
+You need to switch kubernetes to the specific environment, read `dentrino-devops` README to know more.
 
 ```bash
 $ make deploy                        # Deploy to staging
@@ -206,16 +190,10 @@ Content-Type: application/json
       "x-goog-content-length-range": "0,1048576"
     }
   },
-  "uploadedDescriptorGet": {
-    "verb": "get",
-    "url": "https://storage.googleapis.com/dentrino-dev-us/ml-images/ODM4NzA...",
-    "headers": {}
-  },
-  "resultDescriptorGet": {
-    "verb": "get",
-    "url": "https://storage.googleapis.com/dentrino-dev-us/ml-images/ODM4NzA...",
-    "headers": {}
-  },
+	"originalPath": "4NFfruugPxYcPpuHEz8rNYAVK7y2/on_demand/ODM4MTY2MTE0MTQ3MC1ENExVPH1a/smile.jpg",
+	"resultPath": "4NFfruugPxYcPpuHEz8rNYAVK7y2/on_demand/ODM4MTY2MTE0MTQ3MC1ENExVPH1a/smile_after.jpg",
+	"preprocessedPath": "4NFfruugPxYcPpuHEz8rNYAVK7y2/on_demand/ODM4MTY2MTE0MTQ3MC1ENExVPH1a/smile_before.jpg",
+	"smileTaskId": "ODM4MTY2MTE0MTQ3MC1ENExVPH1a",
   "progressWebsocket": "/ws/smile-tasks/ODM4NzA5NzMxNDAxM19jTnQ2dUNU"
 }
 
