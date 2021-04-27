@@ -7,18 +7,12 @@
     "dev-build": "webpack --config ./webpack.config.js --mode development",
     "dev-up": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime src/boot.js",
     "dev-start": "nodemon --inspect --exec 'npm run dev-up'",
-    "seed": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config/config.js ./scripts/quick_seed.js",
     "sign": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config/config.js ./scripts/sign.js",
     "build": "webpack --config ./webpack.config.js --mode production",
     "build-backend": "webpack --config ./webpack.config.server.js --mode production",
     "start": "npm run build && rm -rf ./assets && cp -rf ./dist/* ./ && node -r regenerator-runtime/runtime src/start.js",
     "console": "node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config/config.js",
-    "new-access-point": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config/config.js ./scripts/new_access_point.js",
-    "del-access-point": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config/config.js ./scripts/del_access_point.js",
     "script": "npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config/config.js ./scripts/$SCRIPT.js",
-    "prod-console": "DOTENV_CONFIG_PATH=.env.prod node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config.js",
-    "prod-new-access-point": "DOTENV_CONFIG_PATH=./.env.prod npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config/config.js ./scripts/new_access_point.js",
-    "prod-del-access-point": "DOTENV_CONFIG_PATH=./.env.prod npm run dev-build && node -r dotenv/config -r @babel/register -r regenerator-runtime/runtime -r ./src/config/config.js ./scripts/del_access_point.js",
     "test": "jest -i"
   },
   "dependencies": {

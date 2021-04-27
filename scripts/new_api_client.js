@@ -1,6 +1,9 @@
 import {ApiClient} from '../src/models/database/ApiClient'
 
-let client = ApiClient.build()
-client.save()
+async function create() {
+  let client = ApiClient.build()
+  await client.save()
 
-console.log(`Client Created! ID: ${client.id} Secret: ${client.secret}`)
+  console.log(`Client Created! ID: ${client.id} Secret: ${client.secret}`)
+}
+create().catch(err => console.error(err))
