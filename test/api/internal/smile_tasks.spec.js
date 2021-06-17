@@ -156,6 +156,91 @@ describe(`PUT /api/67a4abe/smile-tasks/:smileTaskId/promote-uploaded`, () => {
   })
 })
 
+describe(`PUT /api/67a4abe/smile-tasks/:smileTaskId/rerun`, () => {
+  describe(`successful response`, () => {
+    let response
+    let smileTask
+
+    beforeEach(async () => {
+      smileTask = Factory.build('smile_task', {
+        filepathUploaded: "uploaded/smile.jpg",
+        filepathResult: "results/smile_after.jpg",
+      })
+      await Promise.all([smileTask.save()])
+      smileTask = await SmileTask.get(smileTask.id)
+
+      response = await putRerun(smileTask.id)
+    })
+
+    test(`respond 200`, async () => {
+      expect(response.status).toBe(200)
+    })
+
+    test(`rename smile to temporary name and then rename it back`, async () => {
+      expect(storageFactory().file).toHaveBeenCalledWith('uploaded/smile_review_pending.jpg')
+      expect(storageFactory().move).toHaveBeenCalledWith('uploaded/smile.jpg')
+      expect(storageFactory().file).toHaveBeenCalledWith('uploaded/smile.jpg')
+      expect(storageFactory().move).toHaveBeenCalledWith('uploaded/smile_review_pending.jpg')
+      expect(storageFactory().file.mock.calls.length).toBe(2)
+      expect(storageFactory().move.mock.calls.length).toBe(2)
+    })
+  })
+
+  describe(`smile task id doesn't exist`, () => {
+    let response
+    let smileTask
+
+    beforeEach(async () => {
+      response = await putRerun("9991237")
+    })
+
+    test(`respond 404`, async () => {
+      expect(response.status).toBe(404)
+    })
+  })
+
+  describe(`image file not found`, () => {
+    let response
+    let smileTask
+
+    beforeEach(async () => {
+      smileTask = Factory.build('smile_task', {
+        filepathUploaded: "uploaded_unexistent/smile.jpg",
+        filepathResult: "results/smile_after.jpg",
+      })
+      await Promise.all([smileTask.save()])
+      smileTask = await SmileTask.get(smileTask.id)
+
+      response = await putRerun(smileTask.id)
+    })
+
+    test(`respond 404`, async () => {
+      expect(response.status).toBe(404)
+    })
+  })
+
+  describe(`error on google cloud storage`, () => {
+    let response
+    let smileTask
+
+    beforeEach(async () => {
+      smileTask = Factory.build('smile_task', {
+        filepathUploaded: "uploaded_error/smile.jpg",
+        filepathResult: "results/smile_after.jpg",
+      })
+      await Promise.all([smileTask.save()])
+      smileTask = await SmileTask.get(smileTask.id)
+
+      response = await putRerun(smileTask.id)
+    })
+
+    test(`respond 500`, async () => {
+      expect(response.status).toBe(500)
+      expect(response.body.error).toBeTruthy()
+    })
+  })
+})
+
 
 describe(`PUT /api/67a4abe/smile-tasks/:smileTaskId/result-candidates`, () => {
   describe(`successful response`, () => {
@@ -407,6 +492,12 @@ describe(`PUT /api/67a4abe/smile-tasks/:smileTaskId/result-candidates/:resultId/
 function putPromoteUploaded(smileTaskId) {
   return request
     .put(`/api/67a4abe/smile-tasks/${smileTaskId}/promote-uploaded`)
+    .send()
+}
+
+function putRerun(smileTaskId) {
+  return request
+    .put(`/api/67a4abe/smile-tasks/${smileTaskId}/rerun`)
     .send()
 }
 
