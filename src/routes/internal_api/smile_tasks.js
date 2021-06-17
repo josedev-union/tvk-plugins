@@ -17,6 +17,17 @@ router.put('/promote-uploaded', helpers.asyncCatchError(async (req, res) => {
   return res.status(200).json({"promoted": true})
 }))
 
+router.put('/rerun', helpers.asyncCatchError(async (req, res) => {
+  const smileTask = res.locals.dentSmileTask
+
+  const {exist} = await smileTaskStorage.renameUploadedImageToForceRerun(smileTask)
+  if (!exist) {
+    return helpers.respondError(res, 404, "Couldn't find the image to rerun")
+  }
+
+  return res.status(200).json({"success": true})
+}))
+
 router.get('/result-candidates', helpers.asyncCatchError(async (req, res) => {
   const smileTask = res.locals.dentSmileTask
   if (!smileTask.hasFinished()) {

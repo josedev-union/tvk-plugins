@@ -11,6 +11,15 @@ export const smileTaskStorage = new (class {
     return await this.#move(temporaryFilepath, permanentFilepath)
   }
 
+  async renameUploadedImageToForceRerun(smileTask) {
+    const temporaryFilepath = smileTask.filepathUploadedToReview()
+    const permanentFilepath = smileTask.filepathUploaded
+    try {
+      await this.#move(permanentFilepath, temporaryFilepath)
+    } catch { /* ignore */ }
+    return await this.#move(temporaryFilepath, permanentFilepath)
+  }
+
   async listResultCandidates(smileTask) {
     const [items] = await storageFactory()
     .bucket(env.gcloudBucket)
