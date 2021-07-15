@@ -29,6 +29,10 @@ export const env = new (class {
     amount:     parseFloat(process.env.DENTRINO_CLIENT_RATE_LIMIT_AMOUNT || 100),
     timeWindow: parseFloat(process.env.DENTRINO_CLIENT_RATE_LIMIT_TIME || 1 * 60 * 1000),
   }
+  quickSimulationTimeout = parseFloat(process.env.DENTRINO_QUICK_SIMULATION_TIMEOUT || 60*2)
+  quickSimulationRouteTimeout = parseFloat(process.env.DENTRINO_QUICK_SIMULATION_ROUTE_TIMEOUT || 0)
+  quickSimulationRouteNoUploadTimeout = parseFloat(process.env.DENTRINO_QUICK_SIMULATION_ROUTE_NO_UPLOAD_TIMEOUT || 0)
+  skipQuickSimulation = process.env.DENTRINO_SKIP_QUICK_SIMULATION
 
   isProduction() { return this.name === 'production' }
   isStaging() { return this.name === 'staging' }

@@ -4,7 +4,7 @@ import {env} from '../config/env'
 
 export const redisFactory = new (class {
   newRedis(config = null) {
-    let client = redis.createClient(config ? config : env.redis)
+    const client = redis.createClient(config ? config : env.redis)
     client.on('error', (err) => {
       logger.error('Error on Redis', err)
       client.isOnline = false
@@ -15,7 +15,7 @@ export const redisFactory = new (class {
     return client
   }
 
-  newRedisPubsub() {
-    return this.newRedis(env.redisPubsub)
+  newRedisPubsub(config = {}) {
+    return this.newRedis(Object.assign({}, env.redisPubsub, config))
   }
 })()
