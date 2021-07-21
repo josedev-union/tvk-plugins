@@ -45,8 +45,8 @@ class Timeout {
   }
 
   start() {
-    console.log(`Start Timeout: ${this.timeSeconds}`)
     if (this.timeSeconds <= 0) return;
+    console.log(`Start Timeout: ${this.timeSeconds}`)
     setTimeout(() => {
       this.outOfTime = true;
       this.onTimeout();
@@ -98,14 +98,16 @@ helpers.asyncCatchError(async (req, res, next) => {
   const startTime = new Date().getTime()
   return form.parse(req, (err, fields, files) => {
     if (err) throw err;
+
+    const id = idGenerator.newOrderedId()
+    console.log(`[1 - ${timenowStr()} - ${id}]: Request Received (UploadTime: ${new Date().getTime() - startTime} ms)`)
+
     if (env.skipQuickSimulation) {
       return res.status(201).json({"skipped": true})
     }
 
     routeNoUploadTimeout.start()
     if (routeTimeout.isOutOfTime() || routeNoUploadTimeout.isOutOfTime()) return;
-    const id = idGenerator.newOrderedId()
-    console.log(`[1 - ${timenowStr()} - ${id}]: Request Received (UploadTime: ${new Date().getTime() - startTime} ms)`)
     const photoRedisKey = `pipeline:listener:${id}:photo`
     fs.readFile(files.photo.path, (err, photo) => {
       if (err) throw err;
