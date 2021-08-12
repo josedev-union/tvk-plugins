@@ -44,9 +44,15 @@ class Timeout {
     if (startNow) this.start();
   }
 
+  getExpiresAt() {
+    return this.expirationTimeSinceEpoch;
+  }
+
   start() {
+    console.log(`Try Start Timeout: ${this.timeSeconds}`)
     if (this.timeSeconds <= 0) return;
-    console.log(`Start Timeout: ${this.timeSeconds}`)
+    this.expirationTimeSinceEpoch = Date.now() + this.timeSeconds * 1000;
+    console.log(`Start Timeout: ${this.timeSeconds} - ${this.expirationTimeSinceEpoch}`)
     setTimeout(() => {
       this.outOfTime = true;
       this.onTimeout();
@@ -115,14 +121,18 @@ helpers.asyncCatchError(async (req, res, next) => {
         if (err) throw err;
       })
       if (routeTimeout.isOutOfTime() || routeNoUploadTimeout.isOutOfTime()) return;
-      redisPubsub.publish('pipeline:listener:request', JSON.stringify({
+      console.log(routeTimeout.getExpiresAt(), routeNoUploadTimeout.getExpiresAt())
+      const expirationTimeSinceEpoch = Math.min(routeTimeout.getExpiresAt(), routeNoUploadTimeout.getExpiresAt())
+      const publishedMessage = JSON.stringify({
         id: id,
         params: {
           photo_redis_key: photoRedisKey,
           mix_factor: parseFloat(fields.mix_factor),
+          expires_at: expirationTimeSinceEpoch
         }
-      }))
-      console.log(`[2 - ${timenowStr()} - ${id}]: Params Published`)
+      })
+      redisPubsub.publish('pipeline:listener:request', publishedMessage)
+      console.log(`[2 - ${timenowStr()} - ${id}]: Params Published: ${publishedMessage}`)
       const subscriber = redisPubsub.duplicate()
       subscriber.on('message', (channel, messageStr) => {
         console.log(`[3 - ${timenowStr()} - ${id}]: Result Received ${messageStr}`)
