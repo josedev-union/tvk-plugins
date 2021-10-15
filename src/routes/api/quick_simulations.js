@@ -9,9 +9,11 @@ import {getModel} from "../../middlewares/getModel"
 import {rateLimit} from "../../middlewares/rateLimit"
 import {SmileResourcesGuide} from "../../models/storage/SmileResourcesGuide"
 import {env} from "../../config/env"
-import {redisPubsub} from "../../config/redis"
+import {redisPubsub, buffersRedis} from "../../config/redis"
 import {helpers} from '../helpers'
 import {idGenerator} from '../../models/tools/idGenerator'
+
+const PUBSUB_PREFIX = 'listener:pipeline-in-memory'
 
 const userRateLimit = rateLimit({
   limit: env.userRateLimit.amount,
@@ -87,14 +89,19 @@ router.post('/',
 //ipRateLimit,
 //clientRateLimit,
 helpers.asyncCatchError(async (req, res, next) => {
+  let responded = false
   const routeTimeout = new Timeout({
     timeSeconds: env.quickSimulationRouteTimeout,
-    onTimeout: () => helpers.respondError(res, 504, 'Timeout!!'),
+    onTimeout: () => {
+      if (!responded) helpers.respondError(res, 504, 'Timeout!!')
+    },
     startNow: true,
   });
   const routeNoUploadTimeout = new Timeout({
     timeSeconds: env.quickSimulationRouteNoUploadTimeout,
-    onTimeout: () => helpers.respondError(res, 504, 'Timeout!!'),
+    onTimeout: () => {
+      if (!responded) helpers.respondError(res, 504, 'Timeout!!')
+    },
     startNow: false,
   });
   next = routeTimeout.wrapCancelOnTimeout(next)
@@ -109,6 +116,7 @@ helpers.asyncCatchError(async (req, res, next) => {
     console.log(`[1 - ${timenowStr()} - ${id}]: Request Received (UploadTime: ${new Date().getTime() - startTime} ms)`)
 
     if (env.skipQuickSimulation) {
+      responded = true
       return res.status(201).json({"skipped": true})
     }
 
@@ -117,7 +125,7 @@ helpers.asyncCatchError(async (req, res, next) => {
     const photoRedisKey = `pipeline:listener:${id}:photo`
     fs.readFile(files.photo.path, (err, photo) => {
       if (err) throw err;
-      redisPubsub.setex(photoRedisKey, env.quickSimulationTimeout, Buffer.from(photo, 'binary'), (err) => {
+      buffersRedis.setex(photoRedisKey, env.quickSimulationTimeout, Buffer.from(photo, 'binary'), (err) => {
         if (err) throw err;
       })
       if (routeTimeout.isOutOfTime() || routeNoUploadTimeout.isOutOfTime()) return;
@@ -131,7 +139,7 @@ helpers.asyncCatchError(async (req, res, next) => {
           expires_at: expirationTimeSinceEpoch
         }
       })
-      redisPubsub.publish('pipeline:listener:request', publishedMessage)
+      redisPubsub.publish(`${PUBSUB_PREFIX}:request`, publishedMessage)
       console.log(`[2 - ${timenowStr()} - ${id}]: Params Published: ${publishedMessage}`)
       const subscriber = redisPubsub.duplicate()
       subscriber.on('message', (channel, messageStr) => {
@@ -139,20 +147,24 @@ helpers.asyncCatchError(async (req, res, next) => {
         const message = JSON.parse(messageStr)
         subscriber.unsubscribe()
         if (message['error']) {
+          responded = true
           helpers.respondError(res, 500, message['error']);
           return;
         }
         const result_redis_key = message['result']['redis_key']
-        redisPubsub.get(result_redis_key, (err, result_photo) => {
+        buffersRedis.get(result_redis_key, (err, result_photo) => {
           if (err) throw err;
-          redisPubsub.del(result_redis_key)
+          buffersRedis.del(result_redis_key)
           // console.log(`ResultPhoto: ${result_photo}`)
           if (routeTimeout.isOutOfTime() || routeNoUploadTimeout.isOutOfTime()) return;
           res.header('Content-Type', 'image/jpeg')
+          responded = true
           return res.send(result_photo)
         })
       })
-      subscriber.subscribe(`pipeline:listener:${id}:response`)
+      const channel = `${PUBSUB_PREFIX}:${id}:response`
+      console.log(`Waiting for result in ${channel}`)
+      subscriber.subscribe(channel)
     })
   })
 

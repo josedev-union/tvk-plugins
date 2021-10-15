@@ -3,8 +3,9 @@ import {logger} from '../instrumentation/logger'
 import {env} from '../config/env'
 
 export const redisFactory = new (class {
-  newRedis(config = null) {
-    const client = redis.createClient(config ? config : env.redis)
+  newRedis(config = {}, overwriteConfig = false) {
+    const finalConfig = overwriteConfig ? config : Object.assign({}, env.redis, config)
+    const client = redis.createClient(finalConfig)
     client.on('error', (err) => {
       logger.error('Error on Redis', err)
       client.isOnline = false
@@ -16,6 +17,6 @@ export const redisFactory = new (class {
   }
 
   newRedisPubsub(config = {}) {
-    return this.newRedis(Object.assign({}, env.redisPubsub, config))
+    return this.newRedis(Object.assign({}, env.redisPubsub, config), true)
   }
 })()
