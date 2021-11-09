@@ -14,6 +14,7 @@ ADD public ./public
 
 # Preparing for distribution
 RUN npm install && \
+    npm run build && \
     npm run build-backend && \
     cp -rf ./dist/* ./
 
