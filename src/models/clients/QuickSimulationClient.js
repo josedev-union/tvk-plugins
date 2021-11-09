@@ -15,7 +15,7 @@ export class QuickSimulationClient {
   static pubsubRequestKey() { return `${PUBSUB_PREFIX}:request` }
   static pubsubResponseKey(id) { return `${PUBSUB_PREFIX}:${id}:response` }
 
-  async requestSimulation(photoPath, mixFactor) {
+  async requestSimulation(photoPath, mixFactor=null) {
     const id = idGenerator.newOrderedId()
     logger.info(`[${id}] Requesting Simulation (mixFactor:${mixFactor})`) // (UploadTime: ${new Date().getTime() - startTime} ms)`)
     const photoRedisKey = `pipeline:listener:${id}:photo`
@@ -23,18 +23,25 @@ export class QuickSimulationClient {
     const photoBuffer = Buffer.from(photo, 'binary')
     await this.#publishRequest(id, photoBuffer, photoRedisKey, mixFactor)
     const resultPhoto = await this.#waitResponse(QuickSimulationClient.pubsubResponseKey(id))
-    return resultPhoto
+    return {
+      original: photo,
+      result: resultPhoto,
+    }
   }
 
   async #publishRequest(id, photoBuffer, photoRedisKey, mixFactor) {
     await redisSetex(photoRedisKey, 15, photoBuffer)
+    var params = {
+      photo_redis_key: photoRedisKey,
+      expires_at: 0//expirationTimeSinceEpoch
+    }
+
+    if (mixFactor !== null) {
+      params['mix_factor'] = parseFloat(mixFactor)
+    }
     const publishedMessage = JSON.stringify({
       id: id,
-      params: {
-        photo_redis_key: photoRedisKey,
-        mix_factor: parseFloat(mixFactor),
-        //expires_at: expirationTimeSinceEpoch
-      }
+      params: params
     })
     redisPubsub.publish(QuickSimulationClient.pubsubRequestKey(), publishedMessage)
     logger.info(`[${id}]: Params Published: ${publishedMessage}`)
