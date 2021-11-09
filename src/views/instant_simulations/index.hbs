@@ -1,0 +1,35 @@
+<div id="dentrino-component">
+  <div class="processing-form">
+    <form method="POST" enctype="multipart/form-data" class="upload-form">
+      <!-- <input type="hidden" name="secret" value="{{secret}}"></input> -->
+      <fieldset>
+        <label for="photo">{{i18n "form:user:image"}}</label>
+        <input name="photo" type="file" accept="image/*" capture />
+      </fieldset>
+
+      <input type="submit" class="processing-button" value="{{i18n "form:submit"}}"></input>
+    </form>
+		{{#with simulation}}
+			<img src="{{original}}" width="300px" />
+			<img src="{{result}}" width="300px" />
+		{{/with}}
+  </div>
+
+  <!--
+  <div class="output-container">
+    <div class="error-container hide">
+      <span class="error-message">Error</span>
+    </div>
+
+    <div class="progress-component hide">
+      <div class="progress-success">
+        <span class="percentage">100</span>
+        <div class="description">
+          <span class="stage">Uploading</span>
+          <span class="loading-dots">...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  -->
+</div>
