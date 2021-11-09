@@ -1,19 +1,11 @@
-import fs from 'fs'
 import express from 'express'
-import formidable from 'formidable'
 const router = express.Router()
 
-import {SmileTask} from "../../models/database/SmileTask"
 import {smileTaskSecurity as security} from "../../middlewares/smileTaskSecurity"
-import {getModel} from "../../middlewares/getModel"
 import {rateLimit} from "../../middlewares/rateLimit"
-import {SmileResourcesGuide} from "../../models/storage/SmileResourcesGuide"
+import {QuickSimulationClient} from "../../models/clients/QuickSimulationClient"
 import {env} from "../../config/env"
-import {redisPubsub, buffersRedis} from "../../config/redis"
 import {helpers} from '../helpers'
-import {idGenerator} from '../../models/tools/idGenerator'
-
-const PUBSUB_PREFIX = 'listener:pipeline-in-memory'
 
 const userRateLimit = rateLimit({
   limit: env.userRateLimit.amount,
@@ -89,122 +81,11 @@ router.post('/',
 //ipRateLimit,
 //clientRateLimit,
 helpers.asyncCatchError(async (req, res, next) => {
-  let responded = false
-  const routeTimeout = new Timeout({
-    timeSeconds: env.quickSimulationRouteTimeout,
-    onTimeout: () => {
-      if (!responded) helpers.respondError(res, 504, 'Timeout!!')
-    },
-    startNow: true,
-  });
-  const routeNoUploadTimeout = new Timeout({
-    timeSeconds: env.quickSimulationRouteNoUploadTimeout,
-    onTimeout: () => {
-      if (!responded) helpers.respondError(res, 504, 'Timeout!!')
-    },
-    startNow: false,
-  });
-  next = routeTimeout.wrapCancelOnTimeout(next)
-  next = routeNoUploadTimeout.wrapCancelOnTimeout(next)
-  console.log(`[0 - ${timenowStr()}]: Request Received`)
-  const form = formidable({ multiples: true })
-  const startTime = new Date().getTime()
-  return form.parse(req, (err, fields, files) => {
-    if (err) throw err;
-
-    const id = idGenerator.newOrderedId()
-    console.log(`[1 - ${timenowStr()} - ${id}]: Request Received (UploadTime: ${new Date().getTime() - startTime} ms)`)
-
-    if (env.skipQuickSimulation) {
-      responded = true
-      return res.status(201).json({"skipped": true})
-    }
-
-    routeNoUploadTimeout.start()
-    if (routeTimeout.isOutOfTime() || routeNoUploadTimeout.isOutOfTime()) return;
-    const photoRedisKey = `pipeline:listener:${id}:photo`
-    fs.readFile(files.photo.path, (err, photo) => {
-      if (err) throw err;
-      buffersRedis.setex(photoRedisKey, env.quickSimulationTimeout, Buffer.from(photo, 'binary'), (err) => {
-        if (err) throw err;
-      })
-      if (routeTimeout.isOutOfTime() || routeNoUploadTimeout.isOutOfTime()) return;
-      console.log(routeTimeout.getExpiresAt(), routeNoUploadTimeout.getExpiresAt())
-      const expirationTimeSinceEpoch = Math.min(routeTimeout.getExpiresAt(), routeNoUploadTimeout.getExpiresAt())
-      const publishedMessage = JSON.stringify({
-        id: id,
-        params: {
-          photo_redis_key: photoRedisKey,
-          mix_factor: parseFloat(fields.mix_factor),
-          expires_at: expirationTimeSinceEpoch
-        }
-      })
-      redisPubsub.publish(`${PUBSUB_PREFIX}:request`, publishedMessage)
-      console.log(`[2 - ${timenowStr()} - ${id}]: Params Published: ${publishedMessage}`)
-      const subscriber = redisPubsub.duplicate()
-      subscriber.on('message', (channel, messageStr) => {
-        console.log(`[3 - ${timenowStr()} - ${id}]: Result Received ${messageStr}`)
-        const message = JSON.parse(messageStr)
-        subscriber.unsubscribe()
-        if (message['error']) {
-          responded = true
-          helpers.respondError(res, 500, message['error']);
-          return;
-        }
-        const result_redis_key = message['result']['redis_key']
-        buffersRedis.get(result_redis_key, (err, result_photo) => {
-          if (err) throw err;
-          buffersRedis.del(result_redis_key)
-          // console.log(`ResultPhoto: ${result_photo}`)
-          if (routeTimeout.isOutOfTime() || routeNoUploadTimeout.isOutOfTime()) return;
-          res.header('Content-Type', 'image/jpeg')
-          responded = true
-          return res.send(result_photo)
-        })
-      })
-      const channel = `${PUBSUB_PREFIX}:${id}:response`
-      console.log(`Waiting for result in ${channel}`)
-      subscriber.subscribe(channel)
-    })
-  })
-
-  // const manualReview = req.body.manualReview
-
-  // const smileTask = SmileTask.build(SmileTask.RequesterType.inhouseClient(), {
-  //   ip: req.ip,
-  //   userId: res.locals.dentUser.id,
-  //   clientId: res.locals.dentClient.id,
-  //   imageMD5: res.locals.dentImageMD5,
-  //   contentType: res.locals.dentImageContentType,
-  // })
-
-  // const resources = SmileResourcesGuide.build()
-  // let uploadDescriptorTask
-  // if (manualReview) {
-  //   uploadDescriptorTask = resources.uploadDescriptor(smileTask, {overwriteImageName: 'smile_review_pending'})
-  // } else {
-  //   uploadDescriptorTask = resources.uploadDescriptor(smileTask)
-  // }
-  // let [_, uploadDescriptor] = await Promise.all([
-  //   smileTask.save(),
-  //   uploadDescriptorTask,
-  // ])
-
-  // let response = {
-  //   uploadDescriptor: uploadDescriptor,
-  //   originalPath: smileTask.filepathUploaded,
-  //   resultPath: smileTask.filepathResult,
-  //   preprocessedPath: smileTask.filepathPreprocessed,
-  //   sideBySidePath: smileTask.filepathSideBySide,
-  //   sideBySideSmallPath: smileTask.filepathSideBySideSmall,
-  //   smileTaskId: smileTask.id,
-  // }
-
-  // if (!manualReview) {
-  //   response.progressWebsocket = `/ws/smile-tasks/${smileTask.id}`
-  // }
-
-  //return res.json(response)
+  const {files, fields} = await helpers.parseForm(req)
+  const client = new QuickSimulationClient()
+  const simulationResultPhoto = await client.requestSimulation(files.photo.path, fields.mix_factor)
+  res.header('Content-Type', 'image/jpeg')
+  return res.send(simulationResultPhoto)
 }))
 
 export default router

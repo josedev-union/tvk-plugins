@@ -1,3 +1,5 @@
+import formidable from 'formidable'
+
 import {envShared} from '../shared/envShared'
 import {simpleCrypto} from '../shared/simpleCrypto'
 import {Uri} from '../models/tools/Uri'
@@ -50,4 +52,15 @@ export const helpers = new (class {
   redirectCatch(catchCallback, behaviour) {
     behaviour().catch(catchCallback)
   }
+
+  parseForm(req) {
+    return new Promise((resolve, reject) => {
+      const form = formidable({ multiples: true })
+      form.parse(req, (err, fields, files) => {
+        if (err) reject(err)
+        else resolve({fields, files})
+      })
+    })
+  }
+
 })()
