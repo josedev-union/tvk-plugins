@@ -30,6 +30,7 @@ export const env = new (class {
     amount:     parseFloat(process.env.DENTRINO_CLIENT_RATE_LIMIT_AMOUNT || 100),
     timeWindow: parseFloat(process.env.DENTRINO_CLIENT_RATE_LIMIT_TIME || 1 * 60 * 1000),
   }
+  instSimUploadTimeout = parseFloat(process.env.DENTRINO_INSTSIM_UPLOAD_TIMEOUT || 15)
   instSimRouteTimeout = parseFloat(process.env.DENTRINO_INSTSIM_ROUTE_TIMEOUT || 60)
   instSimEstimatedDuration = parseFloat(process.env.DENTRINO_INSTSIM_ESTIMATED_DURATION || 5)
   instSimGiveUpStartTimeout = this.instSimRouteTimeout - this.instSimEstimatedDuration

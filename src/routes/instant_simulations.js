@@ -2,6 +2,7 @@ import stream from 'stream'
 import path from 'path'
 import fs from 'fs'
 
+import formidable from 'formidable'
 import {promisify} from "util"
 import timeout from 'connect-timeout'
 import express from 'express';
@@ -13,6 +14,7 @@ import {rateLimit} from "../middlewares/rateLimit"
 import {QuickSimulationClient} from "../models/clients/QuickSimulationClient"
 import {idGenerator} from "../models/tools/idGenerator"
 import {storageFactory} from '../models/storage/storageFactory'
+import {TimeoutManager} from '../models/tools/TimeoutManager'
 import {logger} from '../instrumentation/logger'
 import {env} from "../config/env"
 
@@ -21,7 +23,7 @@ const readfile = promisify(fs.readFile)
 const ipRateLimit = rateLimit({
   limit: env.ipRateLimit.amount,
   expiresIn: env.ipRateLimit.timeWindow,
-  lookup: (req, _) => `instant-simulations:${req.ip}`,
+  lookup: (req, _) => `instant-simulation:${req.ip}`,
   onBlocked: function(req, res, next) {
     throw 'Exceeded IP rate limit'
   }
@@ -32,7 +34,7 @@ router.get('/', async (req, res) => {
 })
 
 router.post('/',
-timeout(`${env.instSimRouteTimeout}s`),
+timeout(`${env.instSimRouteTimeout + env.instSimUploadTimeout}s`),
 //security.getContentType,
 //security.getSignature,
 //security.getImageMD5,
@@ -42,7 +44,18 @@ timeout(`${env.instSimRouteTimeout}s`),
 ipRateLimit,
 //clientRateLimit,
 helpers.asyncCatchError(async (req, res, next) => {
-  const {files, fields} = await helpers.parseForm(req, {maxFileSize: env.maxUploadSizeBytes, maxFieldsSize: 1*1024*1024, allowEmptyFiles: false})
+  const form = formidable({
+    multiples: true,
+    maxFileSize: env.maxUploadSizeBytes,
+    maxFieldsSize: 1*1024*1024,
+    allowEmptyFiles: false
+  })
+  const timeoutManager = new TimeoutManager({externalTimedout: () => req.timedout, onTimeout: () => form.pause()})
+  const {files, fields} = await timeoutManager.exec(async () => {
+    const result = await helpers.parseFormPromise(form, req)
+    return result
+  }, env.instSimUploadTimeout)
+  if (timeoutManager.hasTimedout()) return
   if (!files.photo || files.photo.size === 0) {
     throw "No photo was received"
   }
@@ -58,13 +71,14 @@ helpers.asyncCatchError(async (req, res, next) => {
   const nowSecs = new Date().getTime()
   const expiresAt = Math.round(nowSecs + env.instSimGiveUpStartTimeout * 1000.0)
   const simulation = await client.requestSimulation({photoPath: files.photo.path, expiresAt: expiresAt})
+  if (timeoutManager.hasTimedout()) return
   await uploadToFirestoreData({
     original: simulation.original,
     originalExt: extension,
     result: simulation.result,
     info: res.locals.info
   })
-  if (req.timedout) return
+  if (timeoutManager.hasTimedout()) return
   const originalDataUrl = helpers.toDataUrl(simulation.original)
   const resultDataUrl = helpers.toDataUrl(simulation.result)
   const simulationParams = {success: true, original: originalDataUrl, result: resultDataUrl}
@@ -135,7 +149,7 @@ function getErrorInfo(error) {
     prettyMessage = i18n('errors:upload:no-file')
   } else if (fullErrorMessage.match(/invalid.*extension/i)) {
     prettyMessage = i18n('errors:upload:wrong-image-format')
-  } else if (fullErrorMessage.match(/(response|error).*timeout/i)) {
+  } else if (fullErrorMessage.match(/((response|error).*timeout|timeout:)/i)) {
     prettyMessage = i18n('errors:timeout')
   } else if (fullErrorMessage.match(/Couldn.*t detect face/i)) {
     prettyMessage = i18n('errors:no-face')
@@ -154,12 +168,12 @@ function timenowStr() {
   return new Date().toLocaleString('en-US', {hour12: false});
 }
 
-export default {
-  router: router,
-  errorHandler: errorHandler
-}
-
 function prettyJSON(info) {
   const identation = 4
   return JSON.stringify(info, null, identation)
+}
+
+export default {
+  router: router,
+  errorHandler: errorHandler
 }
