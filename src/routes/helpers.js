@@ -53,9 +53,10 @@ export const helpers = new (class {
     behaviour().catch(catchCallback)
   }
 
-  parseForm(req) {
+  parseForm(req, extraOptions={}) {
     return new Promise((resolve, reject) => {
-      const form = formidable({ multiples: true })
+      let opts = { multiples: true }
+      const form = formidable(Object.assign(opts, extraOptions))
       form.parse(req, (err, fields, files) => {
         if (err) reject(err)
         else resolve({fields, files})

@@ -17,18 +17,22 @@ export const env = new (class {
       db: process.env.DENTRINO_REDIS_PUBSUB_DB,
   }
   maxUploadSizeMb = process.env.DENTRINO_MAX_UPLOAD_SIZE_MB || 15
+  maxUploadSizeBytes = this.maxUploadSizeMb * 1024 * 1024
   userRateLimit = {
     amount:     parseFloat(process.env.DENTRINO_USER_RATE_LIMIT_AMOUNT || 5),
     timeWindow: parseFloat(process.env.DENTRINO_USER_RATE_LIMIT_TIME || 1 * 60 * 1000),
   }
   ipRateLimit = {
-    amount:     parseFloat(process.env.DENTRINO_IP_RATE_LIMIT_AMOUNT || 5),
-    timeWindow: parseFloat(process.env.DENTRINO_IP_RATE_LIMIT_TIME || 1 * 60 * 1000),
+    amount:     parseFloat(process.env.DENTRINO_IP_RATE_LIMIT_AMOUNT || 20),
+    timeWindow: parseFloat(process.env.DENTRINO_IP_RATE_LIMIT_TIME || 1 * 60 * 60 * 1000),
   }
   clientRateLimit = {
     amount:     parseFloat(process.env.DENTRINO_CLIENT_RATE_LIMIT_AMOUNT || 100),
     timeWindow: parseFloat(process.env.DENTRINO_CLIENT_RATE_LIMIT_TIME || 1 * 60 * 1000),
   }
+  instSimRouteTimeout = parseFloat(process.env.DENTRINO_INSTSIM_ROUTE_TIMEOUT || 60)
+  instSimEstimatedDuration = parseFloat(process.env.DENTRINO_INSTSIM_ESTIMATED_DURATION || 5)
+  instSimGiveUpStartTimeout = this.instSimRouteTimeout - this.instSimEstimatedDuration
 
   isProduction() { return this.name === 'production' }
   isStaging() { return this.name === 'staging' }

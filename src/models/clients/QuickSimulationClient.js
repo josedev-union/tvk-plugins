@@ -15,13 +15,13 @@ export class QuickSimulationClient {
   static pubsubRequestKey() { return `${PUBSUB_PREFIX}:request` }
   static pubsubResponseKey(id) { return `${PUBSUB_PREFIX}:${id}:response` }
 
-  async requestSimulation(photoPath, mixFactor=null) {
+  async requestSimulation({photoPath, mixFactor=null, expiresAt=0}) {
     const id = idGenerator.newOrderedId()
     logger.info(`[${id}] Requesting Simulation (mixFactor:${mixFactor})`) // (UploadTime: ${new Date().getTime() - startTime} ms)`)
     const photoRedisKey = `pipeline:listener:${id}:photo`
     const photo = await readfile(photoPath)
     const photoBuffer = Buffer.from(photo, 'binary')
-    await this.#publishRequest(id, photoBuffer, photoRedisKey, mixFactor)
+    await this.#publishRequest(id, photoBuffer, photoRedisKey, mixFactor, expiresAt)
     const resultPhoto = await this.#waitResponse(QuickSimulationClient.pubsubResponseKey(id))
     return {
       original: photo,
@@ -29,11 +29,11 @@ export class QuickSimulationClient {
     }
   }
 
-  async #publishRequest(id, photoBuffer, photoRedisKey, mixFactor) {
-    await redisSetex(photoRedisKey, 15, photoBuffer)
+  async #publishRequest(id, photoBuffer, photoRedisKey, mixFactor, expiresAt) {
+    await redisSetex(photoRedisKey, 25, photoBuffer)
     var params = {
       photo_redis_key: photoRedisKey,
-      expires_at: 0//expirationTimeSinceEpoch
+      expires_at: expiresAt
     }
 
     if (mixFactor !== null) {

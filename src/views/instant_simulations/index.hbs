@@ -10,8 +10,12 @@
       <input type="submit" class="processing-button" value="{{i18n "form:submit"}}"></input>
     </form>
 		{{#with simulation}}
-			<img src="{{original}}" width="300px" />
-			<img src="{{result}}" width="300px" />
+      {{#if success}}
+        <img src="{{original}}" width="300px" />
+        <img src="{{result}}" width="300px" />
+      {{else}}
+        <p>Error: {{error_message}}</p>
+      {{/if}}
 		{{/with}}
   </div>
 

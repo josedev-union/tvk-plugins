@@ -55,11 +55,12 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.use('/', indexRouter);
-app.use('/web/instant-simulations', instantSimulations);
 app.use('/api/users/:userId/smile-tasks/', getModel.user, apiSmileTasks);
 app.use('/api/quick-simulations/', apiQuickSimulations);
 app.use('/api/67a4abe/smile-tasks/:smileTaskId/', getModel.smileTask, internalApiSmileTasks);
 app.use('/webhooks/828ffbc/smile-tasks/', webhooksSmileTasks);
+
+app.use('/web/instant-simulations', instantSimulations.router, Sentry.Handlers.errorHandler(), instantSimulations.errorHandler);
 
 app.use(Sentry.Handlers.errorHandler());
 
