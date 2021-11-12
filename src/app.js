@@ -52,17 +52,18 @@ app.use(express.json());
 app.use(compression());
 app.use(helmet());
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, '../public')));
 
-app.use('/', indexRouter);
-app.use('/api/users/:userId/smile-tasks/', getModel.user, apiSmileTasks);
-app.use('/api/quick-simulations/', apiQuickSimulations);
-app.use('/api/67a4abe/smile-tasks/:smileTaskId/', getModel.smileTask, internalApiSmileTasks);
-app.use('/webhooks/828ffbc/smile-tasks/', webhooksSmileTasks);
-
-app.use('/web/instant-simulations', instantSimulations.router, Sentry.Handlers.errorHandler(), instantSimulations.errorHandler);
-
-app.use(Sentry.Handlers.errorHandler());
+if (env.instSimRouter) {
+  app.use('/', express.static(path.join(__dirname, '../public')));
+  app.use('/', instantSimulations.router, Sentry.Handlers.errorHandler(), instantSimulations.errorHandler);
+} else {
+  app.use('/', indexRouter);
+  app.use('/api/users/:userId/smile-tasks/', getModel.user, apiSmileTasks);
+  app.use('/api/quick-simulations/', apiQuickSimulations);
+  app.use('/api/67a4abe/smile-tasks/:smileTaskId/', getModel.smileTask, internalApiSmileTasks);
+  app.use('/webhooks/828ffbc/smile-tasks/', webhooksSmileTasks);
+  app.use(Sentry.Handlers.errorHandler());
+}
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

@@ -34,6 +34,7 @@ export const env = new (class {
   instSimRouteTimeout = parseFloat(process.env.DENTRINO_INSTSIM_ROUTE_TIMEOUT || 60)
   instSimEstimatedDuration = parseFloat(process.env.DENTRINO_INSTSIM_ESTIMATED_DURATION || 5)
   instSimGiveUpStartTimeout = this.instSimRouteTimeout - this.instSimEstimatedDuration
+  instSimRouter = !!process.env.DENTRINO_INSTSIM_ROUTER
 
   isProduction() { return this.name === 'production' }
   isStaging() { return this.name === 'staging' }
