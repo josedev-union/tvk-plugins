@@ -5,8 +5,8 @@ import cookieParser from 'cookie-parser'
 import morgan from 'morgan'
 import compression from 'compression'
 import helmet from 'helmet'
-import {env} from './config/env'
-
+import buildStaticify from 'staticify'
+import Handlebars from 'hbs'
 const app = express()
 
 import indexRouter from './routes/index'
@@ -15,6 +15,7 @@ import apiSmileTasks from './routes/api/smile_tasks'
 import apiQuickSimulations from './routes/api/quick_simulations'
 import internalApiSmileTasks from './routes/internal_api/smile_tasks'
 import webhooksSmileTasks from './routes/webhooks/smile_tasks'
+import {env} from './config/env'
 import {helpers} from './routes/helpers'
 import './config/config'
 import {getModel} from './middlewares/getModel'
@@ -54,7 +55,11 @@ app.use(helmet());
 app.use(cookieParser());
 
 if (env.instSimRouter) {
-  app.use('/', express.static(path.join(__dirname, '../public')));
+  const publicDirPath = path.join(__dirname, '../public')
+  const staticify = buildStaticify(publicDirPath)
+  Handlebars.registerHelper('getVersionedPath', staticify.getVersionedPath)
+  app.use(staticify.middleware)
+  //app.use('/', express.static(publicDirPath));
   app.use('/', instantSimulations.router, Sentry.Handlers.errorHandler(), instantSimulations.errorHandler);
 } else {
   app.use('/', indexRouter);

@@ -32,6 +32,7 @@ const ipRateLimit = rateLimit({
 })
 
 router.get('/', async (req, res) => {
+  res.set('Cache-Control', "public, max-age=3600, must-revalidate")
   res.render('instant_simulations/index', buildParams())
 })
 
