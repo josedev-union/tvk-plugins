@@ -1,13 +1,13 @@
 <div id="dentrino-component">
   <div class="processing-form">
     <form method="POST" enctype="multipart/form-data" class="upload-form">
-      <!-- <input type="hidden" name="secret" value="{{secret}}"></input> -->
+      <input type="hidden" name="secret" value=""></input>
       <fieldset>
         <label for="photo">{{i18n "form:user:image"}}</label>
         <input name="photo" type="file" accept="image/*" capture />
       </fieldset>
 
-      <input type="submit" name="submit" class="processing-button" value="{{i18n "form:submit"}}"></input>
+      <input type="submit" name="btn" class="processing-button" value="{{i18n "form:submit"}}"></input>
     </form>
     <div id="feedback-container">
       <div class="simulation-images">

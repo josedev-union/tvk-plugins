@@ -18,6 +18,7 @@ import {TimeoutManager} from '../models/tools/TimeoutManager'
 import {logger} from '../instrumentation/logger'
 import {env} from "../config/env"
 import {envShared} from "../shared/envShared"
+import {otp} from "../shared/otp"
 
 const readfile = promisify(fs.readFile)
 
@@ -31,19 +32,17 @@ const ipRateLimit = rateLimit({
 })
 
 router.get('/', async (req, res) => {
-  res.render('instant_simulations/index', buildParams()) // secret: access.secret, 
+  res.render('instant_simulations/index', buildParams())
+})
+
+
+router.get('/epoch', async (req, res) => {
+  res.json({epoch: getOtpEpoch()})
 })
 
 router.post('/',
 timeout(`${env.instSimRouteTimeout + env.instSimUploadTimeout}s`),
-//security.getContentType,
-//security.getSignature,
-//security.getImageMD5,
-//getModel.client,
-//security.verifySignature,
-//userRateLimit,
 ipRateLimit,
-//clientRateLimit,
 helpers.asyncCatchError(async (req, res, next) => {
   const form = formidable({
     multiples: true,
@@ -59,6 +58,10 @@ helpers.asyncCatchError(async (req, res, next) => {
   if (timeoutManager.hasTimedout()) return
   if (!files.photo || files.photo.size === 0) {
     throw "No photo was received"
+  }
+
+  if (!tokenIsValid(fields.secret)) {
+    throw 'Non authorized token'
   }
 
   const extension = path.extname(files.photo.name).toLowerCase()
@@ -165,6 +168,10 @@ function getErrorInfo(error) {
   return info
 }
 
+function tokenIsValid(otpToken) {
+  return otp.verify(otpToken, getOtpEpoch(), envShared.apiSecretToken)
+}
+
 function timenowStr() {
   return new Date().toLocaleString('en-US', {hour12: false});
 }
@@ -172,6 +179,10 @@ function timenowStr() {
 function prettyJSON(info) {
   const identation = 4
   return JSON.stringify(info, null, identation)
+}
+
+function getOtpEpoch() {
+  return Math.round(new Date().getTime() / 1000)
 }
 
 export default {
