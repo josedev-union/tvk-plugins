@@ -1,5 +1,4 @@
 # Dentrino Web
-
 Web user-friendly interface to the smile enhancement image service named Dentrino Smiles.
 
 **Embeddable Web Component**: Code snippet that dentists can embed on their page to allow their potential clients to enhance a personal smile photo. (For now is the only existent component)
