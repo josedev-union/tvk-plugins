@@ -21,6 +21,7 @@ i18n.translator.add({
     'form:user:email': 'Email',
     'form:user:telephone-number': 'Telephone Number',
     'form:user:image': 'Photo',
+    'form:label:error': 'Error',
     'form:submit': 'Start Simulation',
   }
 })

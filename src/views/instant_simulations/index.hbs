@@ -7,16 +7,26 @@
         <input name="photo" type="file" accept="image/*" capture />
       </fieldset>
 
-      <input type="submit" class="processing-button" value="{{i18n "form:submit"}}"></input>
+      <input type="submit" name="submit" class="processing-button" value="{{i18n "form:submit"}}"></input>
     </form>
-		{{#with simulation}}
-      {{#if success}}
-        <img src="{{original}}" width="300px" />
-        <img src="{{result}}" width="300px" />
-      {{else}}
-        <p>Error: {{error_message}}</p>
-      {{/if}}
-		{{/with}}
+    <div id="feedback-container">
+      <div class="simulation-images">
+      {{#with simulation}}
+        {{#if success}}
+          <img src="{{original}}" width="300px" />
+          <img src="{{result}}" width="300px" />
+        {{/if}}
+      {{/with}}
+      </div>
+
+      <div class="error {{#unless simulation.error_message}}hidden{{/unless}}">
+        <span class="error-label">{{i18n "form:label:error"}}</span>: <span class="error-message">{{simulation.error_message}}</span>
+      </div>
+
+      <div class="upload-feedback hidden">
+        <span>[RUNNING SIMULATION]</span>
+      </div>
+    </div>
   </div>
 
   <!--

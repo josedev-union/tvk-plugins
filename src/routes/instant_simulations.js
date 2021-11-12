@@ -17,6 +17,7 @@ import {storageFactory} from '../models/storage/storageFactory'
 import {TimeoutManager} from '../models/tools/TimeoutManager'
 import {logger} from '../instrumentation/logger'
 import {env} from "../config/env"
+import {envShared} from "../shared/envShared"
 
 const readfile = promisify(fs.readFile)
 
@@ -46,7 +47,7 @@ ipRateLimit,
 helpers.asyncCatchError(async (req, res, next) => {
   const form = formidable({
     multiples: true,
-    maxFileSize: env.maxUploadSizeBytes,
+    maxFileSize: envShared.maxUploadSizeBytes,
     maxFieldsSize: 1*1024*1024,
     allowEmptyFiles: false
   })

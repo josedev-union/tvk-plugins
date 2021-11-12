@@ -16,8 +16,6 @@ export const env = new (class {
       port: process.env.DENTRINO_REDIS_PORT,
       db: process.env.DENTRINO_REDIS_PUBSUB_DB,
   }
-  maxUploadSizeMb = process.env.DENTRINO_MAX_UPLOAD_SIZE_MB || 15
-  maxUploadSizeBytes = this.maxUploadSizeMb * 1024 * 1024
   userRateLimit = {
     amount:     parseFloat(process.env.DENTRINO_USER_RATE_LIMIT_AMOUNT || 5),
     timeWindow: parseFloat(process.env.DENTRINO_USER_RATE_LIMIT_TIME || 1 * 60 * 1000),

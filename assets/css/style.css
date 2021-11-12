@@ -2,6 +2,10 @@ body {
   padding: 50px;
 }
 
+.hidden {
+  display: none;
+}
+
 #dentrino-component {
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 }
