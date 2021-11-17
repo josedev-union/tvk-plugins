@@ -86,6 +86,7 @@
     ]
   },
   "nodemonConfig": {
+    "ext": "js css hbs html json",
     "ignore": [
       "test/*",
       "public/*",
