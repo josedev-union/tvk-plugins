@@ -2,6 +2,7 @@ import stream from 'stream'
 import path from 'path'
 import fs from 'fs'
 
+import axios from 'axios'
 import formidable from 'formidable'
 import {promisify} from "util"
 import timeout from 'connect-timeout'
@@ -32,10 +33,19 @@ const ipRateLimit = rateLimit({
 })
 
 router.get('/', async (req, res) => {
-  res.set('Cache-Control', "public, max-age=3600, must-revalidate")
+  setupCacheGet(res)
   res.render('instant_simulations/index', buildParams())
 })
 
+router.get('/terms', async (req, res) => {
+  setupCacheGet(res)
+  res.render('instant_simulations/terms')
+})
+
+router.get('/privacy', async (req, res) => {
+  setupCacheGet(res)
+  res.render('instant_simulations/privacy')
+})
 
 router.get('/epoch', async (req, res) => {
   res.json({epoch: getOtpEpoch()})
@@ -63,6 +73,11 @@ helpers.asyncCatchError(async (req, res, next) => {
 
   if (!tokenIsValid(fields.secret)) {
     throw 'Non authorized token'
+  }
+
+  const recaptchaIsValid = await validateRecaptcha(fields.recaptchaToken)
+  if (!recaptchaIsValid) {
+    throw 'Invalid Recaptcha'
   }
 
   const extension = path.extname(files.photo.name).toLowerCase()
@@ -135,7 +150,7 @@ async function upload(data, filekey) {
 }
 
 function buildParams(simulation=null) {
-  let params = {i18n: i18n, maxFileSize: env.maxUploadSizeBytes}
+  let params = {i18n: i18n, maxFileSize: env.maxUploadSizeBytes, recaptchaClientKey: envShared.instSimRecaptchaClientKey}
   if (simulation !== null) {
     params = Object.assign(params, {simulation: simulation})
   }
@@ -148,6 +163,8 @@ function getErrorInfo(error) {
   let prettyMessage = null
   if (fullErrorMessage.match(/exceeded.*rate limit/i)) {
     prettyMessage = i18n('errors:simulations-hour-limit')
+  } else if (fullErrorMessage.match(/invalid.*recaptcha/i)) {
+    prettyMessage = i18n('errors:invalid-recaptcha')
   } else if (fullErrorMessage.match(/maxFileSize exceeded/i)) {
     prettyMessage = i18n('errors:upload:image-size-limit', {maxSize: env.maxUploadSizeMb})
   } else if (fullErrorMessage.match(/no photo.*received/i)) {
@@ -170,7 +187,13 @@ function getErrorInfo(error) {
 }
 
 function tokenIsValid(otpToken) {
-  return otp.verify(otpToken, getOtpEpoch(), envShared.apiSecretToken)
+  if (env.instSimTokenDisabled) return true
+  return otp.verify(otpToken, getOtpEpoch(), envShared.instSimSecretToken)
+}
+
+async function validateRecaptcha(token) {
+  const {data} = await axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${env.instSimRecaptchaSecretKey}&response=${token}`)
+  return data.success && data.score >= 0.75
 }
 
 function timenowStr() {
@@ -184,6 +207,10 @@ function prettyJSON(info) {
 
 function getOtpEpoch() {
   return Math.round(new Date().getTime() / 1000)
+}
+
+function setupCacheGet(res) {
+  res.set('Cache-Control', "public, max-age=3600, must-revalidate")
 }
 
 export default {

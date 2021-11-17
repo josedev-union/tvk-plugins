@@ -10,6 +10,7 @@ i18n.translator.add({
     'errors:upload:image-size-limit': 'Photo exceeds the %{maxSize}mb size limit',
     'errors:upload:wrong-image-format': 'Photo must be an jpg or png image',
     'errors:upload:no-file': 'Photo is mandatory',
+    'errors:invalid-recaptcha': 'Invalid recaptcha',
 
     'errors:simulations-limit': 'You have reached the limit of simulations, try again in 24 hours.',
     'errors:upload:generic': 'Error on upload, try again later',

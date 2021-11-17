@@ -65,7 +65,8 @@
     "webpack-cli": "^3.3.12",
     "webpack-node-externals": "~1.7.2",
     "firebase-tools": "~9.4.0",
-    "form-data": "~4.0.0"
+    "form-data": "~4.0.0",
+    "axios": "~0.24.0"
   },
   "babel": {
     "presets": [

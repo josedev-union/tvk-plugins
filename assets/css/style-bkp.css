@@ -1,0 +1,74 @@
+body {
+  padding: 50px;
+}
+
+.hidden {
+  display: none;
+}
+
+#dentrino-component {
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+#dentrino-component a {
+  color: #00B7FF;
+}
+
+#dentrino-component .hide {
+  display: none;
+}
+
+.progress-component, .progress-component .progress-success {
+  display: inline-block;
+}
+
+#dentrino-component .progress-component .loading-dots {
+  display: inline-block;
+  width: 1em;
+  text-align: left;
+}
+
+#dentrino-component .progress-component .description {
+  font-weight: bold;
+  text-align: center;
+  padding: 0;
+  margin: 0;
+}
+
+#dentrino-component .progress-component .percentage {
+  text-align: center;
+  font-size: 3em;
+  min-width: 3em;
+  display: block;
+}
+
+#dentrino-component .progress-component .percentage::after {
+  content: "%";
+}
+
+#dentrino-component .error-container {
+  font-size: 1.2rem;
+  color: darkred;
+}
+
+#dentrino-component .output-container {
+  padding: 10px;
+}
+
+#dentrino-component form fieldset {
+  padding: 10px 0;
+  border: none;
+}
+
+#dentrino-component form input {
+  padding: 5px 0;
+}
+
+#dentrino-component form label {
+  display: inline-block;
+  width: 175px;
+}
+
+#dentrino-component .processing-button {
+  padding: 20px 10px;
+}

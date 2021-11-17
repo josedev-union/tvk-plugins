@@ -1,49 +1,84 @@
-<div id="dentrino-component">
-  <div class="processing-form">
-    <form method="POST" enctype="multipart/form-data" class="upload-form">
-      <input type="hidden" name="secret" value=""></input>
-      <fieldset>
-        <label for="photo">{{i18n "form:user:image"}}</label>
-        <input name="photo" type="file" accept="image/*" capture />
-      </fieldset>
-
-      <input type="submit" name="btn" class="processing-button" value="{{i18n "form:submit"}}"></input>
-    </form>
-    <div id="feedback-container">
-      <div class="simulation-images">
-      {{#with simulation}}
-        {{#if success}}
-          <img src="{{original}}" width="300px" />
-          <img src="{{result}}" width="300px" />
-        {{/if}}
-      {{/with}}
-      </div>
-
-      <div class="error {{#unless simulation.error_message}}hidden{{/unless}}">
-        <span class="error-label">{{i18n "form:label:error"}}</span>: <span class="error-message">{{simulation.error_message}}</span>
-      </div>
-
-      <div class="upload-feedback hidden">
-        <span>[RUNNING SIMULATION]</span>
-      </div>
-    </div>
-  </div>
-
-  <!--
-  <div class="output-container">
-    <div class="error-container hide">
-      <span class="error-message">Error</span>
-    </div>
-
-    <div class="progress-component hide">
-      <div class="progress-success">
-        <span class="percentage">100</span>
-        <div class="description">
-          <span class="stage">Uploading</span>
-          <span class="loading-dots">...</span>
-        </div>
-      </div>
-    </div>
-  </div>
-  -->
+<div class="upload-feedback hidden">
+	<div class="is-overlay is-full columns is-centered is-vcentered is-marginless">
+			<div class="column is-centered is-vcentered is-full mx-auto is-marginless" style="width: 160px">
+					<div class="fa-10x fas fa-spinner fa-pulse"></div>
+			</div>
+	</div>
 </div>
+<section class="hero">
+    <div class="hero-body">
+        <div class="container">
+            <div class="columns is-vcentered is-centered">
+								<div class="column is-one-third-widescreen is-one-third-fullhd">
+                    <div class="content">
+												{{#if simulation.success}}
+												<div class="simulation-container">
+													<span class="subtitle is-1 is-2-mobile">Simulation</span>
+													<div class="twentytwenty-container mx-auto simulation-images">
+														<img class="image" src="{{simulation.original}}" />
+														<img class="image" src="{{simulation.result}}" />
+													</div>
+												</div>
+												{{/if}}
+												<div class="no-simulation-container {{#if simulation.success}}hidden{{/if}}">
+													<h1 class="title is-1 is-2-mobile">AI Smile Makeover</h1><span class="subtitle is-3 is-4-mobile">100% Automatic and </span><span class="subtitle is-3 is-4-mobile has-text-weight-bold" style="text-decoration-color: #26C6DA; text-decoration-line: underline; text-decoration-style: solid;">Free</span><img class="image" src="images/hero-simulation-transp.png" />
+												</div>
+                    </div>
+                </div>
+                <div class="column is-half-widescreen is-one-third-fullhd">
+                    <div class="columns is-mobile is-centered is-vcentered">
+                        <div class="column is-1-mobile is-2 is-4-desktop"><svg class="mt-auto mb-auto" width="100%">
+                                <use xlink:href="/svg/curve-arrow-pointing-right.svg#arrow"></use>
+                            </svg></div>
+                        <div class="column is-11-mobile is-10 is-8-desktop">
+                            <div class="card mt-4">
+                                <div class="card-image">
+                                    <figure class="image" style="background-image:url(&quot;images/photo_placeholder.jpg&quot;); background-repeat: repeat; background-size: cover; background-position: center;">
+                                        <div class="columns is-mobile is-centered is-vcentered" style="min-height: 200px;">
+                                            <div class="column is-half-desktop is-full-mobile">
+																								<svg class="mx-auto is-hidden-mobile is-block" width="50%">
+                                                    <use xlink:href="/svg/selfie.svg#selfie"></use>
+                                                </svg>
+																								<form method="POST" enctype="multipart/form-data" class="upload-form">
+																										<input type="hidden" name="secret" value=""></input>
+																										<input type="hidden" name="recaptchaToken" value=""></input>
+																										<div class="file is-link is-centered"><label class="file-label">
+																												<input class="file-input" type="file" name="photo" accept="image/*" capture /><span class="file-cta"><span class="file-icon"><i class="fas fa-upload"></i></span><span class="file-label">Upload Selfie</span></span></label>
+																										</div>
+																								</form>
+                                            </div>
+                                        </div>
+                                    </figure>
+                                </div>
+                                <div class="card-content content">
+																		<p class="error {{#unless simulation.error_message}}hidden{{/unless}}">
+																			<span class="error-label">{{i18n "form:label:error"}}</span>: <span class="error-message">{{simulation.error_message}}</span>
+																		</p>
+                                    <p class="has-text-weight-medium is-size-4">Photo Guidelines</p>
+                                    <ul>
+                                        <li>Full-face looking straight ahead</li>
+                                        <li>Well-lit environment</li>
+                                        <li>Big smile!</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="block mt-6">
+                                <p class="has-text-weight-light is-size-7">By uploading an image you agree to our <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<div class="section">
+    <h2 class="title is-2 has-text-centered">Examples!</h2>
+    <h4 class="subtitle has-text-centered is-size-7">(these are cropped, but the AI only works with full faces)</h4>
+    <div class="columns is-centered">
+        <div class="column is-full is-three-quarters-tablet is-10-desktop">
+            <div class="twentytwenty-container mx-auto" id="container1"><img class="image" src="images/samples/sample1_before.jpg" /><img class="image" src="images/samples/sample1_after.jpg" /></div>
+        </div>
+    </div>
+</div>
+<script src="https://www.google.com/recaptcha/api.js?render={{recaptchaClientKey}}" async defer></script>

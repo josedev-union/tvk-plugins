@@ -33,6 +33,8 @@ export const env = new (class {
   instSimEstimatedDuration = parseFloat(process.env.DENTRINO_INSTSIM_ESTIMATED_DURATION || 5)
   instSimGiveUpStartTimeout = this.instSimRouteTimeout - this.instSimEstimatedDuration
   instSimRouter = !!process.env.DENTRINO_INSTSIM_ROUTER
+  instSimTokenDisabled = !!process.env.DENTRINO_INSTSIM_TOKEN_DISABLED
+  instSimRecaptchaSecretKey = process.env.DENTRINO_INSTSIM_RECAPTCHA_SECRET_KEY
 
   isProduction() { return this.name === 'production' }
   isStaging() { return this.name === 'staging' }

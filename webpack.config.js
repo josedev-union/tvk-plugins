@@ -43,13 +43,15 @@ module.exports = {
   plugins: [
     new Dotenv({
       safe: true,
+      expand: true,
       allowEmptyValues: true,
       systemvars: true,
       silent: true
     }),
     new RemovePlugin({ before: {include: ['public/assets']}}),
     new CopyPlugin([
-      { from: './assets/css/*', to: '.', transformPath(target, abs) { return target.replace("assets", ""); } }
+      { from: './assets/css/*', to: '.', transformPath(target, abs) { return target.replace("assets", ""); } },
+      { from: './assets/vendor/css/**/*', to: '.', transformPath(target, abs) { return target.replace("assets", ""); } }
     ]),
   ],
 };
