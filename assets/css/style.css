@@ -28,3 +28,12 @@ a {
 .error .error-label {
 	font-weight: bold;
 }
+
+#error-notification.notification {
+  position: fixed;
+  right: 35px;
+  top: 35px;
+  width: 30%;
+  min-width: 300px;
+  z-index: 1000;
+}

@@ -13,15 +13,6 @@ import 'whatwg-fetch'
     const $beforeImageDownload = $('.before-image-download')
     const $afterImageDownload = $('.after-image-download')
 
-    if ($beforeImage.length > 0) {
-      prepareDownloadButton($beforeImage, $beforeImageDownload)
-      prepareDownloadButton($afterImage, $afterImageDownload)
-    }
-
-    $("#container1").twentytwenty({
-      no_overlay: true,
-    })
-
     const $form = $('form.upload-form')
     const $photo = $form.find('[name="photo"]')
     const $secret = $form.find('[name="secret"]')
@@ -32,6 +23,23 @@ import 'whatwg-fetch'
     const $simulationContainer = $('.simulation-container')
     const $imagesContainer = $simulationContainer.find('.simulation-images')
     const $uploadFeedback = $('.upload-feedback')
+    const $errorNotification = $('#error-notification')
+
+    if ($beforeImage.length > 0) {
+      prepareDownloadButton($beforeImage, $beforeImageDownload)
+      prepareDownloadButton($afterImage, $afterImageDownload)
+    }
+
+    (function() {
+      let errorMessage = $errorMessage.text().trim()
+      if (errorMessage) {
+        errorAppear(errorMessage)
+      }
+    })()
+
+    $("#container1").twentytwenty({
+      no_overlay: true,
+    })
 
     $imagesContainer.twentytwenty({
       no_overlay: true,
@@ -80,11 +88,21 @@ import 'whatwg-fetch'
       $noSimulationContainer.removeClass('hidden')
       $simulationContainer.addClass('hidden')
       setTimeout(() => {
-        $errorContainer.removeClass('hidden')
-        $uploadFeedback.addClass('hidden')
-        $errorMessage.text(msg)
-        //imagesContainer.classList.add('hidden')
+        errorAppear(msg)
       }, 350)
+    }
+
+    let hideTimeout
+    function errorAppear(msg) {
+      $errorContainer.removeClass('hidden')
+      $uploadFeedback.addClass('hidden')
+      $errorMessage.text(msg)
+      $errorNotification.find('span').text(msg)
+      $errorNotification.fadeIn()
+      $errorNotification.removeClass('hidden')
+      clearTimeout(hideTimeout)
+      hideTimeout = setTimeout(() => $errorNotification.fadeOut(), 2500)
+      //imagesContainer.classList.add('hidden')
     }
 
     function prepareDownloadButton($img, $download) {
