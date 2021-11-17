@@ -8,6 +8,16 @@ import 'whatwg-fetch'
 
 (function($) {
   $(function() {
+    const $beforeImage = $('.before-image')
+    const $afterImage = $('.after-image')
+    const $beforeImageDownload = $('.before-image-download')
+    const $afterImageDownload = $('.after-image-download')
+
+    if ($beforeImage.length > 0) {
+      prepareDownloadButton($beforeImage, $beforeImageDownload)
+      prepareDownloadButton($afterImage, $afterImageDownload)
+    }
+
     $("#container1").twentytwenty({
       no_overlay: true,
     })
@@ -75,6 +85,15 @@ import 'whatwg-fetch'
         $errorMessage.text(msg)
         //imagesContainer.classList.add('hidden')
       }, 350)
+    }
+
+    function prepareDownloadButton($img, $download) {
+      const dataUrl = $img.attr('src')
+      const $link = $download.find('.download-link')
+      const $placeholder = $download.find('.loading-placeholder')
+      $link.attr('href', dataUrl)
+      $link.removeClass('hidden')
+      $placeholder.remove()
     }
   })
 })(jQuery)

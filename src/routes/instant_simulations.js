@@ -101,7 +101,7 @@ helpers.asyncCatchError(async (req, res, next) => {
   if (timeoutManager.hasTimedout()) return
   const originalDataUrl = helpers.toDataUrl(simulation.original)
   const resultDataUrl = helpers.toDataUrl(simulation.result)
-  const simulationParams = {success: true, original: originalDataUrl, result: resultDataUrl}
+  const simulationParams = {success: true, original: originalDataUrl, result: resultDataUrl, originalExt: extension}
   return res.render('instant_simulations/index', buildParams(simulationParams))
 }))
 

@@ -8,15 +8,44 @@
 <section class="hero">
     <div class="hero-body">
         <div class="container">
-            <div class="columns is-vcentered is-centered">
+            <div class="columns is-centered">
 								<div class="column is-one-third-widescreen is-one-third-fullhd">
                     <div class="content">
 												{{#if simulation.success}}
 												<div class="simulation-container">
 													<span class="subtitle is-1 is-2-mobile">Simulation</span>
 													<div class="twentytwenty-container mx-auto simulation-images">
-														<img class="image" src="{{simulation.original}}" />
-														<img class="image" src="{{simulation.result}}" />
+														<img class="image before-image" src="{{simulation.original}}" />
+														<img class="image after-image" src="{{simulation.result}}" />
+													</div>
+
+													<div class="columns is-full mt-2">
+														<div class="column">
+															<div class="file is-primary is-boxed is-centered before-image-download">
+																<a class="hidden download-link" href="" download="dentrino-original.{{simulation.originalExt}}">
+																	<span class="file-cta">
+																		<span class="file-icon"><i class="fa fa-download"></i></span>
+																		<span class="file-label">Original</span>
+																	</span>
+																</a>
+																<span class="loading-placeholder file-cta">
+																	<div class="fa-2x fas fa-spinner fa-pulse"></div>
+																</span>
+															</div>
+														</div>
+														<div class="column">
+															<div class="file is-primary is-boxed is-centered after-image-download">
+																<a class="hidden download-link" href="" download="dentrino-result.jpg">
+																	<span class="file-cta">
+																		<span class="file-icon"><i class="fa fa-download"></i></span>
+																		<span class="file-label">Result</span>
+																	</span>
+																</a>
+																<span class="loading-placeholder file-cta">
+																	<div class="fa-2x fas fa-spinner fa-pulse"></div>
+																</span>
+															</div>
+														</div>
 													</div>
 												</div>
 												{{/if}}
