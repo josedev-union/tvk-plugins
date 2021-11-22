@@ -1,5 +1,5 @@
 import {GcloudPresignedCredentialsProvider} from './GcloudPresignedCredentialsProvider'
-import {env} from '../../config/env'
+import {envShared} from '../../shared/envShared'
 
 const EXPIRATION_IN_SECONDS = 10 * 60
 export class SmileResourcesGuide {
@@ -20,7 +20,7 @@ export class SmileResourcesGuide {
             keyName: keyName,
             contentType: smileTask.contentType,
             contentMD5: smileTask.imageMD5,
-            maxSizeInMegabytes: env.maxUploadSizeMb,
+            maxSizeInMegabytes: envShared.maxUploadSizeMb,
             expiresInSeconds: EXPIRATION_IN_SECONDS,
         })
     }

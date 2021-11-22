@@ -150,7 +150,7 @@ async function upload(data, filekey) {
 }
 
 function buildParams(simulation=null) {
-  let params = {i18n: i18n, maxFileSize: env.maxUploadSizeBytes, recaptchaClientKey: envShared.instSimRecaptchaClientKey}
+  let params = {i18n: i18n, maxFileSize: envShared.maxUploadSizeBytes, recaptchaClientKey: envShared.instSimRecaptchaClientKey}
   if (simulation !== null) {
     params = Object.assign(params, {simulation: simulation})
   }
@@ -166,7 +166,7 @@ function getErrorInfo(error) {
   } else if (fullErrorMessage.match(/invalid.*recaptcha/i)) {
     prettyMessage = i18n('errors:invalid-recaptcha')
   } else if (fullErrorMessage.match(/maxFileSize exceeded/i)) {
-    prettyMessage = i18n('errors:upload:image-size-limit', {maxSize: env.maxUploadSizeMb})
+    prettyMessage = i18n('errors:upload:image-size-limit', {maxSize: envShared.maxUploadSizeMb})
   } else if (fullErrorMessage.match(/no photo.*received/i)) {
     prettyMessage = i18n('errors:upload:no-file')
   } else if (fullErrorMessage.match(/invalid.*extension/i)) {
