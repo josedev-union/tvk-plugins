@@ -31,6 +31,7 @@ export const env = new (class {
   instSimUploadTimeout = parseFloat(process.env.DENTRINO_INSTSIM_UPLOAD_TIMEOUT || 15)
   instSimRouteTimeout = parseFloat(process.env.DENTRINO_INSTSIM_ROUTE_TIMEOUT || 60)
   instSimEstimatedDuration = parseFloat(process.env.DENTRINO_INSTSIM_ESTIMATED_DURATION || 5)
+  instSimMixFactor = parseFloat(process.env.DENTRINO_INSTSIM_MIX_FACTOR || 0.1)
   instSimGiveUpStartTimeout = this.instSimRouteTimeout - this.instSimEstimatedDuration
   instSimRouter = !!process.env.DENTRINO_INSTSIM_ROUTER
   instSimTokenDisabled = !!process.env.DENTRINO_INSTSIM_TOKEN_DISABLED
