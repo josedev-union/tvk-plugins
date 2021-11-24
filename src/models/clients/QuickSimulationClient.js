@@ -22,10 +22,11 @@ export class QuickSimulationClient {
     const photo = await readfile(photoPath)
     const photoBuffer = Buffer.from(photo, 'binary')
     await this.#publishRequest(id, photoBuffer, photoRedisKey, mixFactor, expiresAt)
-    const resultPhoto = await this.#waitResponse(QuickSimulationClient.pubsubResponseKey(id))
+    const data = await this.#waitResponse(QuickSimulationClient.pubsubResponseKey(id))
     return {
       original: photo,
-      result: resultPhoto,
+      before: data['before'],
+      result: data['result'],
     }
   }
 
@@ -54,9 +55,15 @@ export class QuickSimulationClient {
     if (message['error']) {
       throw new Error(message['error'])
     }
-    const resultRedisKey = message['result']['redis_key']
+    const resultRedisKey = message['data']['result_redis_key']
+    const beforeRedisKey = message['data']['before_redis_key']
     const resultPhoto = await redisGet(resultRedisKey)
+    const beforePhoto = await redisGet(beforeRedisKey)
     redisDel(resultRedisKey)
-    return resultPhoto
+    redisDel(beforeRedisKey)
+    return {
+      'result': resultPhoto,
+      'before': beforePhoto
+    }
   }
 }

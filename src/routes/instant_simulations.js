@@ -99,9 +99,9 @@ helpers.asyncCatchError(async (req, res, next) => {
     info: res.locals.info
   })
   if (timeoutManager.hasTimedout()) return
-  const originalDataUrl = helpers.toDataUrl(simulation.original)
+  const beforeDataUrl = helpers.toDataUrl(simulation.before)
   const resultDataUrl = helpers.toDataUrl(simulation.result)
-  const simulationParams = {success: true, original: originalDataUrl, result: resultDataUrl, originalExt: extension}
+  const simulationParams = {success: true, before: beforeDataUrl, result: resultDataUrl}
   return res.render('instant_simulations/index', buildParams(simulationParams))
 }))
 
