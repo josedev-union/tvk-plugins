@@ -1,3 +1,10 @@
+{{#if simulation}}
+<script>
+  if ( window.history.replaceState ) {
+    window.history.replaceState( null, null, window.location.href );
+  }
+</script>
+{{/if}}
 <div id="error-notification" class="notification is-danger hidden">
   <button class="delete"></button>
 	<span>MESSAGE MESSAGE MESSAGE MESSAGE MESSAGE MESSAGE MESSAGE MESSAGE</span>
