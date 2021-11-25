@@ -67,42 +67,45 @@ helpers.asyncCatchError(async (req, res, next) => {
     return result
   }, env.instSimUploadTimeout)
   if (timeoutManager.hasTimedout()) return
-  if (!files.photo || files.photo.size === 0) {
-    throw "No photo was received"
-  }
 
-  if (!tokenIsValid(fields.secret)) {
-    throw 'Non authorized token'
-  }
+  await timeoutManager.exec(async () => {
+    const nowSecs = new Date().getTime()
+    if (!files.photo || files.photo.size === 0) {
+      throw "No photo was received"
+    }
 
-  const recaptchaIsValid = await validateRecaptcha(fields.recaptchaToken)
-  if (!recaptchaIsValid) {
-    throw 'Invalid Recaptcha'
-  }
+    if (!tokenIsValid(fields.secret)) {
+      throw 'Non authorized token'
+    }
 
-  const extension = path.extname(files.photo.name).toLowerCase()
-  res.locals.photoPath = files.photo.path
-  res.locals.photoExt = extension
-  res.locals.info = {ip: req.ip, timestamp: timenowStr()}
-  if (!extension.match(/.*(jpe?g|png)$/i)) {
-    throw `Invalid extension ${extension}`
-  }
-  const client = new QuickSimulationClient()
-  const nowSecs = new Date().getTime()
-  const expiresAt = Math.round(nowSecs + env.instSimGiveUpStartTimeout * 1000.0)
-  const simulation = await client.requestSimulation({photoPath: files.photo.path, expiresAt: expiresAt, mixFactor: env.instSimMixFactor})
-  if (timeoutManager.hasTimedout()) return
-  await uploadToFirestoreData({
-    original: simulation.original,
-    originalExt: extension,
-    result: simulation.result,
-    info: res.locals.info
-  })
-  if (timeoutManager.hasTimedout()) return
-  const beforeDataUrl = helpers.toDataUrl(simulation.before)
-  const resultDataUrl = helpers.toDataUrl(simulation.result)
-  const simulationParams = {success: true, before: beforeDataUrl, result: resultDataUrl, originalExt: extension}
-  return res.render('instant_simulations/index', buildParams(simulationParams))
+    const recaptchaIsValid = await validateRecaptcha(fields.recaptchaToken)
+    if (!recaptchaIsValid) {
+      throw 'Invalid Recaptcha'
+    }
+
+    const extension = path.extname(files.photo.name).toLowerCase()
+    res.locals.photoPath = files.photo.path
+    res.locals.photoExt = extension
+    res.locals.info = {ip: req.ip, timestamp: timenowStr()}
+    if (!extension.match(/.*(jpe?g|png)$/i)) {
+      throw `Invalid extension ${extension}`
+    }
+    const client = new QuickSimulationClient()
+    const expiresAt = Math.round(nowSecs + env.instSimGiveUpStartTimeout * 1000.0)
+    const simulation = await client.requestSimulation({photoPath: files.photo.path, expiresAt: expiresAt, mixFactor: env.instSimMixFactor})
+    if (timeoutManager.hasTimedout()) return
+    await uploadToFirestoreData({
+      original: simulation.original,
+      originalExt: extension,
+      result: simulation.result,
+      info: res.locals.info
+    })
+    if (timeoutManager.hasTimedout()) return
+    const beforeDataUrl = helpers.toDataUrl(simulation.before)
+    const resultDataUrl = helpers.toDataUrl(simulation.result)
+    const simulationParams = {success: true, before: beforeDataUrl, result: resultDataUrl, originalExt: extension}
+    return res.render('instant_simulations/index', buildParams(simulationParams))
+  }, env.instSimRouteTimeout)
 }))
 
 async function errorHandler(error, req, res, next) {
