@@ -7,6 +7,11 @@ a {
   color: #00B7FF;
 }
 
+.stop-scrolling {
+	height: 100%;
+	overflow: hidden;
+}
+
 .upload-feedback {
 	background-color: rgba(0, 0, 0, 0.95);
 	z-index: 99999;
@@ -15,6 +20,8 @@ a {
 	left: 0;
 	top: 0;
 	bottom: 0;
+	width: 100%;
+	height: 100%;
 }
 
 .hidden {

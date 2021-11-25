@@ -10,7 +10,7 @@
 	<span>MESSAGE MESSAGE MESSAGE MESSAGE MESSAGE MESSAGE MESSAGE MESSAGE</span>
 </div>
 <div class="upload-feedback hidden">
-	<div class="is-overlay is-full columns is-centered is-vcentered is-marginless">
+	<div class="is-overlay is-full columns is-centered is-vcentered is-marginless is-mobile">
 			<div class="column is-centered is-vcentered is-full mx-auto is-marginless" style="width: 160px">
 					<div class="fa-10x fas fa-spinner fa-pulse"></div>
 			</div>
@@ -112,6 +112,8 @@
         </div>
     </div>
 </section>
+
+{{#unless simulation}}
 <div class="section">
     <h2 class="title is-2 has-text-centered">Examples!</h2>
     <h4 class="subtitle has-text-centered is-size-7">(these are cropped, but the AI only works with full faces)</h4>
@@ -121,4 +123,5 @@
         </div>
     </div>
 </div>
+{{/unless}}
 <script src="https://www.google.com/recaptcha/api.js?render={{recaptchaClientKey}}" async defer></script>

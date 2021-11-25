@@ -13,6 +13,7 @@ import 'whatwg-fetch'
     const $beforeImageDownload = $('.before-image-download')
     const $afterImageDownload = $('.after-image-download')
 
+    const $htmlbody = $('body,html')
     const $form = $('form.upload-form')
     const $photo = $form.find('[name="photo"]')
     const $secret = $form.find('[name="secret"]')
@@ -47,10 +48,10 @@ import 'whatwg-fetch'
 
     $photo.on('change', (event) => {
       $errorContainer.addClass('hidden')
-      $uploadFeedback.removeClass('hidden')
+      showLoading()
       const errorMsg = validate()
       if (errorMsg) {
-        showError(errorMsg)
+        showErrorDelayed(errorMsg)
         return
       }
       window.grecaptcha.execute(
@@ -58,7 +59,7 @@ import 'whatwg-fetch'
         {action: 'simulate'},
       ).then((token) => {
         submit({recaptchaToken: token})
-      }).catch(() => showError(i18n('errors:unknown-processing-error')))
+      }).catch(() => showErrorDelayed(i18n('errors:unknown-processing-error')))
     })
 
     function submit({recaptchaToken=null}) {
@@ -82,10 +83,11 @@ import 'whatwg-fetch'
       return null
     }
 
-    function showError(msg) {
+    function showErrorDelayed(msg) {
+      showLoading()
       $errorContainer.addClass('hidden')
-      $uploadFeedback.removeClass('hidden')
       $noSimulationContainer.removeClass('hidden')
+      $noSimulationContainer.addClass('is-hidden-mobile')
       $simulationContainer.addClass('hidden')
       setTimeout(() => {
         errorAppear(msg)
@@ -94,8 +96,9 @@ import 'whatwg-fetch'
 
     let hideTimeout
     function errorAppear(msg) {
+      hideLoading()
       $errorContainer.removeClass('hidden')
-      $uploadFeedback.addClass('hidden')
+      $noSimulationContainer.addClass('is-hidden-mobile')
       $errorMessage.text(msg)
       $errorNotification.find('span').text(msg)
       $errorNotification.fadeIn()
@@ -103,6 +106,29 @@ import 'whatwg-fetch'
       clearTimeout(hideTimeout)
       hideTimeout = setTimeout(() => $errorNotification.fadeOut(), 2500)
       //imagesContainer.classList.add('hidden')
+    }
+
+    function showLoading() {
+      $uploadFeedback.removeClass('hidden')
+      lockScrollOnTop()
+    }
+
+    function hideLoading() {
+      $uploadFeedback.addClass('hidden')
+      unlockScroll()
+    }
+
+    function lockScrollOnTop() {
+      $htmlbody.addClass('stop-scrolling')
+      window.scrollTo(0, 0)
+      $htmlbody.bind('touchmove.lockscroll', function(e){e.preventDefault()})
+      $htmlbody.bind('scroll.lockscroll', function(e){e.preventDefault()})
+    }
+
+    function unlockScroll() {
+      $htmlbody.removeClass('stop-scrolling')
+      $htmlbody.unbind('touchmove.lockscroll')
+      $htmlbody.unbind('scroll.lockscroll')
     }
 
     function prepareDownloadButton($img, $download) {
