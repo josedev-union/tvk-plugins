@@ -71,7 +71,7 @@ export const helpers = new (class {
   }
 
   toDataUrl(binary, mime) {
-    return `data:{mime};base64,${simpleCrypto.base64(binary)}`
+    return `data:${mime};base64,${simpleCrypto.base64(binary)}`
   }
 
 })()
