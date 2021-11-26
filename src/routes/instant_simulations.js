@@ -22,6 +22,16 @@ import {envShared} from "../shared/envShared"
 import {otp} from "../shared/otp"
 
 const readfile = promisify(fs.readFile)
+const ROBOTS_PRODUCTION = `# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Disallow: /terms
+
+User-agent: *
+Disallow: /privacy`
+
+const ROBOTS_DEV = `# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Disallow: /`
 
 const ipRateLimit = rateLimit({
   limit: env.ipRateLimit.amount,
@@ -49,6 +59,13 @@ router.get('/privacy', async (req, res) => {
 
 router.get('/epoch', async (req, res) => {
   res.json({epoch: getOtpEpoch()})
+})
+
+router.get('/robots.txt', async (req, res) => {
+  const content = env.isProduction() ? ROBOTS_PRODUCTION : ROBOTS_DEV
+  setupCacheGet(res)
+  res.setHeader('Content-Type', 'text/plain');
+  res.status(200).send(content)
 })
 
 router.post('/',
@@ -213,6 +230,7 @@ function getOtpEpoch() {
 }
 
 function setupCacheGet(res) {
+  if (!env.isProduction()) return;
   res.set('Cache-Control', "public, max-age=3600, must-revalidate")
 }
 
