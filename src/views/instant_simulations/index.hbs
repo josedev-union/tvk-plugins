@@ -20,9 +20,9 @@
     <div class="hero-body">
         <div class="container">
             <div class="columns is-centered">
-								<div class="column is-one-third-widescreen is-one-third-fullhd">
+                {{#if simulation.success}}
+								<div class="column is-two-thirds-widescreen is-two-thirds-fullhd">
                     <div class="content">
-												{{#if simulation.success}}
 												<div class="simulation-container">
 													<span class="subtitle is-1 is-2-mobile">Simulation</span>
 													<div class="twentytwenty-container mx-auto simulation-images">
@@ -58,19 +58,35 @@
 															</div>
 														</div>
 													</div>
+													<div class="columns is-full mt-2">
+                            <div class="column is-centered">
+                              <div class="buttons is-centered">
+                                <a class="button is-link is-large is-fullwidth link-force-reload" href="/#upload">
+                                  <div class="is-centered is-block pr-3">
+																	  <i class="fa fa-repeat"></i>
+                                  </div>
+                                  <div class="is-block">Start Over</div>
+                                </a>
+                              </div>
+                            </div>
+                          </div>
 												</div>
-												{{/if}}
-												<div class="no-simulation-container {{#if simulation.success}}hidden{{/if}}">
+                    </div>
+                </div>
+                {{/if}}
+								<div class="column is-one-third-widescreen is-one-third-fullhd {{#if simulation.success}}is-hidden{{/if}}">
+                    <div class="content">
+												<div class="no-simulation-container">
 													<h1 class="title is-1 is-2-mobile">AI Smile Makeover</h1><span class="subtitle is-3 is-4-mobile">100% Automatic and </span><span class="subtitle is-3 is-4-mobile has-text-weight-bold" style="text-decoration-color: #26C6DA; text-decoration-line: underline; text-decoration-style: solid;">Free</span><img class="image" src="images/hero-simulation-transp.png" />
 												</div>
                     </div>
                 </div>
-                <div class="column is-half-widescreen is-one-third-fullhd">
+                <div class="column is-half-widescreen is-one-third-fullhd {{#if simulation.success}}is-hidden{{/if}}">
                     <div class="columns is-mobile is-centered is-vcentered">
                         <div class="column is-1-mobile is-2 is-4-desktop"><svg class="mt-auto mb-auto" width="100%">
                                 <use xlink:href="/svg/curve-arrow-pointing-right.svg#arrow"></use>
                             </svg></div>
-                        <div class="column is-11-mobile is-10 is-8-desktop">
+                        <div id="upload" class="column is-11-mobile is-10 is-8-desktop">
                             <div class="card mt-4">
                                 <div class="card-image">
                                     <figure class="image" style="background-image:url(&quot;images/photo_placeholder.jpg&quot;); background-repeat: repeat; background-size: cover; background-position: center;">

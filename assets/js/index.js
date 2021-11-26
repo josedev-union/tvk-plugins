@@ -38,6 +38,22 @@ import 'whatwg-fetch'
       }
     })()
 
+    $('.link-force-reload').on('click', function() {
+      const originalHref = location.pathname
+      const href = $(this).attr('href')
+      let [url, hash] = href.split('#')
+      let originalUrl = originalHref.split('#')[0] || '/'
+      if (!url) url = '/'
+      location.hash = hash
+      location.href = href
+      originalUrl = originalUrl.replace(/\/$/, '').toLowerCase()
+      url = url.replace(/\/$/, '').toLowerCase()
+      if (originalUrl === url) {
+        location.reload()
+      }
+      event.preventDefault()
+    })
+
     $("#container1").twentytwenty({
       no_overlay: true,
     })
