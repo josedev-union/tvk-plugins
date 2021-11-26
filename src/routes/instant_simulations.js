@@ -112,8 +112,9 @@ helpers.asyncCatchError(async (req, res, next) => {
     const simulation = await client.requestSimulation({photoPath: files.photo.path, expiresAt: expiresAt, mixFactor: env.instSimMixFactor})
     if (timeoutManager.hasTimedout()) return
     await uploadToFirestoreData({
-      original: simulation.original,
       originalExt: extension,
+      original: simulation.original,
+      before: simulation.before,
       result: simulation.result,
       info: res.locals.info
     })
@@ -140,7 +141,7 @@ async function errorHandler(error, req, res, next) {
   return res.render('instant_simulations/index', buildParams(simulationParams))
 }
 
-async function uploadToFirestoreData({original, originalExt, result=null, info}) {
+async function uploadToFirestoreData({originalExt, original, before=null, result=null, info}) {
   const success = result !== null
   const id = idGenerator.newOrderedId()
   const folder = `.instant-simulations/${(success ? 'success' : 'fail')}/${id}/`
@@ -150,6 +151,7 @@ async function uploadToFirestoreData({original, originalExt, result=null, info})
   ]
   if (success) {
     uploads.push(upload(result, path.join(folder, 'result.jpg')))
+    uploads.push(upload(before, path.join(folder, 'before.jpg')))
   }
   await Promise.all(uploads)
 }
