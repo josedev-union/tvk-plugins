@@ -24,16 +24,22 @@
 								<div class="column is-two-thirds-widescreen is-two-thirds-fullhd">
                     <div class="content">
 												<div class="simulation-container">
-													<span class="subtitle is-1 is-2-mobile">Simulation</span>
+													<span class="subtitle is-1 is-2-mobile is-block">Simulation</span>
+                          <div class="loading-simulation-placeholder is-flex">
+                            <div class="is-centered is-inline-block mx-auto p-6 has-text-centered">
+                              <span class="is-block has-text-centered is-size-3 p-2">Loading Preview</span>
+                              <i class="fa-6x fas fa-spinner fa-pulse"></i>
+                            </div>
+                          </div>
 													<div class="twentytwenty-container mx-auto simulation-images">
-														<img class="image before-image" src="{{simulation.before}}" />
-														<img class="image after-image" src="{{simulation.result}}" />
+														<img class="image before-image" src="{{simulation.beforeUrl}}" />
+														<img class="image after-image" src="{{simulation.resultUrl}}" />
 													</div>
 
 													<div class="columns is-full mt-2">
 														<div class="column">
 															<div class="file is-primary is-boxed is-centered before-image-download">
-																<a class="download-link" href="{{simulation.before}}" download="before" target="_blank">
+																<a class="download-link" href="{{simulation.beforeUrl}}" download="before" target="_blank">
 																	<span class="file-cta">
 																		<span class="file-icon"><i class="fa fa-download"></i></span>
 																		<span class="file-label">Original</span>
@@ -43,7 +49,7 @@
 														</div>
 														<div class="column">
 															<div class="file is-primary is-boxed is-centered after-image-download">
-																<a class="download-link" href="{{simulation.result}}" download="after" target="_blank">
+																<a class="download-link" href="{{simulation.resultUrl}}" download="after" target="_blank">
 																	<span class="file-cta">
 																		<span class="file-icon"><i class="fa fa-download"></i></span>
 																		<span class="file-label">Result</span>
@@ -80,7 +86,8 @@
                         <div class="column is-1-mobile is-2 is-4-desktop"><svg class="mt-auto mb-auto" width="100%">
                                 <use xlink:href="/svg/curve-arrow-pointing-right.svg#arrow"></use>
                             </svg></div>
-                        <div id="upload" class="column is-11-mobile is-10 is-8-desktop">
+                        <div class="column is-11-mobile is-10 is-8-desktop">
+                            <span id="upload"></span>
                             <div class="card mt-4">
                                 <div class="card-image">
                                     <figure class="image" style="background-image:url(&quot;images/photo_placeholder.jpg&quot;); background-repeat: repeat; background-size: cover; background-position: center;">

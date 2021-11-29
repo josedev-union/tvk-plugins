@@ -1,6 +1,5 @@
-import '../vendor/js/jquery-3.6.0.min.js'
-import '../vendor/js/imagesloaded.v4.1.4.js'
-import '../vendor/js/twentytwenty/jquery.event.move.js'
+import jQuery from '../vendor/js/jquery-3.6.0.min.js'
+import imagesLoaded from '../vendor/js/imagesloaded.v4.1.4.js'
 import '../vendor/js/twentytwenty/jquery.twentytwenty.js'
 
 import {i18n} from '../../src/shared/i18n'
@@ -22,6 +21,7 @@ import 'whatwg-fetch'
     const $imagesContainer = $simulationContainer.find('.simulation-images')
     const $uploadFeedback = $('.upload-feedback')
     const $errorNotification = $('#error-notification')
+    const $simulationLoadingPlaceholder = $('.loading-simulation-placeholder')
 
     function setupErrorNotification() {
       let errorMessage = $errorMessage.text().trim()
@@ -30,6 +30,13 @@ import 'whatwg-fetch'
       }
     }
     setupErrorNotification()
+
+    function scrollToUpload() {
+      if (location.hash === '#upload') {
+        window.scrollTo(0, $('#upload').offset().top)
+      }
+    }
+    scrollToUpload()
 
     $('.link-force-reload').on('click', function() {
       const originalHref = location.pathname
@@ -48,7 +55,9 @@ import 'whatwg-fetch'
     })
 
     setupTwentyTwenty($("#container1"))
-    setupTwentyTwenty($imagesContainer)
+    setupTwentyTwenty($imagesContainer, () => {
+      $simulationLoadingPlaceholder.addClass('is-hidden')
+    })
 
     $photo.on('change', (event) => {
       $errorContainer.addClass('hidden')
@@ -129,8 +138,9 @@ import 'whatwg-fetch'
       $htmlbody.bind('scroll.lockscroll', function(e){e.preventDefault()})
     }
 
-    function setupTwentyTwenty($container) {
-      $container.imagesLoaded(() => {
+    function setupTwentyTwenty($container, onLoad) {
+      imagesLoaded($container, () => {
+        if(onLoad) onLoad()
         $container.twentytwenty({
           no_overlay: true,
         })
@@ -143,4 +153,4 @@ import 'whatwg-fetch'
       $htmlbody.unbind('scroll.lockscroll')
     }
   })
-})(window.jQuery)
+})(jQuery)

@@ -122,8 +122,14 @@ helpers.asyncCatchError(async (req, res, next) => {
     if (timeoutManager.hasTimedout()) return
     //const beforeDataUrl = helpers.toDataUrl(simulation.before, 'image/jpeg')
     //const resultDataUrl = helpers.toDataUrl(simulation.result, 'image/jpeg')
-    //const simulationParams = {success: true, before: beforeDataUrl, result: resultDataUrl, originalExt: extension}
-    const simulationParams = {success: true, before: getBeforeUrl, result: getResultUrl, originalExt: extension}
+    const simulationParams = {
+      success: true,
+      beforeUrl: getBeforeUrl,
+      resultUrl: getResultUrl,
+      //beforeDataUrl: beforeDataUrl,
+      //resultDataUrl: resultDataUrl,
+      originalExt: extension
+    }
     return res.render('instant_simulations/index', buildParams(simulationParams))
   }, env.instSimRouteTimeout)
 }))
