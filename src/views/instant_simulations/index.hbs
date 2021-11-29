@@ -33,28 +33,22 @@
 													<div class="columns is-full mt-2">
 														<div class="column">
 															<div class="file is-primary is-boxed is-centered before-image-download">
-																<a class="hidden download-link" href="" download="before{{simulation.originalExt}}">
+																<a class="download-link" href="{{simulation.before}}" download="before" target="_blank">
 																	<span class="file-cta">
 																		<span class="file-icon"><i class="fa fa-download"></i></span>
 																		<span class="file-label">Original</span>
 																	</span>
 																</a>
-																<span class="loading-placeholder file-cta">
-																	<div class="fa-2x fas fa-spinner fa-pulse"></div>
-																</span>
 															</div>
 														</div>
 														<div class="column">
 															<div class="file is-primary is-boxed is-centered after-image-download">
-																<a class="hidden download-link" href="" download="after.jpg">
+																<a class="download-link" href="{{simulation.result}}" download="after" target="_blank">
 																	<span class="file-cta">
 																		<span class="file-icon"><i class="fa fa-download"></i></span>
 																		<span class="file-label">Result</span>
 																	</span>
 																</a>
-																<span class="loading-placeholder file-cta">
-																	<div class="fa-2x fas fa-spinner fa-pulse"></div>
-																</span>
 															</div>
 														</div>
 													</div>

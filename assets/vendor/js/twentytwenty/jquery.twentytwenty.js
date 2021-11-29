@@ -1,5 +1,5 @@
-import jQuery from '../jquery-3.6.0.min.js'
-import './jquery.event.move.js'
+//import jQuery from '../jquery-3.6.0.js'
+//import './jquery.event.move.js'
 
 (function($){
 
@@ -152,4 +152,4 @@ import './jquery.event.move.js'
     });
   };
 
-})(jQuery);
+})(window.jQuery);

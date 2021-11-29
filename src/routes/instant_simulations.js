@@ -13,6 +13,7 @@ import {i18n} from '../shared/i18n'
 import {helpers} from './helpers'
 import {rateLimit} from "../middlewares/rateLimit"
 import {QuickSimulationClient} from "../models/clients/QuickSimulationClient"
+import {GcloudPresignedCredentialsProvider} from '../models/storage/GcloudPresignedCredentialsProvider'
 import {idGenerator} from "../models/tools/idGenerator"
 import {storageFactory} from '../models/storage/storageFactory'
 import {TimeoutManager} from '../models/tools/TimeoutManager'
@@ -111,7 +112,7 @@ helpers.asyncCatchError(async (req, res, next) => {
     const expiresAt = Math.round(nowSecs + env.instSimGiveUpStartTimeout * 1000.0)
     const simulation = await client.requestSimulation({photoPath: files.photo.path, expiresAt: expiresAt, mixFactor: env.instSimMixFactor})
     if (timeoutManager.hasTimedout()) return
-    await uploadToFirestoreData({
+    const { getBeforeUrl, getResultUrl } = await uploadToFirestoreData({
       originalExt: extension,
       original: simulation.original,
       before: simulation.before,
@@ -119,9 +120,10 @@ helpers.asyncCatchError(async (req, res, next) => {
       info: res.locals.info
     })
     if (timeoutManager.hasTimedout()) return
-    const beforeDataUrl = helpers.toDataUrl(simulation.before, 'image/jpeg')
-    const resultDataUrl = helpers.toDataUrl(simulation.result, 'image/jpeg')
-    const simulationParams = {success: true, before: beforeDataUrl, result: resultDataUrl, originalExt: extension}
+    //const beforeDataUrl = helpers.toDataUrl(simulation.before, 'image/jpeg')
+    //const resultDataUrl = helpers.toDataUrl(simulation.result, 'image/jpeg')
+    //const simulationParams = {success: true, before: beforeDataUrl, result: resultDataUrl, originalExt: extension}
+    const simulationParams = {success: true, before: getBeforeUrl, result: getResultUrl, originalExt: extension}
     return res.render('instant_simulations/index', buildParams(simulationParams))
   }, env.instSimRouteTimeout)
 }))
@@ -145,15 +147,27 @@ async function uploadToFirestoreData({originalExt, original, before=null, result
   const success = result !== null
   const id = idGenerator.newOrderedId()
   const folder = `.instant-simulations/${(success ? 'success' : 'fail')}/${id}/`
-  const uploads = [
-    upload(original, path.join(folder, 'original' + originalExt)),
-    upload(prettyJSON(info), path.join(folder, 'info.json')),
-  ]
+  const originalKey = path.join(folder, 'original' + originalExt)
+  const resultKey = path.join(folder, 'result.jpg')
+  const beforeKey = path.join(folder, 'before.jpg')
+  const uploads = []
   if (success) {
-    uploads.push(upload(result, path.join(folder, 'result.jpg')))
-    uploads.push(upload(before, path.join(folder, 'before.jpg')))
+    uploads.push(upload(result, resultKey))
+    uploads.push(upload(before, beforeKey))
   }
+  uploads.push(upload(original, originalKey))
+  uploads.push(upload(prettyJSON(info), path.join(folder, 'info.json')))
   await Promise.all(uploads)
+  if (success) {
+    const signedUrls = []
+    const gcloudSigner = GcloudPresignedCredentialsProvider.build()
+    signedUrls.push(gcloudSigner.urlToGet(beforeKey, {expiresInSeconds: 15 * 60}))
+    signedUrls.push(gcloudSigner.urlToGet(resultKey, {expiresInSeconds: 15 * 60}))
+    let [{url: getBeforeUrl}, {url: getResultUrl}] = await Promise.all(signedUrls)
+    return {getBeforeUrl, getResultUrl}
+  } else {
+    return {}
+  }
 }
 
 async function upload(data, filekey) {

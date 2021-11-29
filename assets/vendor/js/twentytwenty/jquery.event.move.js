@@ -1,4 +1,4 @@
-import jQuery from '../jquery-3.6.0.min.js'
+//import jQuery from '../jquery-3.6.0.js'
 // DOM.event.move
 //
 // 2.0.0
@@ -32,6 +32,7 @@ import jQuery from '../jquery-3.6.0.min.js'
     fn();
   }
 })(function(){
+  const jQuery = window.jQuery
   var assign = Object.assign || jQuery && jQuery.extend;
 
   // Number of pixels a pressed pointer travels before movestart

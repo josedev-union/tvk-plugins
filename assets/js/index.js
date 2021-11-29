@@ -1,4 +1,6 @@
-import jQuery from '../vendor/js/jquery-3.6.0.min.js'
+//import jQuery from '../vendor/js/jquery-3.6.0.js'
+import '../vendor/js/imagesloaded.v4.1.4.js'
+import '../vendor/js/twentytwenty/jquery.event.move.js'
 import '../vendor/js/twentytwenty/jquery.twentytwenty.js'
 
 import {i18n} from '../../src/shared/i18n'
@@ -8,11 +10,6 @@ import 'whatwg-fetch'
 
 (function($) {
   $(function() {
-    const $beforeImage = $('.before-image')
-    const $afterImage = $('.after-image')
-    const $beforeImageDownload = $('.before-image-download')
-    const $afterImageDownload = $('.after-image-download')
-
     const $htmlbody = $('body,html')
     const $form = $('form.upload-form')
     const $photo = $form.find('[name="photo"]')
@@ -26,17 +23,13 @@ import 'whatwg-fetch'
     const $uploadFeedback = $('.upload-feedback')
     const $errorNotification = $('#error-notification')
 
-    if ($beforeImage.length > 0) {
-      prepareDownloadButton($beforeImage, $beforeImageDownload)
-      prepareDownloadButton($afterImage, $afterImageDownload)
-    }
-
-    (function() {
+    function setupErrorNotification() {
       let errorMessage = $errorMessage.text().trim()
       if (errorMessage) {
         errorAppear(errorMessage)
       }
-    })()
+    }
+    setupErrorNotification()
 
     $('.link-force-reload').on('click', function() {
       const originalHref = location.pathname
@@ -54,13 +47,8 @@ import 'whatwg-fetch'
       event.preventDefault()
     })
 
-    $("#container1").twentytwenty({
-      no_overlay: true,
-    })
-
-    $imagesContainer.twentytwenty({
-      no_overlay: true,
-    })
+    setupTwentyTwenty($("#container1"))
+    setupTwentyTwenty($imagesContainer)
 
     $photo.on('change', (event) => {
       $errorContainer.addClass('hidden')
@@ -141,19 +129,18 @@ import 'whatwg-fetch'
       $htmlbody.bind('scroll.lockscroll', function(e){e.preventDefault()})
     }
 
+    function setupTwentyTwenty($container) {
+      $container.imagesLoaded(() => {
+        $container.twentytwenty({
+          no_overlay: true,
+        })
+      })
+    }
+
     function unlockScroll() {
       $htmlbody.removeClass('stop-scrolling')
       $htmlbody.unbind('touchmove.lockscroll')
       $htmlbody.unbind('scroll.lockscroll')
     }
-
-    function prepareDownloadButton($img, $download) {
-      const dataUrl = $img.attr('src')
-      const $link = $download.find('.download-link')
-      const $placeholder = $download.find('.loading-placeholder')
-      $link.attr('href', dataUrl)
-      $link.removeClass('hidden')
-      $placeholder.remove()
-    }
   })
-})(jQuery)
+})(window.jQuery)
