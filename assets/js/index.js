@@ -1,4 +1,4 @@
-//import jQuery from '../vendor/js/jquery-3.6.0.js'
+import '../vendor/js/jquery-3.6.0.min.js'
 import '../vendor/js/imagesloaded.v4.1.4.js'
 import '../vendor/js/twentytwenty/jquery.event.move.js'
 import '../vendor/js/twentytwenty/jquery.twentytwenty.js'
