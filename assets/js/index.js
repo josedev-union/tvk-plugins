@@ -145,12 +145,14 @@ import 'whatwg-fetch'
     }
 
     function setupTwentyTwenty($container, onLoad) {
-      imagesLoaded($container, () => {
-        if(onLoad) onLoad()
+      const callback = function() {
+        if (onLoad) onLoad()
         $container.twentytwenty({
           no_overlay: true,
         })
-      })
+      }
+      imagesLoaded($container).on('always', callback)
+      setTimeout(callback, 5000)
     }
 
     function unlockScroll() {
