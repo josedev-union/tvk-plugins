@@ -60,6 +60,7 @@ if (env.instSimRouter) {
   Handlebars.registerHelper('getVersionedPath', staticify.getVersionedPath)
   app.use(staticify.middleware)
   //app.use('/', express.static(publicDirPath));
+  app.use(redirectWwwToNonWww)
   app.use('/', instantSimulations.router, Sentry.Handlers.errorHandler(), instantSimulations.errorHandler);
 } else {
   app.use('/', indexRouter);
@@ -86,5 +87,17 @@ app.use(function(err, req, res, next) {
   // render the error page
   return helpers.respondError(res, statusCode, message)
 });
+
+function redirectWwwToNonWww(req, res, next) {
+  const host = req.header('host') || ''
+  if (host.match(/^www\..*/i)) {
+    const nonWwwHost = host.replace(/^www\./i, '')
+    const protocol = req.protocol
+    const hostAndPath = path.join(nonWwwHost + req.url)
+    res.redirect(301, `${protocol}://${hostAndPath}`)
+  } else {
+    next()
+  }
+}
 
 export default app
