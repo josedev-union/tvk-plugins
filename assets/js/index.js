@@ -31,12 +31,18 @@ import 'whatwg-fetch'
     }
     setupErrorNotification()
 
-    function scrollToUpload() {
-      if (location.hash === '#upload') {
-        window.scrollTo(0, $('#upload').offset().top)
+    function setupScrollOnPageStart() {
+      function scrollToUpload() {
+        if (location.hash === '#upload') {
+          $('html, body').scrollTop($('#upload').offset().top)
+        }
       }
+      scrollToUpload()
+
+      $(window).on('load', () => setTimeout(scrollToUpload, 10))
+      $('html, body').on('load', () => setTimeout(scrollToUpload, 10))
     }
-    scrollToUpload()
+    setupScrollOnPageStart()
 
     $('.link-force-reload').on('click', function() {
       const originalHref = location.pathname
