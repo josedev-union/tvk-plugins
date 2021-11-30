@@ -91,7 +91,7 @@ import 'whatwg-fetch'
     function validate() {
       const file = $photo.prop('files')[0]
       if (!file) return i18n('errors:upload:no-file')
-      if (!file.name.match(/\.(jpe?g|png)$/)) return i18n('errors:upload:wrong-image-format')
+      if (!file.name.match(/\.(jpe?g|png)$/i)) return i18n('errors:upload:wrong-image-format')
       if (file.size > envShared.maxUploadSizeBytes) return i18n('errors:upload:image-size-limit', {maxSize: envShared.maxUploadSizeMb})
       return null
     }
