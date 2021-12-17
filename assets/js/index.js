@@ -9,6 +9,7 @@ import 'whatwg-fetch'
 
 (function($) {
   $(function() {
+    const dentrinoAnalytics = window.dentrinoAnalytics
     const $htmlbody = $('body,html')
     const $form = $('form.upload-form')
     const $photo = $form.find('[name="photo"]')
@@ -24,9 +25,11 @@ import 'whatwg-fetch'
     const $simulationLoadingPlaceholder = $('.loading-simulation-placeholder')
 
     function setupErrorNotification() {
-      let errorMessage = $errorMessage.text().trim()
+      const errorMessage = $errorMessage.text().trim()
+      const errorCode = $errorMessage.data('error-code').trim()
+      const isSimulationError = $errorMessage.data('is-simulation-error')
       if (errorMessage) {
-        errorAppear(errorMessage)
+        errorAppear({errorMessage, errorCode, isSimulationError, backend: true})
       }
     }
     setupErrorNotification()
@@ -44,20 +47,32 @@ import 'whatwg-fetch'
     }
     setupScrollOnPageStart()
 
-    $('.link-force-reload').on('click', function() {
-      const originalHref = location.pathname
-      const href = $(this).attr('href')
-      let [url, hash] = href.split('#')
-      let originalUrl = originalHref.split('#')[0] || '/'
-      if (!url) url = '/'
-      location.hash = hash
-      location.href = href
-      originalUrl = originalUrl.replace(/\/$/, '').toLowerCase()
-      url = url.replace(/\/$/, '').toLowerCase()
-      if (originalUrl === url) {
-        location.reload()
+    function reportSuccessfulSimulation() {
+      if ($simulationContainer.length && $simulationContainer.is(':visible')) {
+        dentrinoAnalytics.reportSimulationSuccessful()
       }
+    }
+    reportSuccessfulSimulation()
+
+    $('.link-force-reload').on('click', function() {
+      linkForceReload({anchor: this})
       event.preventDefault()
+    })
+
+    $('.link-start-over').on('click contextmenu', function() {
+      event.preventDefault()
+      dentrinoAnalytics.reportClickStartOver()
+      setTimeout(() => {
+        linkForceReload({anchor: this})
+      }, 350)
+    })
+
+    $('.link-download-original').on('click contextmenu', function() {
+      dentrinoAnalytics.reportClickDownloadOriginal()
+    })
+
+    $('.link-download-result').on('click contextmenu', function() {
+      dentrinoAnalytics.reportClickDownloadResult()
     })
 
     setupTwentyTwenty($("#container1"))
@@ -66,11 +81,13 @@ import 'whatwg-fetch'
     })
 
     $photo.on('change', (event) => {
+      const file = getUploadedFile()
+      dentrinoAnalytics.reportSimulationSubmitted(file.size, file.type)
       $errorContainer.addClass('hidden')
       showLoading()
-      const errorMsg = validate()
-      if (errorMsg) {
-        showErrorDelayed(errorMsg)
+      let {errorMessage, errorCode} = validate()
+      if (errorCode) {
+        showErrorDelayed({errorMessage, errorCode})
         return
       }
       window.grecaptcha.execute(
@@ -78,7 +95,11 @@ import 'whatwg-fetch'
         {action: 'simulate'},
       ).then((token) => {
         submit({recaptchaToken: token})
-      }).catch(() => showErrorDelayed(i18n('errors:unknown-processing-error')))
+      }).catch(() => {
+        const errorCode = 'errors:invalid-recaptcha'
+        const errorMessage = i18n(errorCode)
+        showErrorDelayed({errorMessage, errorCode})
+      })
     })
 
     function submit({recaptchaToken=null}) {
@@ -95,31 +116,56 @@ import 'whatwg-fetch'
     }
 
     function validate() {
-      const file = $photo.prop('files')[0]
-      if (!file) return i18n('errors:upload:no-file')
-      if (!file.name.match(/\.(jpe?g|png)$/i)) return i18n('errors:upload:wrong-image-format')
-      if (file.size > envShared.maxUploadSizeBytes) return i18n('errors:upload:image-size-limit', {maxSize: envShared.maxUploadSizeMb})
-      return null
+      const file = getUploadedFile()
+      let errorMessage = null
+      let errorCode = null
+      if (!file) {
+        errorCode = 'errors:upload:no-file'
+        errorMessage = i18n(errorCode)
+      } else if (!file.name.match(/\.(jpe?g|png)$/i)) {
+        errorCode = 'errors:upload:wrong-image-format'
+        errorMessage = i18n(errorCode)
+      } else if (file.size > envShared.maxUploadSizeBytes) {
+        errorCode = 'errors:upload:image-size-limit'
+        errorMessage = i18n(errorCode, {maxSize: envShared.maxUploadSizeMb})
+      }
+      return {errorCode, errorMessage}
     }
 
-    function showErrorDelayed(msg) {
+    function getUploadedFile() {
+      return $photo.prop('files')[0]
+    }
+
+    function showErrorDelayed(errorData={}) {
+      const {errorMessage, errorCode} = errorData
       showLoading()
       $errorContainer.addClass('hidden')
       $noSimulationContainer.removeClass('hidden')
       $noSimulationContainer.addClass('is-hidden-mobile')
       $simulationContainer.addClass('hidden')
       setTimeout(() => {
-        errorAppear(msg)
+        errorAppear(errorData)
       }, 350)
     }
 
     let hideTimeout
-    function errorAppear(msg) {
+    function errorAppear({errorMessage, errorCode, backend=false, isSimulationError=false}) {
+      if (backend) {
+        console.log('BackendReport', errorCode)
+        if (isSimulationError) {
+          dentrinoAnalytics.reportSimulationFailed(errorCode)
+        } else {
+          dentrinoAnalytics.reportBackendValidationError(errorCode)
+        }
+      } else {
+        console.log('FrontendReport', errorCode)
+        dentrinoAnalytics.reportFrontendValidationError(errorCode)
+      }
       hideLoading()
       $errorContainer.removeClass('hidden')
       $noSimulationContainer.addClass('is-hidden-mobile')
-      $errorMessage.text(msg)
-      $errorNotification.find('span').text(msg)
+      $errorMessage.text(errorMessage)
+      $errorNotification.find('span').text(errorMessage)
       $errorNotification.fadeIn()
       $errorNotification.removeClass('hidden')
       clearTimeout(hideTimeout)
@@ -159,6 +205,21 @@ import 'whatwg-fetch'
       $htmlbody.removeClass('stop-scrolling')
       $htmlbody.unbind('touchmove.lockscroll')
       $htmlbody.unbind('scroll.lockscroll')
+    }
+
+    function linkForceReload({anchor}) {
+      const originalHref = location.pathname
+      const href = $(anchor).attr('href')
+      let [url, hash] = href.split('#')
+      let originalUrl = originalHref.split('#')[0] || '/'
+      if (!url) url = '/'
+      location.hash = hash
+      location.href = href
+      originalUrl = originalUrl.replace(/\/$/, '').toLowerCase()
+      url = url.replace(/\/$/, '').toLowerCase()
+      if (originalUrl === url) {
+        location.reload()
+      }
     }
   })
 })(jQuery)

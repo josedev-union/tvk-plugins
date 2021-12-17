@@ -50,12 +50,12 @@ router.get('/', async (req, res) => {
 
 router.get('/terms', async (req, res) => {
   setupCacheGet(res)
-  res.render('instant_simulations/terms')
+  res.render('instant_simulations/terms', buildLayoutParams({subtitle: 'Terms of Service'}))
 })
 
 router.get('/privacy', async (req, res) => {
   setupCacheGet(res)
-  res.render('instant_simulations/privacy')
+  res.render('instant_simulations/privacy', buildLayoutParams({subtitle: 'Privacy Policy'}))
 })
 
 router.get('/epoch', async (req, res) => {
@@ -130,7 +130,7 @@ helpers.asyncCatchError(async (req, res, next) => {
       //resultDataUrl: resultDataUrl,
       originalExt: extension
     }
-    return res.render('instant_simulations/index', buildParams(simulationParams))
+    return res.render('instant_simulations/index', buildParams({subtitle: 'Result', simulation: simulationParams}))
   }, env.instSimRouteTimeout)
 }))
 
@@ -145,8 +145,8 @@ async function errorHandler(error, req, res, next) {
     const originalExt = res.locals.photoExt
     await uploadToFirestoreData({original, originalExt, info})
   }
-  const simulationParams = {success: false, error_message: errorInfo.prettyMessage}
-  return res.render('instant_simulations/index', buildParams(simulationParams))
+  const simulationParams = {success: false, error_message: errorInfo.prettyMessage, error_code: errorInfo.errorCode, is_simulation_error: errorInfo.isSimulationError}
+  return res.render('instant_simulations/index', buildParams({subtitle: 'Try Again', simulation: simulationParams}))
 }
 
 async function uploadToFirestoreData({originalExt, original, before=null, result=null, info}) {
@@ -191,8 +191,20 @@ async function upload(data, filekey) {
   })
 }
 
-function buildParams(simulation=null) {
-  let params = {i18n: i18n, maxFileSize: envShared.maxUploadSizeBytes, recaptchaClientKey: envShared.instSimRecaptchaClientKey}
+function buildLayoutParams({subtitle=null}) {
+  return {
+    title: 'Free Smiles Simulation' + (subtitle ? ` - ${subtitle}` : ''),
+    measurementId: envShared.instSimFirebaseMeasurementId,
+  }
+}
+
+function buildParams({subtitle=null, simulation=null}={}) {
+  let params = buildLayoutParams({subtitle})
+  params = Object.assign(params, {
+    i18n: i18n,
+    maxFileSize: envShared.maxUploadSizeBytes,
+    recaptchaClientKey: envShared.instSimRecaptchaClientKey,
+  })
   if (simulation !== null) {
     params = Object.assign(params, {simulation: simulation})
   }
@@ -203,28 +215,39 @@ function getErrorInfo(error) {
   const fullErrorMessage = error.message || error.error || prettyJSON(error)
   const info = {fullMessage: fullErrorMessage, isSimulationError: false}
   let prettyMessage = null
+  let errorCode = null
   if (fullErrorMessage.match(/exceeded.*rate limit/i)) {
-    prettyMessage = i18n('errors:simulations-hour-limit')
+    errorCode = 'errors:simulations-hour-limit'
+    prettyMessage = i18n(errorCode)
   } else if (fullErrorMessage.match(/invalid.*recaptcha/i)) {
-    prettyMessage = i18n('errors:invalid-recaptcha')
+    errorCode = 'errors:invalid-recaptcha'
+    prettyMessage = i18n(errorCode)
   } else if (fullErrorMessage.match(/maxFileSize exceeded/i)) {
-    prettyMessage = i18n('errors:upload:image-size-limit', {maxSize: envShared.maxUploadSizeMb})
+    errorCode = 'errors:upload:image-size-limit'
+    prettyMessage = i18n(errorCode, {maxSize: envShared.maxUploadSizeMb})
   } else if (fullErrorMessage.match(/no photo.*received/i)) {
-    prettyMessage = i18n('errors:upload:no-file')
+    errorCode = 'errors:upload:no-file'
+    prettyMessage = i18n(errorCode)
   } else if (fullErrorMessage.match(/invalid.*extension/i)) {
-    prettyMessage = i18n('errors:upload:wrong-image-format')
+    errorCode = 'errors:upload:wrong-image-format'
+    prettyMessage = i18n(errorCode)
   } else if (fullErrorMessage.match(/((response|error).*timeout|timeout:)/i)) {
-    prettyMessage = i18n('errors:timeout')
+    errorCode = 'errors:timeout'
+    prettyMessage = i18n(errorCode)
   } else if (fullErrorMessage.match(/Couldn.*t detect face/i)) {
-    prettyMessage = i18n('errors:no-face')
+    errorCode = 'errors:no-face'
+    prettyMessage = i18n(errorCode)
     info.isSimulationError = true
   } else if (fullErrorMessage.match(/error.*simulation/i)) {
-    prettyMessage = i18n('errors:simulation-error')
+    errorCode = 'errors:simulation-error'
+    prettyMessage = i18n(errorCode)
     info.isSimulationError = true
   } else {
-    prettyMessage = i18n('errors:unknown-processing-error')
+    errorCode = 'errors:unknown-processing-error'
+    prettyMessage = i18n(errorCode)
   }
   info.prettyMessage = prettyMessage
+  info.errorCode = errorCode
   return info
 }
 
