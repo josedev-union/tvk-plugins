@@ -40,12 +40,21 @@ if (env.isNonLocal()) {
   });
 }
 
-app.disable('trust proxy')
+app.enable('trust proxy')
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 
+app.use(function(req, res, next) {
+  if (env.disableXForwardedForCheck) return next();
+  const xForwardedFor = req.header('x-forwarded-for') || ''
+  const ipsCountOnHeader = xForwardedFor.split(',').length
+  if (ipsCountOnHeader !== 2) {
+    throw createError(400, 'X-Forwarded-For has suspecious value')
+  }
+  next()
+});
 app.use(Sentry.Handlers.requestHandler());
 app.use(morgan(':date[iso] :method :url HTTP/:http-version" :status :res[content-length] [:remote-addr - :remote-user]'));
 app.use(express.urlencoded({ extended: false }));

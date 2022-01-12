@@ -36,6 +36,7 @@ export const env = new (class {
   instSimRouter = !!process.env.DENTRINO_INSTSIM_ROUTER
   instSimTokenDisabled = !!process.env.DENTRINO_INSTSIM_TOKEN_DISABLED
   instSimRecaptchaSecretKey = process.env.DENTRINO_INSTSIM_RECAPTCHA_SECRET_KEY
+  disableXForwardedForCheck = process.env.DENTRINO_INSTSIM_DISABLE_X_FORWARDED_FOR_CHECK
 
   isProduction() { return this.name === 'production' }
   isStaging() { return this.name === 'staging' }
