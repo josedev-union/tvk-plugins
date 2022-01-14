@@ -47,7 +47,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 
 app.use(function(req, res, next) {
-  if (env.disableXForwardedForCheck) return next();
+  if (env.disableXForwardedForCheck || env.isLocal()) return next();
   const xForwardedFor = req.header('x-forwarded-for') || ''
   const ipsCountOnHeader = xForwardedFor.split(',').length
   if (ipsCountOnHeader !== 2) {
