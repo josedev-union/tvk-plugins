@@ -177,17 +177,24 @@ async function uploadToFirestoreData({originalExt, original, before=null, result
 }
 
 async function upload(data, filekey) {
+  const bucket = env.gcloudBucket
   await new Promise((resolve, reject) => {
     const file = storageFactory()
-    .bucket(env.gcloudBucket)
+    .bucket(bucket)
     .file(filekey)
     const passthroughStream = new stream.PassThrough()
     passthroughStream.write(data)
     passthroughStream.end()
     passthroughStream
     .pipe(file.createWriteStream())
-    .on('finish', resolve)
-    .on('error', reject)
+    .on('finish', function() {
+      logger.info(`[SUCCESS] Upload: (${bucket}) ${filekey}`)
+      resolve()
+    })
+    .on('error', function(err) {
+      logger.error(`[FAILED] Upload: (${bucket}) ${filekey}`)
+      reject(err)
+    })
   })
 }
 
