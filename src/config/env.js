@@ -28,6 +28,18 @@ export const env = new (class {
     amount:     parseFloat(process.env.DENTRINO_CLIENT_RATE_LIMIT_AMOUNT || 100),
     timeWindow: parseFloat(process.env.DENTRINO_CLIENT_RATE_LIMIT_TIME || 1 * 60 * 1000),
   }
+  instSimIpRateLimitMinutely = {
+    amount:     parseFloat(process.env.DENTRINO_INSTSIM_IP_RATE_LIMIT_MINUTELY_AMOUNT || 3),
+    timeWindow: parseFloat(1 * 60 * 1000),
+  }
+  instSimIpRateLimitHourly = {
+    amount:     parseFloat(process.env.DENTRINO_INSTSIM_IP_RATE_LIMIT_HOURLY_AMOUNT || 5),
+    timeWindow: parseFloat(1 * 60 * 60 * 1000),
+  }
+  instSimIpRateLimitDaily = {
+    amount:     parseFloat(process.env.DENTRINO_INSTSIM_IP_RATE_LIMIT_DAILY_AMOUNT || 20),
+    timeWindow: parseFloat(24 * 60 * 60 * 1000),
+  }
   instSimUploadTimeout = parseFloat(process.env.DENTRINO_INSTSIM_UPLOAD_TIMEOUT || 15)
   instSimRouteTimeout = parseFloat(process.env.DENTRINO_INSTSIM_ROUTE_TIMEOUT || 60)
   instSimEstimatedDuration = parseFloat(process.env.DENTRINO_INSTSIM_ESTIMATED_DURATION || 5)

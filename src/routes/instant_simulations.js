@@ -34,12 +34,33 @@ const ROBOTS_DEV = `# https://www.robotstxt.org/robotstxt.html
 User-agent: *
 Disallow: /`
 
-const ipRateLimit = rateLimit({
-  limit: env.ipRateLimit.amount,
-  expiresIn: env.ipRateLimit.timeWindow,
-  lookup: (req, _) => `instant-simulation:${req.ip}`,
+const minutelyIpRateLimit = rateLimit({
+  limit: env.instSimIpRateLimitMinutely.amount,
+  expiresIn: env.instSimIpRateLimitMinutely.timeWindow,
+  lookup: (req, _) => `instant-simulation:minutely:${req.ip}`,
   onBlocked: function(req, res, next) {
-    throw 'Exceeded IP rate limit'
+    throw 'Exceeded minutely IP rate limit'
+  }
+})
+
+const hourlySuccessIpRateLimit = rateLimit({
+  limit: env.instSimIpRateLimitHourly.amount,
+  expiresIn: env.instSimIpRateLimitHourly.timeWindow,
+  lookup: (req, _) => `instant-simulation:hourly:${req.ip}`,
+  countIf: (_, res) => {
+    return (res.statusCode >= 200 && res.statusCode <= 299) && !res.locals.dentInstSimIsErrorPage;
+  },
+  onBlocked: function(req, res, next) {
+    throw 'Exceeded hourly IP rate limit'
+  }
+})
+
+const dailyIpRateLimit = rateLimit({
+  limit: env.instSimIpRateLimitDaily.amount,
+  expiresIn: env.instSimIpRateLimitDaily.timeWindow,
+  lookup: (req, _) => `instant-simulation:daily:${req.ip}`,
+  onBlocked: function(req, res, next) {
+    throw 'Exceeded daily IP rate limit'
   }
 })
 
@@ -71,7 +92,9 @@ router.get('/robots.txt', async (req, res) => {
 
 router.post('/',
 timeout(`${env.instSimRouteTimeout + env.instSimUploadTimeout}s`),
-ipRateLimit,
+hourlySuccessIpRateLimit,
+minutelyIpRateLimit,
+dailyIpRateLimit,
 helpers.asyncCatchError(async (req, res, next) => {
   const form = formidable({
     multiples: true,
@@ -146,6 +169,7 @@ async function errorHandler(error, req, res, next) {
     await uploadToFirestoreData({original, originalExt, info})
   }
   const simulationParams = {success: false, error_message: errorInfo.prettyMessage, error_code: errorInfo.errorCode, is_simulation_error: errorInfo.isSimulationError}
+  res.locals.dentInstSimIsErrorPage = true
   return res.render('instant_simulations/index', buildParams({subtitle: 'Try Again', simulation: simulationParams}))
 }
 
@@ -221,10 +245,17 @@ function buildParams({subtitle=null, simulation=null}={}) {
 function getErrorInfo(error) {
   const fullErrorMessage = error.message || error.error || prettyJSON(error)
   const info = {fullMessage: fullErrorMessage, isSimulationError: false}
+  const rateLimitPattern = /exceeded.*rate limit/i
   let prettyMessage = null
   let errorCode = null
-  if (fullErrorMessage.match(/exceeded.*rate limit/i)) {
-    errorCode = 'errors:simulations-hour-limit'
+  if (fullErrorMessage.match(rateLimitPattern) && fullErrorMessage.match(/minute/i)) {
+    errorCode = 'errors:simulations-minutely-limit'
+    prettyMessage = i18n(errorCode)
+  } else if (fullErrorMessage.match(rateLimitPattern) && fullErrorMessage.match(/hour/i)) {
+    errorCode = 'errors:simulations-hourly-limit'
+    prettyMessage = i18n(errorCode)
+  } else if (fullErrorMessage.match(rateLimitPattern) && fullErrorMessage.match(/da(il)?y/i)) {
+    errorCode = 'errors:simulations-daily-limit'
     prettyMessage = i18n(errorCode)
   } else if (fullErrorMessage.match(/invalid.*recaptcha/i)) {
     errorCode = 'errors:invalid-recaptcha'

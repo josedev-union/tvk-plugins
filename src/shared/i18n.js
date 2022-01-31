@@ -2,7 +2,9 @@ import i18n from "roddeh-i18n"
 
 i18n.translator.add({
   values: {
-    'errors:simulations-hour-limit': 'You have reached the limit of simulations, try again in 1 hour.',
+    'errors:simulations-hourly-limit': 'You have reached your simulations hourly limit, try again in 1 hour.',
+    'errors:simulations-minutely-limit': 'You are sending too much simulations in sequence, please wait 1 minute before trying again.',
+    'errors:simulations-daily-limit': 'You have reached your simulations daily limit, try again tomorrow.',
     'errors:no-face': "We couldn't process this photo, please try again with another one.",
     'errors:simulation-error': "An error happened with the simulation, please try again with another photo.",
     'errors:unknown-processing-error': 'An error has ocurred, try again later.',
