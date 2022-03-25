@@ -15,13 +15,13 @@ export class QuickSimulationClient {
   static pubsubRequestKey() { return `${PUBSUB_PREFIX}:request` }
   static pubsubResponseKey(id) { return `${PUBSUB_PREFIX}:${id}:response` }
 
-  async requestSimulation({photoPath, mixFactor=null, expiresAt=0}) {
+  async requestSimulation({photoPath, expiresAt=0}) {
     const id = idGenerator.newOrderedId()
-    logger.info(`[${id}] Requesting Simulation (mixFactor:${mixFactor})`) // (UploadTime: ${new Date().getTime() - startTime} ms)`)
+    logger.info(`[${id}] Requesting Simulation`) // (UploadTime: ${new Date().getTime() - startTime} ms)`)
     const photoRedisKey = `pipeline:listener:${id}:photo`
     const photo = await readfile(photoPath)
     const photoBuffer = Buffer.from(photo, 'binary')
-    await this.#publishRequest(id, photoBuffer, photoRedisKey, mixFactor, expiresAt)
+    await this.#publishRequest(id, photoBuffer, photoRedisKey, expiresAt)
     const data = await this.#waitResponse(QuickSimulationClient.pubsubResponseKey(id))
     return {
       original: photo,
@@ -30,16 +30,13 @@ export class QuickSimulationClient {
     }
   }
 
-  async #publishRequest(id, photoBuffer, photoRedisKey, mixFactor, expiresAt) {
+  async #publishRequest(id, photoBuffer, photoRedisKey, expiresAt) {
     await redisSetex(photoRedisKey, 25, photoBuffer)
     var params = {
       photo_redis_key: photoRedisKey,
       expires_at: expiresAt
     }
 
-    if (mixFactor !== null) {
-      params['mix_factor'] = parseFloat(mixFactor)
-    }
     const publishedMessage = JSON.stringify({
       id: id,
       params: params

@@ -26,14 +26,9 @@ describe(`on a successful request`, () => {
   beforeEach(async () => {
     const photoPath = './test/fixtures/photo.jpg'
     //const photo = await readfile(photoPath)
-    const mixFactor = 0.85
     setTimeout(() => mockWorkerRequest(), 0)
     await new Promise(r => setTimeout(r, 100));
-    response = await postSimulation(photoPath, mixFactor)
-    //simulationRequest, response = await Promise.all([
-    //  mockWorkerRequest(),
-    //  postSimulation(photoPath, mixFactor)
-    //])
+    response = await postSimulation(photoPath)
   })
 
   test(`respond 200`, async () => {
@@ -79,9 +74,8 @@ describe(`on a successful request`, () => {
   //})
 })
 
-function postSimulation(photoPath, mixFactor, ip='127.0.0.0') {
+function postSimulation(photoPath, ip='127.0.0.0') {
   const form = new FormData()
-  form.append('mix_factor', mixFactor)
   form.append('photo', fs.readFileSync(photoPath), {filename: 'photo.jpg', contentType: 'image/jpeg'})
 
   return request
