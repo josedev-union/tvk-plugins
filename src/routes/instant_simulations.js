@@ -66,7 +66,8 @@ const dailyIpRateLimit = rateLimit({
 
 router.get('/', async (req, res) => {
   setupCacheGet(res)
-  res.render('instant_simulations/index', buildParams())
+  const synthTransform = !!req.query.transform || !!req.query.t
+  res.render('instant_simulations/index', buildParams({synthTransform: synthTransform}))
 })
 
 router.get('/terms', async (req, res) => {
@@ -133,7 +134,8 @@ helpers.asyncCatchError(async (req, res, next) => {
     }
     const client = new QuickSimulationClient()
     const expiresAt = Math.round(nowSecs + env.instSimGiveUpStartTimeout * 1000.0)
-    const simulation = await client.requestSimulation({photoPath: files.photo.path, expiresAt: expiresAt})
+    const mixFactor = fields.synthTransform == 'true' ? null : env.instSimMixFactor
+    const simulation = await client.requestSimulation({photoPath: files.photo.path, expiresAt: expiresAt, mixFactor: mixFactor})
     if (timeoutManager.hasTimedout()) return
     const { getBeforeUrl, getResultUrl } = await uploadToFirestoreData({
       originalExt: extension,
@@ -229,12 +231,13 @@ function buildLayoutParams({subtitle=null}) {
   }
 }
 
-function buildParams({subtitle=null, simulation=null}={}) {
+function buildParams({subtitle=null, simulation=null, synthTransform=false}={}) {
   let params = buildLayoutParams({subtitle})
   params = Object.assign(params, {
     i18n: i18n,
     maxFileSize: envShared.maxUploadSizeBytes,
     recaptchaClientKey: envShared.instSimRecaptchaClientKey,
+    synthTransform: synthTransform,
   })
   if (simulation !== null) {
     params = Object.assign(params, {simulation: simulation})

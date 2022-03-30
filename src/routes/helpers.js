@@ -57,7 +57,7 @@ export const helpers = new (class {
     return new Promise((resolve, reject) => {
       let opts = { multiples: true }
       const form = formidable(Object.assign(opts, extraOptions))
-      return this.parseFormPromise(form, req)
+      return parseFormPromise(form)
     })
   }
 

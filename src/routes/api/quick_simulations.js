@@ -83,7 +83,7 @@ router.post('/',
 helpers.asyncCatchError(async (req, res, next) => {
   const {files, fields} = await helpers.parseForm(req)
   const client = new QuickSimulationClient()
-  const simulation = await client.requestSimulation(files.photo.path)
+  const simulation = await client.requestSimulation(files.photo.path, fields.mix_factor)
   res.header('Content-Type', 'image/jpeg')
   return res.send(simulation.result)
 }))
