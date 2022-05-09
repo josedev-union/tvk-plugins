@@ -48,11 +48,13 @@ jest.mock('../../../src/models/storage/storageFactory', () => {
           resolve([
             [
               { name: path.join(prefix, "smile_after.jpg") },
-              { name: path.join(prefix, "smile_after_0.62_predefined.jpg") },
-              { name: path.join(prefix, "smile_after_0.583212_auto.jpg") },
+              { name: path.join(prefix, "smile_6_face_after_0_transformed.jpg") },
+              { name: path.join(prefix, "smile_6_face_after_1_0.45.jpg") },
               { name: path.join(prefix, "smile.jpg") },
+              { name: path.join(prefix, "smile_6_face_after_2_0.75.jpg") },
               { name: path.join(prefix, "smile_after_0.55_predefined.jpg") },
               { name: path.join(prefix, "smile_review_pending.jpg") },
+              { name: path.join(prefix, "smile_after_0.583212_auto.jpg") },
             ]
           ])
         }
@@ -262,8 +264,18 @@ describe(`PUT /api/67a4abe/smile-tasks/:smileTaskId/result-candidates`, () => {
       expect(response.status).toBe(200)
     })
 
-    test(`list the files named in the format .*after_LUMINANCE.*`, async () => {
+    test(`list the files named in the format .*after_.*`, async () => {
       expect(response.body.candidates).toEqual([
+        {
+          id: "c21pbGVfNl9mYWNlX2FmdGVyXzBfdHJhbnNmb3JtZWQuanBn",
+          luminance: null,
+          path: "results/smile_6_face_after_0_transformed.jpg",
+        },
+        {
+          id: "c21pbGVfNl9mYWNlX2FmdGVyXzFfMC40NS5qcGc",
+          luminance: 0.45,
+          path: "results/smile_6_face_after_1_0.45.jpg",
+        },
         {
           id: "c21pbGVfYWZ0ZXJfMC41NV9wcmVkZWZpbmVkLmpwZw",
           luminance: 0.55,
@@ -275,9 +287,9 @@ describe(`PUT /api/67a4abe/smile-tasks/:smileTaskId/result-candidates`, () => {
           path: "results/smile_after_0.583212_auto.jpg",
         },
         {
-          id: "c21pbGVfYWZ0ZXJfMC42Ml9wcmVkZWZpbmVkLmpwZw",
-          luminance: 0.62,
-          path: "results/smile_after_0.62_predefined.jpg",
+          id: "c21pbGVfNl9mYWNlX2FmdGVyXzJfMC43NS5qcGc",
+          luminance: 0.75,
+          path: "results/smile_6_face_after_2_0.75.jpg",
         },
       ])
     })

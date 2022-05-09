@@ -32,9 +32,10 @@ export const smileTaskStorage = new (class {
     items.forEach((storageObj) => {
       const resultPath = storageObj.name
       const resultName = path.basename(resultPath)
-      const match = resultName.match(/_after_([\d.]+)/)
+      const match = resultName.match(/_after(_.*\.)(jpe?g|png)/)
       if (match) {
-        const synthLuminance = Math.round(parseFloat(match[1])*100.0)/100.0
+        const luminanceMatch = match[1].match(/[_.](\d+\.\d+)[_.]/)
+        const synthLuminance = luminanceMatch ? Math.round(parseFloat(luminanceMatch[1])*100.0)/100.0 : null
         results.push({
           id: this.#resultNameToId(resultName),
           path: resultPath,
