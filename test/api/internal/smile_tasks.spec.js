@@ -48,10 +48,11 @@ jest.mock('../../../src/models/storage/storageFactory', () => {
           resolve([
             [
               { name: path.join(prefix, "smile_after.jpg") },
-              { name: path.join(prefix, "smile_6_face_after_0_transformed.jpg") },
-              { name: path.join(prefix, "smile_6_face_after_1_0.45.jpg") },
+              { name: path.join(prefix, "smile_06_face_after_00_transformed_b1.00.jpg") },
+              { name: path.join(prefix, "smile_06_face_after_00_transformed_b0.50.jpg") },
+              { name: path.join(prefix, "smile_06_face_after_01_interpolated_mf0.45_b0.50.jpg") },
               { name: path.join(prefix, "smile.jpg") },
-              { name: path.join(prefix, "smile_6_face_after_2_0.75.jpg") },
+              { name: path.join(prefix, "smile_06_face_after_02_interpolated_mf0.75_b1.50.jpg") },
               { name: path.join(prefix, "smile_after_0.55_predefined.jpg") },
               { name: path.join(prefix, "smile_review_pending.jpg") },
               { name: path.join(prefix, "smile_after_0.583212_auto.jpg") },
@@ -267,29 +268,46 @@ describe(`PUT /api/67a4abe/smile-tasks/:smileTaskId/result-candidates`, () => {
     test(`list the files named in the format .*after_.*`, async () => {
       expect(response.body.candidates).toEqual([
         {
-          id: "c21pbGVfNl9mYWNlX2FmdGVyXzBfdHJhbnNmb3JtZWQuanBn",
+          id: "c21pbGVfMDZfZmFjZV9hZnRlcl8wMF90cmFuc2Zvcm1lZF9iMS4wMC5qcGc",
+          synthType: 'transformed',
           luminance: null,
-          path: "results/smile_6_face_after_0_transformed.jpg",
+          brightness: 1.0,
+          path: "results/smile_06_face_after_00_transformed_b1.00.jpg",
         },
         {
-          id: "c21pbGVfNl9mYWNlX2FmdGVyXzFfMC40NS5qcGc",
+          id: "c21pbGVfMDZfZmFjZV9hZnRlcl8wMF90cmFuc2Zvcm1lZF9iMC41MC5qcGc",
+          synthType: 'transformed',
+          luminance: null,
+          brightness: 0.5,
+          path: "results/smile_06_face_after_00_transformed_b0.50.jpg",
+        },
+        {
+          id: "c21pbGVfMDZfZmFjZV9hZnRlcl8wMV9pbnRlcnBvbGF0ZWRfbWYwLjQ1X2IwLjUwLmpwZw",
+          synthType: 'interpolated',
           luminance: 0.45,
-          path: "results/smile_6_face_after_1_0.45.jpg",
+          brightness: 0.5,
+          path: "results/smile_06_face_after_01_interpolated_mf0.45_b0.50.jpg",
         },
         {
           id: "c21pbGVfYWZ0ZXJfMC41NV9wcmVkZWZpbmVkLmpwZw",
+          synthType: 'interpolated',
           luminance: 0.55,
+          brightness: 1.00,
           path: "results/smile_after_0.55_predefined.jpg",
         },
         {
           id: "c21pbGVfYWZ0ZXJfMC41ODMyMTJfYXV0by5qcGc",
+          synthType: 'interpolated',
           luminance: 0.58,
+          brightness: 1.00,
           path: "results/smile_after_0.583212_auto.jpg",
         },
         {
-          id: "c21pbGVfNl9mYWNlX2FmdGVyXzJfMC43NS5qcGc",
+          id: "c21pbGVfMDZfZmFjZV9hZnRlcl8wMl9pbnRlcnBvbGF0ZWRfbWYwLjc1X2IxLjUwLmpwZw",
+          synthType: 'interpolated',
           luminance: 0.75,
-          path: "results/smile_6_face_after_2_0.75.jpg",
+          brightness: 1.50,
+          path: "results/smile_06_face_after_02_interpolated_mf0.75_b1.50.jpg",
         },
       ])
     })

@@ -34,11 +34,16 @@ export const smileTaskStorage = new (class {
       const resultName = path.basename(resultPath)
       const match = resultName.match(/_after(_.*\.)(jpe?g|png)/)
       if (match) {
-        const luminanceMatch = match[1].match(/[_.](\d+\.\d+)[_.]/)
-        const synthLuminance = luminanceMatch ? Math.round(parseFloat(luminanceMatch[1])*100.0)/100.0 : null
+        const isTransformed = resultName.includes('_transformed')
+        const brightnessMatch = match[1].match(/[_.]b(\d+\.\d+)[_.]/)
+        const luminanceMatch = match[1].match(/([_.]mf|[_.])(\d+\.\d+)[_.]/)
+        const synthBrightness = brightnessMatch ? Math.round(parseFloat(brightnessMatch[1])*100.0)/100.0 : 1.0
+        const synthLuminance = luminanceMatch ? Math.round(parseFloat(luminanceMatch[2])*100.0)/100.0 : null
         results.push({
           id: this.#resultNameToId(resultName),
           path: resultPath,
+          synthType: (isTransformed ? 'transformed' : 'interpolated'),
+          brightness: synthBrightness,
           luminance: synthLuminance,
         })
       }
