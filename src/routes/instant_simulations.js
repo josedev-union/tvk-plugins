@@ -6,8 +6,8 @@ import axios from 'axios'
 import formidable from 'formidable'
 import {promisify} from "util"
 import timeout from 'connect-timeout'
-import express from 'express';
-const router = express.Router();
+import express from 'express'
+const router = express.Router()
 
 import {i18n} from '../shared/i18n'
 import {helpers} from './helpers'

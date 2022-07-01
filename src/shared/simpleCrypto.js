@@ -1,5 +1,10 @@
 import _sha1 from 'js-sha1'
-import sha256 from 'js-sha256'
+import _sha256 from 'js-sha256'
+import uuid from 'uuid/v4'
+import {promisify} from 'util'
+import crypto from 'crypto'
+
+const randomBytesAsync = promisify(crypto.randomBytes)
 
 export const simpleCrypto = new (class {
     base64(str, params = {padding: true}) {
@@ -33,8 +38,14 @@ export const simpleCrypto = new (class {
         return s1.hex()
     }
 
+    sha256(str) {
+        const s256 = _sha256.create()
+        s256.update(str)
+        return s256.hex()
+    }
+
     hmac(str, pass) {
-        const hmac = sha256.hmac.create(pass)
+        const hmac = _sha256.hmac.create(pass)
         hmac.update(str)
         return hmac.hex()
     }
@@ -56,5 +67,11 @@ export const simpleCrypto = new (class {
             uuid += uuidChars[Math.floor(Math.random()*uuidChars.length)]
         }
         return uuid
+    }
+
+    async newSecret(size = 32) {
+      const crypto256Token = (await randomBytesAsync(size)).toString('hex')
+      const uuidToken = uuid()
+      return this.hmac(crypto256Token, uuidToken)
     }
 })()
