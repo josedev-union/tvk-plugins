@@ -36,19 +36,26 @@ export const smileTaskStorage = new (class {
       if (match) {
         const isTransformed = resultName.includes('_transformed')
         const brightnessMatch = match[1].match(/[_.]b(\d+\.\d+)[_.]/)
-        const luminanceMatch = match[1].match(/([_.]mf|[_.])(\d+\.\d+)[_.]/)
+        const mixFactorMatch = match[1].match(/([_.]mf|[_.])(\d+\.\d+)[_.]/)
+        const whitenMatch = match[1].match(/[_.]w(\d+\.\d+)[_.]/)
+        const blendMatch = match[1].match(/[_.]blend([^_]+)[_.]/)
         const synthBrightness = brightnessMatch ? Math.round(parseFloat(brightnessMatch[1])*100.0)/100.0 : 1.0
-        const synthLuminance = luminanceMatch ? Math.round(parseFloat(luminanceMatch[2])*100.0)/100.0 : null
+        const synthMixFactor = mixFactorMatch ? Math.round(parseFloat(mixFactorMatch[2])*100.0)/100.0 : null
+        const synthWhiten = whitenMatch ? Math.round(parseFloat(whitenMatch[1])*100.0)/100.0 : 0.0
+        const blending = blendMatch ? blendMatch[1] : 'replace'
         results.push({
           id: this.#resultNameToId(resultName),
           path: resultPath,
           synthType: (isTransformed ? 'transformed' : 'interpolated'),
           brightness: synthBrightness,
-          luminance: synthLuminance,
+          luminance: synthMixFactor,
+          mixFactor: synthMixFactor,
+          whiten: synthWhiten,
+          blending: blending,
         })
       }
     })
-    results.sort((a,b) => a.luminance - b.luminance)
+    results.sort((a,b) => a.mixFactor - b.mixFactor)
     return results
   }
 
