@@ -135,7 +135,14 @@ helpers.asyncCatchError(async (req, res, next) => {
     const client = new QuickSimulationClient()
     const expiresAt = Math.round(nowSecs + env.instSimGiveUpStartTimeout * 1000.0)
     const mixFactor = fields.synthTransform == 'true' ? null : env.instSimMixFactor
-    const simulation = await client.requestSimulation({photoPath: files.photo.path, expiresAt: expiresAt, mixFactor: mixFactor})
+    const simulation = await client.requestSimulation({
+      photoPath: files.photo.path,
+      expiresAt: expiresAt,
+      mixFactor: mixFactor,
+      brightness: env.instSimBrightness,
+      whiten: env.instSimWhiten,
+      poisson: env.instSimPoisson,
+    })
     if (timeoutManager.hasTimedout()) return
     const { getBeforeUrl, getResultUrl } = await uploadToFirestoreData({
       originalExt: extension,

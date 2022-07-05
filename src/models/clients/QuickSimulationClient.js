@@ -15,13 +15,13 @@ export class QuickSimulationClient {
   static pubsubRequestKey() { return `${PUBSUB_PREFIX}:request` }
   static pubsubResponseKey(id) { return `${PUBSUB_PREFIX}:${id}:response` }
 
-  async requestSimulation({photoPath, mixFactor=null, expiresAt=0}) {
+  async requestSimulation({photoPath, mixFactor=null, brightness=1.0, whiten=0.0, poisson=true, expiresAt=0}) {
     const id = idGenerator.newOrderedId()
-    logger.info(`[${id}] Requesting Simulation (mixFactor:${mixFactor})`) // (UploadTime: ${new Date().getTime() - startTime} ms)`)
+    logger.info(`[${id}] Requesting Simulation (mixFactor:${mixFactor} brightness:${brightness} whiten:${whiten} poisson:${poisson})`) // (UploadTime: ${new Date().getTime() - startTime} ms)`)
     const photoRedisKey = `pipeline:listener:${id}:photo`
     const photo = await readfile(photoPath)
     const photoBuffer = Buffer.from(photo, 'binary')
-    await this.#publishRequest(id, photoBuffer, photoRedisKey, mixFactor, expiresAt)
+    await this.#publishRequest(id, photoBuffer, photoRedisKey, mixFactor, brightness, whiten, poisson, expiresAt)
     const data = await this.#waitResponse(QuickSimulationClient.pubsubResponseKey(id))
     return {
       original: photo,
@@ -30,7 +30,7 @@ export class QuickSimulationClient {
     }
   }
 
-  async #publishRequest(id, photoBuffer, photoRedisKey, mixFactor, expiresAt) {
+  async #publishRequest(id, photoBuffer, photoRedisKey, mixFactor, brightness, whiten, poisson, expiresAt) {
     await redisSetex(photoRedisKey, 25, photoBuffer)
     var params = {
       photo_redis_key: photoRedisKey,
@@ -40,6 +40,9 @@ export class QuickSimulationClient {
     if (mixFactor !== null) {
       params['mix_factor'] = parseFloat(mixFactor)
     }
+    params['brightness'] = brightness
+    params['whiten'] = whiten
+    params['poisson'] = poisson
     const publishedMessage = JSON.stringify({
       id: id,
       params: params
