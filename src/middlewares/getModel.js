@@ -6,8 +6,10 @@ import {SmileTask} from '../models/database/SmileTask'
 export const getModel = new (class {
   async client(req, res, next) {
     return await helpers.redirectCatch(next, async () => {
-      const client = await ApiClient.get(res.locals.dentClientId)
+      const clientId = res.locals.dentClientId
+      const client = await ApiClient.get(clientId)
       if (!client) {
+        console.warn(`Unauthorized: Could not find client "${clientId}"`)
         return helpers.respondError(res, 403, "Not Authorized")
       }
       res.locals.dentClient = client
