@@ -92,6 +92,8 @@ app.use(function(err, req, res, next) {
   const statusCode = err.status || 500
   res.locals.message = message
   res.locals.error = req.app.get('env') === 'development' ? err : {}
+  console.error(err)
+  console.trace()
 
   // render the error page
   return helpers.respondError(res, statusCode, message)
