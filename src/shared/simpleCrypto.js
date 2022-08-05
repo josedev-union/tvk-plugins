@@ -39,6 +39,16 @@ export const simpleCrypto = new (class {
         return hmac.hex()
     }
 
+    md5(str) {
+        const m5 = crypto.createHash('md5')
+        m5.update(str)
+        return m5.digest('hex')
+    }
+
+    verifySignatureHmac(signature, str, pass) {
+        return this.hmac(str, pass) == signature
+    }
+
     genericUUID(size = 10) {
         const uuidChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.,!@#$%&*()+=[]{}/\\<>;:".split('')
         let uuid = ""
