@@ -1,5 +1,4 @@
 import {Factory} from 'rosie'
-import {Database} from '../../../src/models/database/Database'
 import {RateLimit} from '../../../src/models/database/RateLimit'
 import {redis, clearRedis} from '../../../src/config/redis'
 import '../../../src/config/config'

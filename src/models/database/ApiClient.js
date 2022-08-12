@@ -1,8 +1,6 @@
 import {idGenerator} from '../tools/idGenerator'
 import {Database} from './Database'
 
-function afterClassDefinition() {
-  Database.registerCollection(ApiClient.COLLECTION_NAME)
 }
 
 export class ApiClient {
@@ -50,4 +48,3 @@ export class ApiClient {
         return idGenerator.newSecret()
     }
 }
-afterClassDefinition()

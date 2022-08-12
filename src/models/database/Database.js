@@ -3,8 +3,6 @@ import admin from 'firebase-admin'
 import {env} from '../../config/env'
 
 export class Database {
-    static #collections = []
-
     constructor({connection, namespace = ""}) {
         this.connection = connection
         this.namespace = namespace
@@ -26,10 +24,6 @@ export class Database {
       let instance = this.instances[key]
       if (!instance) throw `Couldn't find database named ${key}`
       return instance
-    }
-
-    static registerCollection(collectionName) {
-      Database.#collections.push(collectionName)
     }
 
     static toTimestamp(date) {
@@ -66,27 +60,8 @@ export class Database {
         return this.#getRef(objPath).delete()
     }
 
-    async drop() {
-        if (!env.isTest()) {
-            throw `Can't drop database on ${env.name}`
-        }
-
-        let batch = this.connection.batch()
-        let collections = Database.#collections
-        for (var i = 0; i < collections.length; i++) {
-            batch = await this.#dropCollection(collections[i], batch)
-        }
-        await batch.commit()
-    }
-
     #getRef(objPath) {
         return this.connection.doc(objPath)
-    }
-
-    async #dropCollection(collectionName, batch) {
-        const snapshot = await this.startQuery(collectionName).get()
-        snapshot.docs.forEach(doc => batch.delete(doc.ref))
-        return batch
     }
 }
 

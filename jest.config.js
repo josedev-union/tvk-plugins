@@ -194,4 +194,5 @@ process.env = Object.assign(process.env, {
   DENTRINO_USER_RATE_LIMIT_TIME:   '500',
   DENTRINO_IP_RATE_LIMIT_TIME:     '500',
   DENTRINO_CLIENT_RATE_LIMIT_TIME: '500',
+  FIRESTORE_EMULATOR_HOST: 'localhost:8080',
 });

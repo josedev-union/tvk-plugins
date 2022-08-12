@@ -8,6 +8,7 @@ import {SmileTask} from '../../src/models/database/SmileTask'
 import {storageFactory} from '../../src/models/storage/storageFactory'
 import {clearRedis} from '../../src/config/redis'
 import {env} from '../../src/config/env'
+import {firebaseHelpers} from '../helpers/firebaseHelpers'
 
 import app from '../../src/app'
 app.enable('trust proxy')
@@ -45,10 +46,13 @@ jest.mock('../../src/models/storage/storageFactory', () => {
   }
 })
 
+beforeAll(async () => {
+  await firebaseHelpers.ensureTestEnv()
+})
 
 beforeEach(async () => {
   storageFactory.mockClear()
-  await Database.instance().drop()
+  await firebaseHelpers.clearFirestore()
   await clearRedis()
 })
 

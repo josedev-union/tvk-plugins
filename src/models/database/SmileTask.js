@@ -27,9 +27,6 @@ const REQUESTER_METADATA = {
   },
 }
 
-function afterClassDefinition() {
-  Database.registerCollection(SmileTask.COLLECTION_NAME)
-}
 export class SmileTask {
   static get COLLECTION_NAME() { return 'smile_tasks' }
   static get RequesterType() { return RequesterType }
@@ -118,4 +115,3 @@ export class SmileTask {
     return path
   }
 }
-afterClassDefinition()

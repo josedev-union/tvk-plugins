@@ -14,17 +14,22 @@ import {redisFactory} from '../../src/models/redisFactory'
 import {env} from '../../src/config/env'
 import {WebsocketServer} from '../../src/websockets/WebsocketServer'
 import app from '../../src/app'
+import {firebaseHelpers} from '../helpers/firebaseHelpers'
 
 const redis = redisFactory.newRedisPubsub()
 const server = http.createServer();
 server.listen(9876, '0.0.0.0')
 WebsocketServer.upgradeRequestsOn(server)
 
+beforeAll(async () => {
+  await firebaseHelpers.ensureTestEnv()
+})
+
 describe(`full event sequence`, () => {
   let user
   let smileTask
   beforeEach(async () => {
-    await Database.instance().drop()
+    await firebaseHelpers.clearFirestore()
     user = Factory.build('user')
     smileTask = Factory.build('smile_task', {userId: user.id})
     await Promise.all([smileTask.save(), user.save()])
