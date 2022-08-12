@@ -24,6 +24,7 @@ import {simpleCrypto} from "../../shared/simpleCrypto"
 import {helpers} from '../helpers'
 //import {i18n} from '../../shared/i18n'
 import {quickApi} from "../../middlewares/quickApi"
+import {api} from '../../middlewares/api'
 
 const userRateLimit = rateLimit({
   limit: env.userRateLimit.amount,
@@ -44,15 +45,13 @@ const clientRateLimit = rateLimit({
 })
 
 router.post('/',
-//security.getContentType,
-//security.getSignature,
-//security.getImageMD5,
-//security.verifySignature,
 //userRateLimit,
 //ipRateLimit,
 //clientRateLimit,
+api.setId('simulationsCosmetic'),
 quickApi.parseAuthToken,
 getModel.client,
+quickApi.enforceCors,
 quickApi.validateAuthToken,
 quickApi.parseRequestBody,
 quickApi.validateBodyData,

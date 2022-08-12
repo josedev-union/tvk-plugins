@@ -2,7 +2,6 @@ import formidable from 'formidable'
 
 import {envShared} from '../shared/envShared'
 import {simpleCrypto} from '../shared/simpleCrypto'
-import {Uri} from '../models/tools/Uri'
 
 export const helpers = new (class {
   getReferer(req) {
@@ -26,12 +25,14 @@ export const helpers = new (class {
     return res.status(status).json({error: message})
   }
 
-  setCors(req, res) {
-    const referer = req.get('Referer') || req.get('Origin') || req.get('Host')
+  setCors(res, {hosts, methods, headers}) {
+    if (Array.isArray(hosts)) hosts = hosts.join(', ')
+    if (Array.isArray(methods)) methods = methods.join(', ')
+    if (Array.isArray(headers)) headers = headers.join(', ')
     res.set({
-      "Access-Control-Allow-Origin": new Uri(referer).toString({path: false}),
-      "Access-Control-Allow-Methods": "POST",
-      "Access-Control-Allow-Headers": envShared.signatureHeaderName,
+      "Access-Control-Allow-Origin": hosts,
+      "Access-Control-Allow-Methods": methods,
+      "Access-Control-Allow-Headers": headers,
     })
   }
 
