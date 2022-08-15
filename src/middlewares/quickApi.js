@@ -8,13 +8,12 @@ import {rateLimit} from "./rateLimit"
 import {envShared} from "../shared/envShared"
 import {simpleCrypto} from "../shared/simpleCrypto"
 
+import {timeInSeconds} from "../utils/time"
+const {SECONDS, MINUTES, HOURS, DAYS} = timeInSeconds
+
 const readfile = promisify(fs.readFile)
 
 const DEFAULT_RATE_LIMIT_MAX_SUCCESSES_PER_SECOND = 1.0
-const SECONDS = 1000.0
-const MINUTES = SECONDS * 60.0
-const HOURS = MINUTES * 60.0
-const DAYS = HOURS * 24.0
 
 export const quickApi = new (class {
   async enforceCors(req, res, next) {
