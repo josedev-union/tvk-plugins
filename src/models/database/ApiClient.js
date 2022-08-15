@@ -1,5 +1,9 @@
 import {idGenerator} from '../tools/idGenerator'
 import {Database} from './Database'
+import {InMemory as Cache} from '../../cache/InMemory'
+
+import {timeInSeconds} from '../../utils/time'
+const {SECONDS, MINUTES, HOURS, DAYS} = timeInSeconds
 
 const API_CONFIG_ALLOWED_HOSTS = 'allowedHosts'
 const API_CONFIG_RATE_LIMIT = 'rateLimit'
@@ -7,6 +11,11 @@ const API_CONFIG_DEFAULT = {
   [API_CONFIG_ALLOWED_HOSTS]: null,
   [API_CONFIG_RATE_LIMIT]: null,
 }
+
+const cache = Cache.build({
+  cacheTTL: 1.0 * MINUTES,
+  staleTTL: 3.0 * DAYS,
+})
 
 export class ApiClient {
     static get COLLECTION_NAME() {return 'api_clients'}
@@ -78,8 +87,14 @@ export class ApiClient {
       return value
     }
 
-    static async get(id) {
-      const data = await Database.instance().get(`${ApiClient.COLLECTION_NAME}/${id}`)
+    static async get(id, skipCache=false) {
+      const data = await cache.wrap({
+        key: `ApiClient:${id}`,
+        skip: skipCache,
+        op: async () => {
+          return Database.instance().get(`${ApiClient.COLLECTION_NAME}/${id}`)
+        }
+      })
       if (!data) return null
       data.id = id
       return new ApiClient(data)
