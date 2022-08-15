@@ -3,22 +3,123 @@ import {promisify} from "util"
 import formidable from 'formidable'
 import {helpers} from '../routes/helpers'
 import {cors} from './cors'
+import {rateLimit} from "./rateLimit"
 
 import {envShared} from "../shared/envShared"
 import {simpleCrypto} from "../shared/simpleCrypto"
 
 const readfile = promisify(fs.readFile)
 
+const DEFAULT_RATE_LIMIT_MAX_SUCCESSES_PER_SECOND = 1.0
+const SECONDS = 1000.0
+const MINUTES = SECONDS * 60.0
+const HOURS = MINUTES * 60.0
+const DAYS = HOURS * 24.0
+
 export const quickApi = new (class {
   async enforceCors(req, res, next) {
-    const client = res.locals.dentClient
-    const hosts = client.apiAllowedHosts({api: res.locals.dentApiId})
+    const {dentApiId: apiId, dentClient: client} = res.locals
+    const hosts = client.apiAllowedHosts({api: apiId})
     const enforce = cors.enforceCors({
       hosts: hosts,
       methods: ['POST'],
       headers: [envShared.signatureHeaderName]
     })
     return await enforce(req, res, next)
+  }
+
+  async rateLimit(req, res, next) {
+    const {dentApiId: apiId, dentClient: client} = res.locals
+    const maxSuccessesPerSec = client.apiMaxSuccessesPerSecond({api: apiId}) || DEFAULT_RATE_LIMIT_MAX_SUCCESSES_PER_SECOND
+    const ipMaxRequestsPerMinute = 30
+    const ipMaxSuccessesPerHour = 20
+    const ipMaxSuccessesPerDay = 50
+
+    const ipLimitRequestsPerMinute = rateLimit({
+      limit: ipMaxRequestsPerMinute,
+      expiresIn: 1.0 * MINUTES,
+      lookup: (req, _) => `rlimit:ip:${apiId}:${req.ip}:request-min`,
+      onBlocked: function(req, res, next) {
+        throw 'Exceeded IP requests per minute rate limit'
+      }
+    })
+    const clientLimitRequestsPerSecond = rateLimit({
+      limit: maxSuccessesPerSec * 60 * 2.5 * 3,
+      expiresIn: 1.0 * SECONDS,
+      lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:request-sec`,
+      onBlocked: function(req, res, next) {
+        throw 'Exceeded client requests per second client rate limit'
+      }
+    })
+
+    const clientLimitSuccessesPerSecond = rateLimit({
+      limit: maxSuccessesPerSec * 2.5,
+      expiresIn: 1.0 * SECONDS,
+      lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:success-sec`,
+      countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
+      onBlocked: function(req, res, next) {
+        throw 'Exceeded client successes per second rate limit'
+      }
+    })
+    const clientLimitSuccessesPerMinute = rateLimit({
+      limit: maxSuccessesPerSec * 60,
+      expiresIn: 1.0 * MINUTES,
+      lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:success-min`,
+      countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
+      onBlocked: function(req, res, next) {
+        throw 'Exceeded client successes per minute rate limit'
+      }
+    })
+    const clientLimitSuccessesPerHour = rateLimit({
+      limit: maxSuccessesPerSec * 60 * 60 * 0.5,
+      expiresIn: 1.0 * HOURS,
+      lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:success-hour`,
+      countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
+      onBlocked: function(req, res, next) {
+        throw 'Exceeded client successes per hour rate limit'
+      }
+    })
+    const ipLimitSuccessesPerHour = rateLimit({
+      limit: ipMaxSuccessesPerHour,
+      expiresIn: 1.0 * HOURS,
+      lookup: (req, _) => `rlimit:ip:${apiId}:${req.ip}:success-hour`,
+      countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
+      onBlocked: function(req, res, next) {
+        throw 'Exceeded IP requests per hour rate limit'
+      }
+    })
+    const ipLimitSuccessesPerDay = rateLimit({
+      limit: ipMaxSuccessesPerDay,
+      expiresIn: 1.0 * DAYS,
+      lookup: (req, _) => `rlimit:ip:${apiId}:${req.ip}:success-day`,
+      countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
+      onBlocked: function(req, res, next) {
+        throw 'Exceeded IP successes per day rate limit'
+      }
+    })
+
+    const allRateLimits = [
+      // Limiting any requests
+      ipLimitRequestsPerMinute,
+      clientLimitRequestsPerSecond,
+
+      // Limiting ip successes
+      ipLimitSuccessesPerHour,
+      ipLimitSuccessesPerDay,
+
+      // Limiting client successes
+      clientLimitSuccessesPerSecond,
+      clientLimitSuccessesPerMinute,
+      clientLimitSuccessesPerHour,
+    ]
+
+    const joinedNexts = allRateLimits.reverse().reduce((prevNext, limit) => {
+      return async () => {
+        return await limit(req, res, prevNext)
+      }
+    }, next)
+
+    return await joinedNexts()
   }
 
   async parseRequestBody(req, res, next) {

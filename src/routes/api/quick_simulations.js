@@ -10,7 +10,6 @@ import timeout from 'connect-timeout'
 import express from 'express'
 const router = express.Router()
 
-import {rateLimit} from "../../middlewares/rateLimit"
 import {getModel} from "../../middlewares/getModel"
 import {QuickSimulationClient} from "../../models/clients/QuickSimulationClient"
 import {GcloudPresignedCredentialsProvider} from '../../models/storage/GcloudPresignedCredentialsProvider'
@@ -22,43 +21,21 @@ import {env} from "../../config/env"
 import {envShared} from "../../shared/envShared"
 import {simpleCrypto} from "../../shared/simpleCrypto"
 import {helpers} from '../helpers'
-//import {i18n} from '../../shared/i18n'
 import {quickApi} from "../../middlewares/quickApi"
 import {api} from '../../middlewares/api'
 
-const userRateLimit = rateLimit({
-  limit: env.userRateLimit.amount,
-  expiresIn: env.userRateLimit.timeWindow,
-  lookup: (_, res) => res.locals.dentUser.id,
-})
-
-const ipRateLimit = rateLimit({
-  limit: env.ipRateLimit.amount,
-  expiresIn: env.ipRateLimit.timeWindow,
-  lookup: (req, _) => req.ip,
-})
-
-const clientRateLimit = rateLimit({
-  limit: env.clientRateLimit.amount,
-  expiresIn: env.clientRateLimit.timeWindow,
-  lookup: (_, res) => res.locals.dentClient.id,
-})
-
 router.post('/',
-//userRateLimit,
-//ipRateLimit,
-//clientRateLimit,
 api.setId('simulationsCosmetic'),
 quickApi.parseAuthToken,
 getModel.client,
 quickApi.enforceCors,
 quickApi.validateAuthToken,
+quickApi.rateLimit,
 quickApi.parseRequestBody,
 quickApi.validateBodyData,
 quickApi.dataToSimulationOptions,
 helpers.asyncCatchError(async (req, res, next) => {
   const data = res.locals.dentSimulationOptions
-  console.log(data)
   const photo = res.locals.dentParsedBody.images['img_photo']
 
   const nowSecs = new Date().getTime()

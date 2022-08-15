@@ -2,8 +2,10 @@ import {idGenerator} from '../tools/idGenerator'
 import {Database} from './Database'
 
 const API_CONFIG_ALLOWED_HOSTS = 'allowedHosts'
+const API_CONFIG_RATE_LIMIT = 'rateLimit'
 const API_CONFIG_DEFAULT = {
-  [API_CONFIG_ALLOWED_HOSTS]: null
+  [API_CONFIG_ALLOWED_HOSTS]: null,
+  [API_CONFIG_RATE_LIMIT]: null,
 }
 
 export class ApiClient {
@@ -32,6 +34,16 @@ export class ApiClient {
 
     apiAllowedHosts({api='default', host}) {
       return this.#getApiConfig({api, config: API_CONFIG_ALLOWED_HOSTS}) || []
+    }
+
+    apiMaxSuccessesPerSecond({api='default'}) {
+      const rateLimitCfg = this.#getApiConfig({api, config: API_CONFIG_RATE_LIMIT}) || {}
+      return rateLimitCfg.maxSuccessesPerSecond
+    }
+    setMaxSuccessesPerSecond({api='default', value}) {
+      const rateLimitCfg = this.#rawGetApiConfig({api, config: API_CONFIG_RATE_LIMIT}) || {}
+      rateLimitCfg.maxSuccessesPerSecond = value
+      this.#setApiConfig({api, config: API_CONFIG_ALLOWED_HOSTS, value: rateLimitCfg})
     }
 
     save() {
