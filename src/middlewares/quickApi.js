@@ -3,6 +3,7 @@ import {promisify} from "util"
 import formidable from 'formidable'
 import {helpers} from '../routes/helpers'
 import {cors} from './cors'
+import {timeout} from "./timeout"
 import {rateLimit} from "./rateLimit"
 
 import {envShared} from "../shared/envShared"
@@ -129,7 +130,10 @@ export const quickApi = new (class {
         maxFieldsSize: 1*1024*1024,
         allowEmptyFiles: false
       })
+      const timeoutManager = timeout.getManager(res)
+      if (timeoutManager) timeoutManager.onTimeout(() => form.pause())
       const {files, fields} = await helpers.parseFormPromise(form, req)
+      await new Promise((resolve) => setTimeout(resolve, 10000.0) )
       const {data: dataJson} = fields
       const data = quickApi.#parseJson(dataJson)
       if (!data) {

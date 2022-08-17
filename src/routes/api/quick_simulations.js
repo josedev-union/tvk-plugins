@@ -6,11 +6,9 @@ const readfile = promisify(fs.readFile)
 
 // import axios from 'axios'
 import FileType from 'file-type';
-import timeout from 'connect-timeout'
 import express from 'express'
 const router = express.Router()
 
-import {getModel} from "../../middlewares/getModel"
 import {QuickSimulationClient} from "../../models/clients/QuickSimulationClient"
 import {GcloudPresignedCredentialsProvider} from '../../models/storage/GcloudPresignedCredentialsProvider'
 import {idGenerator} from "../../models/tools/idGenerator"
@@ -21,39 +19,33 @@ import {env} from "../../config/env"
 import {envShared} from "../../shared/envShared"
 import {simpleCrypto} from "../../shared/simpleCrypto"
 import {helpers} from '../helpers'
+import {getModel} from "../../middlewares/getModel"
+import {timeout} from "../../middlewares/timeout"
 import {quickApi} from "../../middlewares/quickApi"
 import {api} from '../../middlewares/api'
 
 router.post('/',
 api.setId('simulationsCosmetic'),
+timeout.ensure(env.quickApiRouteTimeout),
 quickApi.parseAuthToken,
 getModel.client,
 quickApi.enforceCors,
 quickApi.validateAuthToken,
 quickApi.rateLimit,
-quickApi.parseRequestBody,
+timeout.blowIfTimedout,
+timeout.ensure(env.quickApiInputUploadTimeout, [
+  quickApi.parseRequestBody,
+]),
 quickApi.validateBodyData,
 quickApi.dataToSimulationOptions,
 helpers.asyncCatchError(async (req, res, next) => {
+  const timeoutManager = timeout.getManager(res)
   const data = res.locals.dentSimulationOptions
   const photo = res.locals.dentParsedBody.images['img_photo']
 
-  const nowSecs = new Date().getTime()
   if (!photo || photo.size === 0) {
     throw "No photo was received"
   }
-
-  // TODO: Verify dataJson signature
-  // TODO: Verify image MD5
-
-  // if (!tokenIsValid(fields.secret)) {
-  //   throw 'Non authorized token'
-  // }
-
-  // const recaptchaIsValid = await validateRecaptcha(fields.recaptchaToken)
-  // if (!recaptchaIsValid) {
-  //   throw 'Invalid Recaptcha'
-  // }
 
   const {ext: extension} = (await FileType.fromBuffer(photo.content)) || {}
 
@@ -61,18 +53,22 @@ helpers.asyncCatchError(async (req, res, next) => {
   if (!extension || !extension.match(/.*(jpe?g|png)$/i)) {
     throw `Invalid image type ${extension}`
   }
-  const client = new QuickSimulationClient()
-  const expiresAt = Math.round(nowSecs + env.instSimGiveUpStartTimeout * 1000.0)
-  const simulation = await client.requestSimulation({photo: photo.content, expiresAt: expiresAt, options: data})
-  const { getBeforeUrl, getResultUrl } = await uploadToFirestoreData({
-    originalExt: extension,
-    original: simulation.original,
-    before: simulation.before,
-    result: simulation.result,
-    info: info
+
+  const simulation = await timeoutManager.exec(env.quickApiSimulationTimeout, async () => {
+    const client = new QuickSimulationClient()
+    const expiresAt = Math.round(timeoutManager.nextExpiresAtInSeconds() * 1000.0)
+    return await client.requestSimulation({photo: photo.content, expiresAt: expiresAt, options: data})
   })
-  //const beforeDataUrl = helpers.toDataUrl(simulation.before, 'image/jpeg')
-  //const resultDataUrl = helpers.toDataUrl(simulation.result, 'image/jpeg')
+  const { getBeforeUrl, getResultUrl } = await timeoutManager.exec(env.quickApiResultsUploadTimeout, async () => {
+    return await uploadToFirestoreData({
+      originalExt: extension,
+      original: simulation.original,
+      before: simulation.before,
+      result: simulation.result,
+      info: info
+    })
+  })
+
   return res.status(200).json({
     success: true,
     beforeUrl: getBeforeUrl,
