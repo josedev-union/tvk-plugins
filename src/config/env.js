@@ -32,6 +32,8 @@ export const env = new (class {
   quickApiInputUploadTimeout = parseFloat(process.env.DENTRINO_QAPI_INPUT_UPLOAD_TIMEOUT || 15)
   quickApiSimulationTimeout = parseFloat(process.env.DENTRINO_QAPI_SIMULATION_TIMEOUT || 15)
   quickApiResultsUploadTimeout = parseFloat(process.env.DENTRINO_QAPI_RESULTS_UPLOAD_TIMEOUT || 15)
+  quickApiMaxUploadSizeMb = process.env.DENTRINO_QAPI_MAX_UPLOAD_SIZE_MB || 15
+  quickApiMaxUploadSizeBytes = this.quickApiMaxUploadSizeMb * 1024 * 1024
   instSimIpRateLimitMinutely = {
     amount:     parseFloat(process.env.DENTRINO_INSTSIM_IP_RATE_LIMIT_MINUTELY_AMOUNT || 3),
     timeWindow: parseFloat(1 * 60 * 1000),

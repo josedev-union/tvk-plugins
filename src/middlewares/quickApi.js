@@ -5,7 +5,7 @@ import {cors} from './cors'
 import {timeout} from "./timeout"
 import {rateLimit} from "./rateLimit"
 
-import {envShared} from "../shared/envShared"
+import {env} from "../config/env"
 import {simpleCrypto} from "../shared/simpleCrypto"
 
 import {helpers} from '../routes/helpers'
@@ -14,9 +14,12 @@ import {asyncMiddleware, invokeMiddleware, invokeMiddlewares} from './expressAsy
 import {timeInSeconds} from "../utils/time"
 const {SECONDS, MINUTES, HOURS, DAYS} = timeInSeconds
 
+import {BufferWritable} from "../utils/BufferWritable"
+
 const readfile = promisify(fs.readFile)
 
 const DEFAULT_RATE_LIMIT_MAX_SUCCESSES_PER_SECOND = 1.0
+const SIGNATURE_HEADER = 'Authorization'
 
 export const quickApi = new (class {
   get enforceCors() {
@@ -26,7 +29,7 @@ export const quickApi = new (class {
       const enforce = cors.enforceCors({
         hosts: hosts,
         methods: ['POST'],
-        headers: [envShared.signatureHeaderName]
+        headers: [SIGNATURE_HEADER]
       })
       return await invokeMiddleware(enforce, req, res)
     })
@@ -126,9 +129,16 @@ export const quickApi = new (class {
     return asyncMiddleware('quickApi.parseRequestBody', async (req, res, next) => {
       const form = formidable({
         multiples: true,
-        maxFileSize: envShared.maxUploadSizeBytes,
+        maxFileSize: env.quickApiMaxUploadSizeBytes,
         maxFieldsSize: 1*1024*1024,
-        allowEmptyFiles: false
+        allowEmptyFiles: false,
+        fileWriteStreamHandler: (file) => {
+          const writable = new BufferWritable()
+          writable.on('finish', () => {
+            file.content = writable.content
+          })
+          return writable
+        }
       })
       const timeoutManager = timeout.getManager(res)
       if (timeoutManager) timeoutManager.onTimeout(() => form.pause())
@@ -142,10 +152,7 @@ export const quickApi = new (class {
       const images = {}
       for (let fileKey in files) {
         if (fileKey.startsWith('img')) {
-          images[fileKey] = {
-            ...files[fileKey],
-            content: await readfile(files[fileKey].path),
-          }
+          images[fileKey] = files[fileKey]
         }
       }
       res.locals.dentParsedBody = {
@@ -352,7 +359,7 @@ export const quickApi = new (class {
   }
 
   #getToken(req) {
-    const signatureHeader = helpers.normalizeParamValue(req.get(envShared.signatureHeaderName))
+    const signatureHeader = helpers.normalizeParamValue(req.get(SIGNATURE_HEADER))
     if (!signatureHeader) return null
 
     const match = signatureHeader.match(/^Bearer\s+(.*)\s*$/)
