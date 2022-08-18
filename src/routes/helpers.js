@@ -4,8 +4,8 @@ import {envShared} from '../shared/envShared'
 import {simpleCrypto} from '../shared/simpleCrypto'
 
 export const helpers = new (class {
-  getReferer(req) {
-    return this.normalizeParamValue(req.get('Referer') || req.get('Origin') || req.get('Host'))
+  getOrigin(req) {
+    return this.normalizeParamValue(req.get('Origin') || req.get('Referer') || req.get('Host'))
   }
 
   getSignature(req) {
@@ -21,8 +21,8 @@ export const helpers = new (class {
     return decoded;
   }
 
-  respondError(res, status, message) {
-    return res.status(status).json({error: message})
+  respondError(res, status, data) {
+    return res.status(status).json({error: data})
   }
 
   setCors(res, {hosts, methods, headers}) {

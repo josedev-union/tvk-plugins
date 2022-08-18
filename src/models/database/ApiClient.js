@@ -101,7 +101,7 @@ export class ApiClient {
     }
 
     static destroy(id) {
-        if (id === '/' || id === '' || !id) throw "Can't delete root"
+        if (id === '/' || id === '' || !id) throw new Error("Can't delete root")
         return Database.instance().delete(`/${ApiClient.COLLECTION_NAME}/${id}`)
     }
 

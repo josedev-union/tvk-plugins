@@ -1,39 +1,50 @@
 import {getNowInSecs} from '../../utils/time'
 
 export class TimeoutManager {
-  constructor({onTimeout}={}) {
+  constructor({onTimeout, onBlow}={}) {
     this.timedout = false
     this.expiredTimeoutId = null
+    this.expiredExtraData = null
+    this.expiredOnBlow = null
     this.timeouts = {}
+    this.onBlowCb = onBlow || ((data) => {
+      throw new Error(`Timeout: Operation took too long timeoutId:${data.id}`)
+    })
     this.callbacks = []
     this.onTimeout(onTimeout)
   }
 
-  async exec(timeoutSecs, operation, {id, onTimeout}={}) {
+  async exec(timeoutSecs, operation, {id, onTimeout, onBlow, extraData}={}) {
     if (this.hasTimedout()) {
       this.#asPromise(onTimeout)
       return await this.blowIfTimedout()
     }
-    id = this.start(timeoutSecs, {id, onTimeout})
+    id = this.start(timeoutSecs, {id, onTimeout, onBlow, extraData})
     const result = await Promise.race([
       this.#asPromise(operation),
-      this.#blowOnTimeout()
+      this.#blowOnTimeout({onBlow, extraData})
     ])
     this.clear(id)
     await this.blowIfTimedout()
     return result
   }
 
-  start(timeoutSecs, {id, onTimeout}={}) {
+  start(timeoutSecs, {id, onTimeout, onBlow, extraData}={}) {
     if (this.hasTimedout()) {
       this.#asPromise(onTimeout)
       return
     }
     const nowSecs = getNowInSecs()
+    const timeoutObj = {
+      onBlowCb: onBlow,
+      extraData: extraData || {},
+      startedAt: nowSecs,
+      duration: timeoutSecs,
+    }
     const clearId = setTimeout(async () => {
-      if (!this) return
+      if (!this || this.timedout) return
       this.timedout = true
-      this.expiredTimeoutId = id
+      this.expiredTimeout = timeoutObj
       this.clearAll()
       await Promise.all([
         this.#asPromise(onTimeout),
@@ -42,11 +53,11 @@ export class TimeoutManager {
     }, timeoutSecs * 1000.0)
 
     if (!id) id = clearId
-    this.timeouts[id] = {
+    Object.assign(timeoutObj, {
+      id,
       clearId,
-      startedAt: nowSecs,
-      duration: timeoutSecs,
-    }
+    })
+    this.timeouts[id] = timeoutObj
     return id
   }
 
@@ -102,8 +113,9 @@ export class TimeoutManager {
 
   blowIfTimedoutSync() {
     if (this.hasTimedout()) {
+      const timeout = this.expiredTimeout
       this.clearAll()
-      throw `Timeout: Operation took too long timeoutId:${this.expiredTimeoutId}`
+      return (timeout.onBlowCb || this.onBlowCb)(timeout)
     }
   }
 

@@ -19,6 +19,8 @@ import {env} from './config/env'
 import {helpers} from './routes/helpers'
 import './config/config'
 import {getModel} from './middlewares/getModel'
+import {api} from './middlewares/api'
+import {RichError} from './utils/RichError'
 import * as Sentry from '@sentry/node'
 import * as Tracing from '@sentry/tracing'
 
@@ -51,9 +53,18 @@ app.use(function(req, res, next) {
   const xForwardedFor = req.header('x-forwarded-for') || ''
   const ipsCountOnHeader = xForwardedFor.split(',').length
   if (ipsCountOnHeader !== 2) {
-    throw createError(400, 'X-Forwarded-For has suspecious value')
+    const err = new RichError({
+      httpCode: 400,
+      publicId: 'bad-request',
+      publicMessage: 'Bad Request',
+      debugId: 'bad-x-forwarded-for',
+      debugMessage: `X-Forwarded-For has suspecious value.`,
+      logAsWarning: true,
+    })
+    next(err)
+  } else {
+    next()
   }
-  next()
 });
 app.use(Sentry.Handlers.requestHandler());
 app.use(morgan(':date[iso] :method :url HTTP/:http-version" :status :res[content-length] [:remote-addr - :remote-user]'));
@@ -82,21 +93,36 @@ if (env.instSimRouter) {
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-  next(createError(404));
+  const err = new RichError({
+    httpCode: 404,
+    publicId: 'not-found',
+    publicMessage: 'Not Found',
+    doLog: false,
+  })
+  next(err)
 });
+
+app.use(api.convertToRichError);
 
 // error handler
 app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  const message = err.message || err.error || `Unexpected Error: ${JSON.stringify(err)}`
-  const statusCode = err.status || 500
-  res.locals.message = message
-  res.locals.error = req.app.get('env') === 'development' ? err : {}
-  console.error(err)
-  console.trace()
-
-  // render the error page
-  return helpers.respondError(res, statusCode, message)
+  let statusCode = 500
+  let data = null
+  if (err instanceof RichError) {
+    const errLogLevel = err.logLevel()
+    if (errLogLevel) {
+      console[errLogLevel](err.logText())
+    }
+    statusCode = err.httpCode
+    data = err.data({isDebug: !env.isProduction()});
+  } else {
+    const message = err.message || err.error || `Unexpected Error: ${JSON.stringify(err)}`
+    statusCode = err.status || 500
+    console.error(err)
+    console.trace()
+    data = message
+  }
+  res.status(statusCode).json({error: data});
 });
 
 function redirectWwwToNonWww(req, res, next) {

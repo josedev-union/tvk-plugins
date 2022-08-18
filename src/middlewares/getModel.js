@@ -11,8 +11,15 @@ export const getModel = new (class {
       const clientId = res.locals.dentClientId
       const client = await ApiClient.get(clientId)
       if (!client) {
-        console.warn(`Unauthorized: Could not find client "${clientId}"`)
-        return helpers.respondError(res, 403, "Not Authorized")
+        throw new RichError({
+          publicId: 'not-authorized',
+          debugId: 'bad-token',
+          httpCode: 403,
+          debugMessage: `Unauthorized: Could not find client "${clientId}"`,
+          debugDetails: {clientId},
+          publicMessage: 'Not Authorized',
+          logAsWarning: true,
+        })
       }
       res.locals.dentClient = client
     })
@@ -23,7 +30,13 @@ export const getModel = new (class {
       const userId = req.params['userId']
       const user = await User.get(userId)
       if (!user) {
-        return helpers.respondError(res, 404, "User not found")
+        throw new RichError({
+          httpCode: 404,
+          publicId: 'user-not-found',
+          publicMessage: 'User not found',
+          debugDetails: {userId},
+          logAsWarning: true,
+        })
       }
       res.locals.dentUser = user
     })
@@ -34,7 +47,13 @@ export const getModel = new (class {
       const smileTaskId = req.params['smileTaskId']
       const smileTask = await SmileTask.get(smileTaskId)
       if (!smileTask) {
-        return helpers.respondError(res, 404, "SmileTask not found")
+        throw new RichError({
+          httpCode: 404,
+          publicId: 'smiletask-not-found',
+          publicMessage: 'SmileTask not found',
+          debugDetails: {smileTaskId},
+          logAsWarning: true,
+        })
       }
       res.locals.dentSmileTask = smileTask
     })

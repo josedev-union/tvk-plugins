@@ -1,12 +1,16 @@
 import fs from 'fs'
 import {promisify} from "util"
 import formidable from 'formidable'
+import FileType from 'file-type'
+
 import {cors} from './cors'
+import {api} from './api'
 import {timeout} from "./timeout"
 import {rateLimit} from "./rateLimit"
 
 import {env} from "../config/env"
 import {simpleCrypto} from "../shared/simpleCrypto"
+import {RichError} from "../utils/RichError"
 
 import {helpers} from '../routes/helpers'
 import {asyncMiddleware, invokeMiddleware, invokeMiddlewares} from './expressAsync'
@@ -48,7 +52,10 @@ export const quickApi = new (class {
         expiresIn: 1.0 * MINUTES,
         lookup: (req, _) => `rlimit:ip:${apiId}:${req.ip}:request-min`,
         onBlocked: function(req, res, next) {
-          throw 'Exceeded IP requests per minute rate limit'
+          throw quickApi.#newRateLimitError({
+            message: 'Exceeded IP requests per minute rate limit',
+            tags: {'error:rate-limit': 'ip-requests-per-minute'},
+          })
         }
       })
       const clientLimitRequestsPerSecond = rateLimit({
@@ -56,7 +63,10 @@ export const quickApi = new (class {
         expiresIn: 1.0 * SECONDS,
         lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:request-sec`,
         onBlocked: function(req, res, next) {
-          throw 'Exceeded client requests per second client rate limit'
+          throw quickApi.#newRateLimitError({
+            message: 'Exceeded client requests per second client rate limit',
+            tags: {'error:rate-limit': 'client-requests-per-second'},
+          })
         }
       })
 
@@ -66,7 +76,10 @@ export const quickApi = new (class {
         lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:success-sec`,
         countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
         onBlocked: function(req, res, next) {
-          throw 'Exceeded client successes per second rate limit'
+          throw quickApi.#newRateLimitError({
+            message: 'Exceeded client successes per second rate limit',
+            tags: {'error:rate-limit': 'client-successes-per-second'},
+          })
         }
       })
       const clientLimitSuccessesPerMinute = rateLimit({
@@ -75,7 +88,10 @@ export const quickApi = new (class {
         lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:success-min`,
         countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
         onBlocked: function(req, res, next) {
-          throw 'Exceeded client successes per minute rate limit'
+          throw quickApi.#newRateLimitError({
+            message: 'Exceeded client successes per minute rate limit',
+            tags: {'error:rate-limit': 'client-successes-per-minute'},
+          })
         }
       })
       const clientLimitSuccessesPerHour = rateLimit({
@@ -84,7 +100,10 @@ export const quickApi = new (class {
         lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:success-hour`,
         countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
         onBlocked: function(req, res, next) {
-          throw 'Exceeded client successes per hour rate limit'
+          throw quickApi.#newRateLimitError({
+            message: 'Exceeded client successes per hour rate limit',
+            tags: {'error:rate-limit': 'client-successes-per-hour'},
+          })
         }
       })
       const ipLimitSuccessesPerHour = rateLimit({
@@ -93,7 +112,10 @@ export const quickApi = new (class {
         lookup: (req, _) => `rlimit:ip:${apiId}:${req.ip}:success-hour`,
         countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
         onBlocked: function(req, res, next) {
-          throw 'Exceeded IP requests per hour rate limit'
+          throw quickApi.#newRateLimitError({
+            message: 'Exceeded IP requests per hour rate limit',
+            tags: {'error:rate-limit': 'ip-requests-per-hour'},
+          })
         }
       })
       const ipLimitSuccessesPerDay = rateLimit({
@@ -102,7 +124,10 @@ export const quickApi = new (class {
         lookup: (req, _) => `rlimit:ip:${apiId}:${req.ip}:success-day`,
         countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
         onBlocked: function(req, res, next) {
-          throw 'Exceeded IP successes per day rate limit'
+          throw quickApi.#newRateLimitError({
+            message: 'Exceeded IP successes per day rate limit',
+            tags: {'error:rate-limit': 'ip-successes-per-day'},
+          })
         }
       })
 
@@ -146,8 +171,12 @@ export const quickApi = new (class {
       const {data: dataJson} = fields
       const data = quickApi.#parseJson(dataJson)
       if (!data) {
-        console.warn(`Bad data json format - ${dataJson}`)
-        return helpers.respondError(res, 422, "Unprocessable Entity")
+        throw quickApi.#newBadParamsError({
+          message: `Bad format on data json`,
+          details: {
+            receivedDataJson: dataJson
+          }
+        })
       }
       const images = {}
       for (let fileKey in files) {
@@ -159,6 +188,37 @@ export const quickApi = new (class {
         data: data,
         dataJson: dataJson,
         images: images,
+      }
+    })
+  }
+
+  getPhotoExtension(imgFields) {
+    return asyncMiddleware('quickApi.getPhotoExtension', async (req, res, next) => {
+      const images = res.locals.dentParsedBody.images
+      const fields = Object.keys(images)
+      for (var i = 0; i < fields.length; i++) {
+        const field = fields[i]
+        const photo = images[field]
+
+        if (!photo || photo.size === 0) {
+          throw quickApi.#newBadParamsError({
+            message: `A photo param ${field} is mandatory`,
+            details: {
+              imgParamsReceived: Object.keys(images)
+            }
+          })
+        }
+
+        const {ext: extension} = (await FileType.fromBuffer(photo.content)) || {}
+
+        if (!extension || !extension.match(/.*(jpe?g|png)$/i)) {
+          throw quickApi.#newBadParamsError({
+            message: `Invalid photo type of ${field}`,
+            details: {
+              receivedPhotoType: extension
+            }
+          })
+        }
       }
     })
   }
@@ -180,32 +240,25 @@ export const quickApi = new (class {
 
       if (data['synth'] === 'interpolate') {
         if (!data['mix_factor']) {
-          return quickApi.#validationError(res, "'mix_factor' is mandatory on 'interpolate' synth")
+          throw quickApi.#newBadParamsError({
+            message: "'mix_factor' is mandatory on 'interpolate' synth"
+          })
         }
       } else {
         delete data['mix_factor']
       }
 
-      const {error: synthError} = quickApi.#validateValues(res, data, 'synth', SYNTH_VALUES)
-      if (synthError) return synthError
-
-      const {error: modeError} = quickApi.#validateValues(res, data, 'mode', MODE_VALUES)
-      if (modeError) return modeError
-
-      const {error: blendError} = quickApi.#validateValues(res, data, 'blend', BLEND_VALUES)
-      if (blendError) return blendError
-
-      const {value: whitenVal, error: whitenError} = quickApi.#validateFloat(res, data, 'whiten', 0.0, 1.0)
-      if (whitenError) return whitenError
+      quickApi.#validateValues(res, data, 'synth', SYNTH_VALUES)
+      quickApi.#validateValues(res, data, 'mode', MODE_VALUES)
+      quickApi.#validateValues(res, data, 'blend', BLEND_VALUES)
+      const {value: whitenVal} = quickApi.#validateFloat(res, data, 'whiten', 0.0, 1.0)
       data['whiten'] = whitenVal
 
-      const {value: brightnessVal, error: brightnessError} = quickApi.#validateFloat(res, data, 'brightness', -1.0, 1.0)
-      if (brightnessError) return brightnessError
+      const {value: brightnessVal} = quickApi.#validateFloat(res, data, 'brightness', -1.0, 1.0)
       data['brightness'] = brightnessVal + 1.0
 
       if (data['mix_factor']) {
-        const {value: mixFactorVal, error: mixFactorError} = quickApi.#validateFloat(res, data, 'mix_factor', 0.0, 1.0)
-        if (mixFactorError) return mixFactorError
+        const {value: mixFactorVal} = quickApi.#validateFloat(res, data, 'mix_factor', 0.0, 1.0)
         data['mix_factor'] = mixFactorVal
       }
 
@@ -236,19 +289,28 @@ export const quickApi = new (class {
       }
     }
 
-    return {error: quickApi.#validationError(res, `'${val}' is not valid value for '${key}' option`)}
+    throw quickApi.#newBadParamsError({
+      message: `'${val}' is not valid value for '${key}' option`,
+      details: {
+        key: key,
+        receivedValue: val
+      }
+    })
   }
 
   #validateValues(res, data, key, values) {
     const val = data[key]
     if (!values.includes(val)) {
-      return {error: quickApi.#validationError(res, `'${val}' is not valid value for '${key}' option`)}
+      throw quickApi.#newBadParamsError({
+        message: `'${val}' is not valid value for '${key}' option`,
+        details: {
+          key: key,
+          receivedValue: val,
+          validValues: values,
+        }
+      })
     }
     return {success: true}
-  }
-
-  #validationError(res, msg) {
-    return helpers.respondError(res, 422, msg)
   }
 
   #normalizeValue(val) {
@@ -260,13 +322,18 @@ export const quickApi = new (class {
     return asyncMiddleware('quickApi.parseAuthToken', async (req, res) => {
       const token = quickApi.#getToken(req)
       if (!token) {
-        console.warn("Unauthorized: Didn't received token")
-        return helpers.respondError(res, 403, "Not Authorized")
+        throw quickApi.#newAuthorizationError({
+          message: "Didn't received token",
+        })
       }
       const parts = token.split(':')
       if (parts.length !== 2 || !parts[0] || !parts[1]) {
-        console.warn(`Unauthorized: Token invalid "${token}"`)
-        return helpers.respondError(res, 403, "Not Authorized")
+        throw quickApi.#newAuthorizationError({
+          message: `Token invalid "${token}"`,
+          details: {
+            receivedToken: token,
+          }
+        })
       }
 
       const b64Claims = parts[0]
@@ -274,21 +341,43 @@ export const quickApi = new (class {
 
       const claimsJson = simpleCrypto.base64Decode(b64Claims)
       if (!claimsJson) {
-        console.warn(`Unauthorized: Couldn't decode claims json "${b64Claims}"`)
-        return helpers.respondError(res, 403, "Not Authorized")
+        throw quickApi.#newAuthorizationError({
+          message: `Couldn't decode claims json "${b64Claims}"`,
+          details: {
+            receivedToken: token,
+            receivedClaimsInBase64: b64Claims,
+          }
+        })
       }
 
       const claims = quickApi.#parseJson(claimsJson)
       if (!claims) {
-        console.warn(`Unauthorized: claims is not a valid json - ${claimsJson}`)
-        return helpers.respondError(res, 403, "Not Authorized")
+        throw quickApi.#newAuthorizationError({
+          message: `claims is not a valid json - ${claimsJson}`,
+          details: {
+            receivedToken: token,
+            receivedClaims: claimsJson,
+          }
+        })
       }
       if (!claims['client_id']) {
-        console.warn(`Unauthorized: Missing 'client_id' on claims - "${token}" - ${claimsJson}`)
-        return helpers.respondError(res, 403, "Not Authorized")
+        throw quickApi.#newAuthorizationError({
+          message: `Missing 'client_id' on claims - "${token}`,
+          details: {
+            receivedToken: token,
+            receivedClaims: claimsJson,
+          }
+        })
       }
 
-      res.locals.dentClientId = claims['client_id']
+      const clientId = claims['client_id']
+      api.addInfo(res, {
+        "security": {
+          "client-id": clientId,
+          "signature": signature,
+        },
+      })
+      res.locals.dentClientId = clientId
       res.locals.dentParsedToken = {
         claimsJson: claimsJson,
         claims: claims,
@@ -311,8 +400,13 @@ export const quickApi = new (class {
       const {claimsJson, signature} = res.locals.dentParsedToken
       const isValid = simpleCrypto.verifySignatureHmac(signature, claimsJson, client.secret)
       if (!isValid) {
-        console.warn(`Unauthorized: Signature is invalid - "${signature}" - ${claimsJson}`)
-        return helpers.respondError(res, 403, "Not Authorized")
+        throw quickApi.#newAuthorizationError({
+          message: `Claims JSON signature doesn't match it`,
+          details: {
+            signatureReceived: signature,
+            claimsJsonReceived: claimsJson,
+          }
+        })
       }
     })
   }
@@ -327,8 +421,13 @@ export const quickApi = new (class {
       const signaturesKeys = Object.keys(paramsSigned)
       const keys = Array.prototype.concat(Object.keys(images), ['data'])
       if (!quickApi.#hasSameValues(signaturesKeys, keys)) {
-        console.warn(`Unauthorized: Request data does not match token claims - ${keys} - ${signaturesKeys}`)
-        return helpers.respondError(res, 403, "Not Authorized")
+        throw quickApi.#newAuthorizationError({
+          message: `Request data does not match token claims - ${keys} - ${signaturesKeys}`,
+          details: {
+            signedParamsOnTokenClaims: signaturesKeys,
+            keysReceivedOnBody: keys,
+          }
+        })
       }
 
       const keysLength = keys.length
@@ -338,8 +437,13 @@ export const quickApi = new (class {
         const signature = paramsSigned[key]
         const verificationSignature = simpleCrypto.md5(val)
         if (signature !== verificationSignature) {
-          console.warn(`Unauthorized: Request "${key}" md5 does not match claims - ${signature} != ${verificationSignature}`)
-          return helpers.respondError(res, 403, "Not Authorized")
+          throw quickApi.#newAuthorizationError({
+            message: `Signed param "${key}" does not match claims received on token`,
+            details: {
+              paramSignatureReceived: paramsSigned,
+              paramSignatureExpected: verificationSignature,
+            }
+          })
         }
       }
     })
@@ -365,5 +469,39 @@ export const quickApi = new (class {
     const match = signatureHeader.match(/^Bearer\s+(.*)\s*$/)
     if (!match) return null;
     return match[1]
+  }
+
+  #newRateLimitError({message, tags}) {
+    return new RichError({
+      publicId: 'rate-limit',
+      httpCode: 429,
+      publicMessage: 'Too Many Requests',
+      debugMessage: message,
+      logAsWarning: true,
+      tags,
+    })
+  }
+
+  #newBadParamsError({message, details={}}) {
+    return new RichError({
+      publicId: 'bad-params',
+      httpCode: 422,
+      debugMessage: message,
+      debugDetails: details,
+      publicMessage: 'Unprocessable Entity',
+      doLog: false,
+    })
+  }
+
+  #newAuthorizationError({message, details={}}) {
+    return new RichError({
+      publicId: 'not-authorized',
+      debugId: 'bad-token',
+      httpCode: 403,
+      debugMessage: message,
+      debugDetails: details,
+      publicMessage: 'Not Authorized',
+      doLog: false,
+    })
   }
 })()

@@ -5,7 +5,6 @@ import {promisify} from "util"
 const readfile = promisify(fs.readFile)
 
 // import axios from 'axios'
-import FileType from 'file-type';
 import express from 'express'
 const router = express.Router()
 
@@ -13,7 +12,6 @@ import {QuickSimulationClient} from "../../models/clients/QuickSimulationClient"
 import {GcloudPresignedCredentialsProvider} from '../../models/storage/GcloudPresignedCredentialsProvider'
 import {idGenerator} from "../../models/tools/idGenerator"
 import {storageFactory} from '../../models/storage/storageFactory'
-import {TimeoutManager} from '../../models/tools/TimeoutManager'
 import {logger} from '../../instrumentation/logger'
 import {env} from "../../config/env"
 import {envShared} from "../../shared/envShared"
@@ -27,54 +25,44 @@ import {api} from '../../middlewares/api'
 
 router.post('/',
 api.setId('simulationsCosmetic'),
-timeout.ensure(env.quickApiRouteTimeout),
+timeout.ensure({id: 'full-route', timeoutSecs: env.quickApiRouteTimeout}),
 quickApi.parseAuthToken,
 getModel.client,
 quickApi.enforceCors,
 quickApi.validateAuthToken,
 quickApi.rateLimit,
 timeout.blowIfTimedout,
-timeout.ensure(env.quickApiInputUploadTimeout, [
+timeout.ensure({httpCodeOverride: 408, id: 'parse-body', timeoutSecs: env.quickApiInputUploadTimeout}, [
   quickApi.parseRequestBody,
 ]),
 quickApi.validateBodyData,
 quickApi.dataToSimulationOptions,
+quickApi.getPhotoExtension(['img_photo']),
 asyncRoute(async (req, res) => {
   const timeoutManager = timeout.getManager(res)
   const data = res.locals.dentSimulationOptions
   const photo = res.locals.dentParsedBody.images['img_photo']
 
-  if (!photo || photo.size === 0) {
-    throw "No photo was received"
-  }
-
-  const {ext: extension} = (await FileType.fromBuffer(photo.content)) || {}
-
-  const info = {ip: req.ip, timestamp: timenowStr()}
-  if (!extension || !extension.match(/.*(jpe?g|png)$/i)) {
-    throw `Invalid image type ${extension}`
-  }
-
   const simulation = await timeoutManager.exec(env.quickApiSimulationTimeout, async () => {
     const client = new QuickSimulationClient()
     const expiresAt = Math.round(timeoutManager.nextExpiresAtInSeconds() * 1000.0)
     return await client.requestSimulation({photo: photo.content, expiresAt: expiresAt, options: data})
-  })
+  }, {id: 'wait-simulation'})
   const { getBeforeUrl, getResultUrl } = await timeoutManager.exec(env.quickApiResultsUploadTimeout, async () => {
     return await uploadToFirestoreData({
-      originalExt: extension,
+      originalExt: photo.extension,
       original: simulation.original,
       before: simulation.before,
       result: simulation.result,
-      info: info
+      info: {ip: req.ip, timestamp: timenowStr()}
     })
-  })
+  }, {id: 'wait-firestorage-upload'})
 
   return res.status(200).json({
     success: true,
     beforeUrl: getBeforeUrl,
     resultUrl: getResultUrl,
-    originalExt: extension
+    originalExt: photo.extension
   })
 }))
 

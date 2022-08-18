@@ -22,7 +22,7 @@ export class Database {
 
     static instance(key='default') {
       let instance = this.instances[key]
-      if (!instance) throw `Couldn't find database named ${key}`
+      if (!instance) throw new Error(`Couldn't find database named ${key}`)
       return instance
     }
 
@@ -56,7 +56,7 @@ export class Database {
     }
 
     async delete(objPath, allow_root = false) {
-        if (!allow_root && (objPath === '/' || objPath === '' || !objPath)) throw "Can't delete root"
+        if (!allow_root && (objPath === '/' || objPath === '' || !objPath)) throw new Error("Can't delete root")
         return this.#getRef(objPath).delete()
     }
 

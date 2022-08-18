@@ -4,21 +4,36 @@ import onHeaders from 'on-headers'
 import {helpers} from '../routes/helpers'
 import {TimeoutManager} from '../models/tools/TimeoutManagerV2'
 import {asyncMiddleware, invokeMiddleware} from './expressAsync'
+import {RichError} from '../utils/RichError'
 
 export const timeout = new (class {
   getManager(res) {
     let manager = res.locals.dentTimeout
     if (!manager) {
-      res.locals.dentTimeout = manager = new TimeoutManager()
+      res.locals.dentTimeout = manager = new TimeoutManager({
+        onBlow: (data) => {
+          const id = manager.expiredTimeoutId
+          throw new RichError({
+            publicId: 'timeout',
+            httpCode: data.extraData.overrideHttpCode || 504,
+            publicMessage: 'Operation took too long',
+            debugMessage: `Operation id:${data.id} took too long.`,
+            logAsWarning: true,
+            tags: {
+              'error:timeout': data.id,
+            },
+          })
+        }
+      })
       onFinished(res, () => manager.clearAll())
       onHeaders(res, () => manager.clearAll())
     }
     return manager
   }
 
-  ensure(timeoutSecs, middlewares=null) {
-    if (middlewares) return timeout.#localEnsure(timeoutSecs, middlewares)
-    else return timeout.#globalEnsure(timeoutSecs)
+  ensure({id, timeoutSecs, overrideHttpCode}, middlewares=null) {
+    if (middlewares) return timeout.#localEnsure({id, timeoutSecs, overrideHttpCode}, middlewares)
+    else return timeout.#globalEnsure({id, timeoutSecs, overrideHttpCode})
   }
 
   get blowIfTimedout() {
@@ -28,15 +43,15 @@ export const timeout = new (class {
     })
   }
 
-  #globalEnsure(timeoutSecs) {
+  #globalEnsure({id, timeoutSecs, overrideHttpCode}) {
     return asyncMiddleware('timeout.#globalEnsure', async (req, res) => {
       const manager = timeout.getManager(res)
       await manager.blowIfTimedout()
-      manager.start(timeoutSecs)
+      manager.start(timeoutSecs, {id, extraData: {overrideHttpCode}})
     })
   }
 
-  #localEnsure(timeoutSecs, middlewares) {
+  #localEnsure({id, timeoutSecs, overrideHttpCode}, middlewares) {
     return asyncMiddleware('timeout.#localEnsure', async (req, res) => {
       const manager = timeout.getManager(res)
       await manager.blowIfTimedout()
@@ -46,7 +61,7 @@ export const timeout = new (class {
           const middleware = middlewares[i]
           await invokeMiddleware(middleware, req, res)
         }
-      })
+      }, {id, extraData: {overrideHttpCode}})
     })
   }
 

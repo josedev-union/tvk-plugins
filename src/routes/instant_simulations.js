@@ -41,7 +41,7 @@ const minutelyIpRateLimit = rateLimit({
   expiresIn: env.instSimIpRateLimitMinutely.timeWindow,
   lookup: (req, _) => `instant-simulation:minutely:${req.ip}`,
   onBlocked: function(req, res, next) {
-    throw 'Exceeded minutely IP rate limit'
+    throw new Error('Exceeded minutely IP rate limit')
   }
 })
 
@@ -53,7 +53,7 @@ const hourlySuccessIpRateLimit = rateLimit({
     return (res.statusCode >= 200 && res.statusCode <= 299) && !res.locals.dentInstSimIsErrorPage;
   },
   onBlocked: function(req, res, next) {
-    throw 'Exceeded hourly IP rate limit'
+    throw new Error('Exceeded hourly IP rate limit')
   }
 })
 
@@ -62,7 +62,7 @@ const dailyIpRateLimit = rateLimit({
   expiresIn: env.instSimIpRateLimitDaily.timeWindow,
   lookup: (req, _) => `instant-simulation:daily:${req.ip}`,
   onBlocked: function(req, res, next) {
-    throw 'Exceeded daily IP rate limit'
+    throw new Error('Exceeded daily IP rate limit')
   }
 })
 
@@ -115,16 +115,16 @@ asyncRoute(async (req, res, next) => {
   await timeoutManager.exec(async () => {
     const nowMillis = getNowInMillis()
     if (!files.photo || files.photo.size === 0) {
-      throw "No photo was received"
+      throw new Error("No photo was received")
     }
 
     if (!tokenIsValid(fields.secret)) {
-      throw 'Non authorized token'
+      throw new Error('Non authorized token')
     }
 
     const recaptchaIsValid = await validateRecaptcha(fields.recaptchaToken)
     if (!recaptchaIsValid) {
-      throw 'Invalid Recaptcha'
+      throw new Error('Invalid Recaptcha')
     }
 
     const extension = path.extname(files.photo.name).toLowerCase()
@@ -132,7 +132,7 @@ asyncRoute(async (req, res, next) => {
     res.locals.photoExt = extension
     res.locals.info = {ip: req.ip, timestamp: timenowStr()}
     if (!extension.match(/.*(jpe?g|png)$/i)) {
-      throw `Invalid extension ${extension}`
+      throw new Error(`Invalid extension ${extension}`)
     }
     const client = new QuickSimulationClient()
     const expiresAt = Math.round(nowMillis + env.instSimGiveUpStartTimeout * 1000.0)

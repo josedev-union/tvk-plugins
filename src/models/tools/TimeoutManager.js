@@ -40,7 +40,7 @@ export class TimeoutManager {
     if (this.hasTimedout()) {
       this.blownTimeout = true
       this.onTimeout()
-      throw 'Timeout: Behavior took too long'
+      throw new Error('Timeout: Behavior took too long')
     }
     if (err) throw err
     else return result
