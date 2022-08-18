@@ -1,3 +1,5 @@
+import {getNowInSecs} from '../../utils/time'
+
 export class TimeoutManager {
   constructor({onTimeout}={}) {
     this.timedout = false
@@ -27,7 +29,7 @@ export class TimeoutManager {
       this.#asPromise(onTimeout)
       return
     }
-    const nowSecs = new Date().getTime()
+    const nowSecs = getNowInSecs()
     const clearId = setTimeout(async () => {
       if (!this) return
       this.timedout = true
@@ -69,7 +71,7 @@ export class TimeoutManager {
 
   missingSecondsToExpire() {
     const expiresAtSecs = this.nextExpiresAtInSeconds()
-    const nowSecs = new Date().getTime()
+    const nowSecs = getNowInSecs()
     return max(0.0, expiresAtSecs - nowSecs)
   }
 

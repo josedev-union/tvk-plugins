@@ -3,6 +3,14 @@ export const timeInMillis = getMultipliers({oneSecond: 1000.0})
 export const timeInMicros = getMultipliers({oneSecond: 1000000.0})
 export const timeInNanos = getMultipliers({oneSecond: 1000000000.0})
 
+export function getNowInSecs() {
+  return getNowInMillis() / 1000.0
+}
+
+export function getNowInMillis() {
+  return new Date().getTime()
+}
+
 function getMultipliers({oneSecond}) {
   const m = {}
   m.seconds = oneSecond

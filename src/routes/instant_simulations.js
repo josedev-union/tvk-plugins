@@ -22,6 +22,7 @@ import {logger} from '../instrumentation/logger'
 import {env} from "../config/env"
 import {envShared} from "../shared/envShared"
 import {otp} from "../shared/otp"
+import {getNowInMillis} from '../utils/time'
 
 const readfile = promisify(fs.readFile)
 const ROBOTS_PRODUCTION = `# https://www.robotstxt.org/robotstxt.html
@@ -112,7 +113,7 @@ asyncRoute(async (req, res, next) => {
   if (timeoutManager.hasTimedout()) return
 
   await timeoutManager.exec(async () => {
-    const nowSecs = new Date().getTime()
+    const nowMillis = getNowInMillis()
     if (!files.photo || files.photo.size === 0) {
       throw "No photo was received"
     }
@@ -134,7 +135,7 @@ asyncRoute(async (req, res, next) => {
       throw `Invalid extension ${extension}`
     }
     const client = new QuickSimulationClient()
-    const expiresAt = Math.round(nowSecs + env.instSimGiveUpStartTimeout * 1000.0)
+    const expiresAt = Math.round(nowMillis + env.instSimGiveUpStartTimeout * 1000.0)
     const simOpts = {
       brightness: env.instSimBrightness,
       whiten: env.instSimWhiten,

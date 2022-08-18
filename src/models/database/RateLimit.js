@@ -3,6 +3,7 @@ import {env} from "../../config/env"
 import {redis} from "../../config/redis"
 import {promisify} from "util"
 import {v4 as uuid} from 'uuid'
+import {getNowInMillis} from '../../utils/time'
 
 const zcountAsync = promisify(redis.zcount).bind(redis)
 
@@ -41,16 +42,12 @@ export class RateLimit {
     }
 
     async #haveAvailableSlotsIn(bucketKey) {
-      const usedSlotsCount = await zcountAsync(bucketKey, nowMillis()-this.expiresIn, '+inf')
+      const usedSlotsCount = await zcountAsync(bucketKey, getNowInMillis()-this.expiresIn, '+inf')
       return usedSlotsCount < this.limit
     }
 
     async #addSlotIn(bucketKey) {
-      redis.zadd(bucketKey, nowMillis(), uuid())
+      redis.zadd(bucketKey, getNowInMillis(), uuid())
       redis.pexpire(bucketKey, this.expiresIn)
     }
-}
-
-function nowMillis() {
-    return new Date().getTime()
 }
