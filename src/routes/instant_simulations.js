@@ -11,6 +11,7 @@ const router = express.Router()
 
 import {i18n} from '../shared/i18n'
 import {helpers} from './helpers'
+import {asyncRoute} from '../middlewares/expressAsync'
 import {rateLimit} from "../middlewares/rateLimit"
 import {QuickSimulationClient} from "../models/clients/QuickSimulationClient"
 import {GcloudPresignedCredentialsProvider} from '../models/storage/GcloudPresignedCredentialsProvider'
@@ -64,39 +65,39 @@ const dailyIpRateLimit = rateLimit({
   }
 })
 
-router.get('/', async (req, res) => {
+router.get('/', asyncRoute(async (req, res) => {
   setupCacheGet(res)
   const synthTransform = !!req.query.transform || !!req.query.t
   res.render('instant_simulations/index', buildParams({synthTransform: synthTransform}))
-})
+}))
 
-router.get('/terms', async (req, res) => {
+router.get('/terms', asyncRoute(async (req, res) => {
   setupCacheGet(res)
   res.render('instant_simulations/terms', buildLayoutParams({subtitle: 'Terms of Service'}))
-})
+}))
 
-router.get('/privacy', async (req, res) => {
+router.get('/privacy', asyncRoute(async (req, res) => {
   setupCacheGet(res)
   res.render('instant_simulations/privacy', buildLayoutParams({subtitle: 'Privacy Policy'}))
-})
+}))
 
-router.get('/epoch', async (req, res) => {
+router.get('/epoch', asyncRoute(async (req, res) => {
   res.json({epoch: getOtpEpoch()})
-})
+}))
 
-router.get('/robots.txt', async (req, res) => {
+router.get('/robots.txt', asyncRoute(async (req, res) => {
   const content = env.isProduction() ? ROBOTS_PRODUCTION : ROBOTS_DEV
   setupCacheGet(res)
   res.setHeader('Content-Type', 'text/plain');
   res.status(200).send(content)
-})
+}))
 
 router.post('/',
 timeout(`${env.instSimRouteTimeout + env.instSimUploadTimeout}s`),
 hourlySuccessIpRateLimit,
 minutelyIpRateLimit,
 dailyIpRateLimit,
-helpers.asyncCatchError(async (req, res, next) => {
+asyncRoute(async (req, res, next) => {
   const form = formidable({
     multiples: true,
     maxFileSize: envShared.maxUploadSizeBytes,
@@ -105,7 +106,7 @@ helpers.asyncCatchError(async (req, res, next) => {
   })
   const timeoutManager = new TimeoutManager({externalTimedout: () => req.timedout, onTimeout: () => form.pause()})
   const {files, fields} = await timeoutManager.exec(async () => {
-    const result = await helpers.parseFormPromise(form, req)
+    const result = await helpers.parseForm(form, req)
     return result
   }, env.instSimUploadTimeout)
   if (timeoutManager.hasTimedout()) return

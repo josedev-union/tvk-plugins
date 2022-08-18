@@ -3,6 +3,7 @@ import onHeaders from 'on-headers'
 
 import {helpers} from '../routes/helpers'
 import {TimeoutManager} from '../models/tools/TimeoutManagerV2'
+import {asyncMiddleware, invokeMiddleware} from './expressAsync'
 
 export const timeout = new (class {
   getManager(res) {
@@ -20,44 +21,33 @@ export const timeout = new (class {
     else return timeout.#globalEnsure(timeoutSecs)
   }
 
-  async blowIfTimedout(req, res, next) {
-    const manager = timeout.getManager(res)
-    await manager.blowIfTimedout()
-    return next()
+  get blowIfTimedout() {
+    return asyncMiddleware('timeout.blowIfTimedout', async (req, res) => {
+      const manager = timeout.getManager(res)
+      await manager.blowIfTimedout()
+    })
   }
 
   #globalEnsure(timeoutSecs) {
-    return async (req, res, next) => {
+    return asyncMiddleware('timeout.#globalEnsure', async (req, res) => {
       const manager = timeout.getManager(res)
       await manager.blowIfTimedout()
       manager.start(timeoutSecs)
-      return next()
-    }
+    })
   }
 
   #localEnsure(timeoutSecs, middlewares) {
-    return async (req, res, next) => {
+    return asyncMiddleware('timeout.#localEnsure', async (req, res) => {
       const manager = timeout.getManager(res)
       await manager.blowIfTimedout()
-      const timeoutId = manager.start(timeoutSecs)
 
-      const lastNext = () => {
-        manager.clear(timeoutId)
-        return next()
-      }
-
-      const joinedNexts = middlewares.reverse().reduce((prevNext, middleware) => {
-        const prevNextWrapped = async () => {
-          await manager.blowIfTimedout()
-          return prevNext()
+      await manager.exec(timeoutSecs, async () => {
+        for(let i = 0; i < middlewares.length; i++) {
+          const middleware = middlewares[i]
+          await invokeMiddleware(middleware, req, res)
         }
-        return async () => {
-          return await Promise.resolve(middleware(req, res, prevNextWrapped))
-        }
-      }, lastNext)
-
-      return await joinedNexts()
-    }
+      })
+    })
   }
 
   async #asPromise(obj) {

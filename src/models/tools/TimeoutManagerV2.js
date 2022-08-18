@@ -3,7 +3,6 @@ export class TimeoutManager {
     this.timedout = false
     this.expiredTimeoutId = null
     this.timeouts = {}
-    this.hasBlown = false
     this.callbacks = []
     this.onTimeout(onTimeout)
   }
@@ -100,9 +99,7 @@ export class TimeoutManager {
   }
 
   blowIfTimedoutSync() {
-    if (this.hasBlown) return
     if (this.hasTimedout()) {
-      this.hasBlown = true
       this.clearAll()
       throw `Timeout: Operation took too long timeoutId:${this.expiredTimeoutId}`
     }

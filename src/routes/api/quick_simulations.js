@@ -19,6 +19,7 @@ import {env} from "../../config/env"
 import {envShared} from "../../shared/envShared"
 import {simpleCrypto} from "../../shared/simpleCrypto"
 import {helpers} from '../helpers'
+import {asyncRoute} from '../../middlewares/expressAsync'
 import {getModel} from "../../middlewares/getModel"
 import {timeout} from "../../middlewares/timeout"
 import {quickApi} from "../../middlewares/quickApi"
@@ -38,7 +39,7 @@ timeout.ensure(env.quickApiInputUploadTimeout, [
 ]),
 quickApi.validateBodyData,
 quickApi.dataToSimulationOptions,
-helpers.asyncCatchError(async (req, res, next) => {
+asyncRoute(async (req, res) => {
   const timeoutManager = timeout.getManager(res)
   const data = res.locals.dentSimulationOptions
   const photo = res.locals.dentParsedBody.images['img_photo']

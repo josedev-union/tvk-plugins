@@ -1,13 +1,15 @@
 import fs from 'fs'
 import {promisify} from "util"
 import formidable from 'formidable'
-import {helpers} from '../routes/helpers'
 import {cors} from './cors'
 import {timeout} from "./timeout"
 import {rateLimit} from "./rateLimit"
 
 import {envShared} from "../shared/envShared"
 import {simpleCrypto} from "../shared/simpleCrypto"
+
+import {helpers} from '../routes/helpers'
+import {asyncMiddleware, invokeMiddleware, invokeMiddlewares} from './expressAsync'
 
 import {timeInSeconds} from "../utils/time"
 const {SECONDS, MINUTES, HOURS, DAYS} = timeInSeconds
@@ -17,113 +19,111 @@ const readfile = promisify(fs.readFile)
 const DEFAULT_RATE_LIMIT_MAX_SUCCESSES_PER_SECOND = 1.0
 
 export const quickApi = new (class {
-  async enforceCors(req, res, next) {
-    const {dentApiId: apiId, dentClient: client} = res.locals
-    const hosts = client.apiAllowedHosts({api: apiId})
-    const enforce = cors.enforceCors({
-      hosts: hosts,
-      methods: ['POST'],
-      headers: [envShared.signatureHeaderName]
+  get enforceCors() {
+    return asyncMiddleware('quickApi.enforceCors', async (req, res, next) => {
+      const {dentApiId: apiId, dentClient: client} = res.locals
+      const hosts = client.apiAllowedHosts({api: apiId})
+      const enforce = cors.enforceCors({
+        hosts: hosts,
+        methods: ['POST'],
+        headers: [envShared.signatureHeaderName]
+      })
+      return await invokeMiddleware(enforce, req, res)
     })
-    return await enforce(req, res, next)
   }
 
-  async rateLimit(req, res, next) {
-    const {dentApiId: apiId, dentClient: client} = res.locals
-    const maxSuccessesPerSec = client.apiMaxSuccessesPerSecond({api: apiId}) || DEFAULT_RATE_LIMIT_MAX_SUCCESSES_PER_SECOND
-    const ipMaxRequestsPerMinute = 30
-    const ipMaxSuccessesPerHour = 20
-    const ipMaxSuccessesPerDay = 50
+  get rateLimit() {
+    return asyncMiddleware('quickApi.rateLimit', async (req, res, next) => {
+      const {dentApiId: apiId, dentClient: client} = res.locals
+      const maxSuccessesPerSec = client.apiMaxSuccessesPerSecond({api: apiId}) || DEFAULT_RATE_LIMIT_MAX_SUCCESSES_PER_SECOND
+      const ipMaxRequestsPerMinute = 30
+      const ipMaxSuccessesPerHour = 20
+      const ipMaxSuccessesPerDay = 50
 
-    const ipLimitRequestsPerMinute = rateLimit({
-      limit: ipMaxRequestsPerMinute,
-      expiresIn: 1.0 * MINUTES,
-      lookup: (req, _) => `rlimit:ip:${apiId}:${req.ip}:request-min`,
-      onBlocked: function(req, res, next) {
-        throw 'Exceeded IP requests per minute rate limit'
-      }
-    })
-    const clientLimitRequestsPerSecond = rateLimit({
-      limit: maxSuccessesPerSec * 60 * 2.5 * 3,
-      expiresIn: 1.0 * SECONDS,
-      lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:request-sec`,
-      onBlocked: function(req, res, next) {
-        throw 'Exceeded client requests per second client rate limit'
-      }
-    })
+      const ipLimitRequestsPerMinute = rateLimit({
+        limit: ipMaxRequestsPerMinute,
+        expiresIn: 1.0 * MINUTES,
+        lookup: (req, _) => `rlimit:ip:${apiId}:${req.ip}:request-min`,
+        onBlocked: function(req, res, next) {
+          throw 'Exceeded IP requests per minute rate limit'
+        }
+      })
+      const clientLimitRequestsPerSecond = rateLimit({
+        limit: maxSuccessesPerSec * 60 * 2.5 * 3,
+        expiresIn: 1.0 * SECONDS,
+        lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:request-sec`,
+        onBlocked: function(req, res, next) {
+          throw 'Exceeded client requests per second client rate limit'
+        }
+      })
 
-    const clientLimitSuccessesPerSecond = rateLimit({
-      limit: maxSuccessesPerSec * 2.5,
-      expiresIn: 1.0 * SECONDS,
-      lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:success-sec`,
-      countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
-      onBlocked: function(req, res, next) {
-        throw 'Exceeded client successes per second rate limit'
-      }
-    })
-    const clientLimitSuccessesPerMinute = rateLimit({
-      limit: maxSuccessesPerSec * 60,
-      expiresIn: 1.0 * MINUTES,
-      lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:success-min`,
-      countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
-      onBlocked: function(req, res, next) {
-        throw 'Exceeded client successes per minute rate limit'
-      }
-    })
-    const clientLimitSuccessesPerHour = rateLimit({
-      limit: maxSuccessesPerSec * 60 * 60 * 0.5,
-      expiresIn: 1.0 * HOURS,
-      lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:success-hour`,
-      countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
-      onBlocked: function(req, res, next) {
-        throw 'Exceeded client successes per hour rate limit'
-      }
-    })
-    const ipLimitSuccessesPerHour = rateLimit({
-      limit: ipMaxSuccessesPerHour,
-      expiresIn: 1.0 * HOURS,
-      lookup: (req, _) => `rlimit:ip:${apiId}:${req.ip}:success-hour`,
-      countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
-      onBlocked: function(req, res, next) {
-        throw 'Exceeded IP requests per hour rate limit'
-      }
-    })
-    const ipLimitSuccessesPerDay = rateLimit({
-      limit: ipMaxSuccessesPerDay,
-      expiresIn: 1.0 * DAYS,
-      lookup: (req, _) => `rlimit:ip:${apiId}:${req.ip}:success-day`,
-      countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
-      onBlocked: function(req, res, next) {
-        throw 'Exceeded IP successes per day rate limit'
-      }
-    })
+      const clientLimitSuccessesPerSecond = rateLimit({
+        limit: maxSuccessesPerSec * 2.5,
+        expiresIn: 1.0 * SECONDS,
+        lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:success-sec`,
+        countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
+        onBlocked: function(req, res, next) {
+          throw 'Exceeded client successes per second rate limit'
+        }
+      })
+      const clientLimitSuccessesPerMinute = rateLimit({
+        limit: maxSuccessesPerSec * 60,
+        expiresIn: 1.0 * MINUTES,
+        lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:success-min`,
+        countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
+        onBlocked: function(req, res, next) {
+          throw 'Exceeded client successes per minute rate limit'
+        }
+      })
+      const clientLimitSuccessesPerHour = rateLimit({
+        limit: maxSuccessesPerSec * 60 * 60 * 0.5,
+        expiresIn: 1.0 * HOURS,
+        lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:success-hour`,
+        countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
+        onBlocked: function(req, res, next) {
+          throw 'Exceeded client successes per hour rate limit'
+        }
+      })
+      const ipLimitSuccessesPerHour = rateLimit({
+        limit: ipMaxSuccessesPerHour,
+        expiresIn: 1.0 * HOURS,
+        lookup: (req, _) => `rlimit:ip:${apiId}:${req.ip}:success-hour`,
+        countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
+        onBlocked: function(req, res, next) {
+          throw 'Exceeded IP requests per hour rate limit'
+        }
+      })
+      const ipLimitSuccessesPerDay = rateLimit({
+        limit: ipMaxSuccessesPerDay,
+        expiresIn: 1.0 * DAYS,
+        lookup: (req, _) => `rlimit:ip:${apiId}:${req.ip}:success-day`,
+        countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
+        onBlocked: function(req, res, next) {
+          throw 'Exceeded IP successes per day rate limit'
+        }
+      })
 
-    const allRateLimits = [
-      // Limiting any requests
-      ipLimitRequestsPerMinute,
-      clientLimitRequestsPerSecond,
+      const allRateLimits = [
+        // Limiting any requests
+        ipLimitRequestsPerMinute,
+        clientLimitRequestsPerSecond,
 
-      // Limiting ip successes
-      ipLimitSuccessesPerHour,
-      ipLimitSuccessesPerDay,
+        // Limiting ip successes
+        ipLimitSuccessesPerHour,
+        ipLimitSuccessesPerDay,
 
-      // Limiting client successes
-      clientLimitSuccessesPerSecond,
-      clientLimitSuccessesPerMinute,
-      clientLimitSuccessesPerHour,
-    ]
+        // Limiting client successes
+        clientLimitSuccessesPerSecond,
+        clientLimitSuccessesPerMinute,
+        clientLimitSuccessesPerHour,
+      ]
 
-    const joinedNexts = allRateLimits.reverse().reduce((prevNext, limit) => {
-      return async () => {
-        return await limit(req, res, prevNext)
-      }
-    }, next)
-
-    return await joinedNexts()
+      return await invokeMiddlewares(allRateLimits, req, res)
+    })
   }
 
-  async parseRequestBody(req, res, next) {
-    return await helpers.redirectCatch(next, async () => {
+  get parseRequestBody() {
+    return asyncMiddleware('quickApi.parseRequestBody', async (req, res, next) => {
       const form = formidable({
         multiples: true,
         maxFileSize: envShared.maxUploadSizeBytes,
@@ -132,8 +132,7 @@ export const quickApi = new (class {
       })
       const timeoutManager = timeout.getManager(res)
       if (timeoutManager) timeoutManager.onTimeout(() => form.pause())
-      const {files, fields} = await helpers.parseFormPromise(form, req)
-      await new Promise((resolve) => setTimeout(resolve, 10000.0) )
+      const {files, fields} = await helpers.parseForm(form, req)
       const {data: dataJson} = fields
       const data = quickApi.#parseJson(dataJson)
       if (!data) {
@@ -154,16 +153,15 @@ export const quickApi = new (class {
         dataJson: dataJson,
         images: images,
       }
-      return next()
     })
   }
 
-  async dataToSimulationOptions(req, res, next) {
-    const SYNTH_VALUES = ['transform', 'interpolate']
-    const MODE_VALUES = ['cosmetic', 'ortho']
-    const BLEND_VALUES = ['poisson', 'replace']
+  get dataToSimulationOptions() {
+    return asyncMiddleware('quickApi.dataToSimulationOptions', async (req, res, next) => {
+      const SYNTH_VALUES = ['transform', 'interpolate']
+      const MODE_VALUES = ['cosmetic', 'ortho']
+      const BLEND_VALUES = ['poisson', 'replace']
 
-    return await helpers.redirectCatch(next, async () => {
       const originalData = res.locals.dentParsedBody.data
       let data = {}
       data['synth'] = quickApi.#normalizeValue(originalData['synth'] || SYNTH_VALUES[0])
@@ -205,7 +203,6 @@ export const quickApi = new (class {
       }
 
       res.locals.dentSimulationOptions = quickApi.#normalizedDataToSimulationOptions(data)
-      return next()
     })
   }
 
@@ -252,8 +249,8 @@ export const quickApi = new (class {
     return val.toString().trim().toLowerCase()
   }
 
-  async parseAuthToken(req, res, next) {
-    return await helpers.redirectCatch(next, async () => {
+  get parseAuthToken() {
+    return asyncMiddleware('quickApi.parseAuthToken', async (req, res) => {
       const token = quickApi.#getToken(req)
       if (!token) {
         console.warn("Unauthorized: Didn't received token")
@@ -269,7 +266,10 @@ export const quickApi = new (class {
       const signature = parts[1]
 
       const claimsJson = simpleCrypto.base64Decode(b64Claims)
-      if (!claimsJson) return null;
+      if (!claimsJson) {
+        console.warn(`Unauthorized: Couldn't decode claims json "${b64Claims}"`)
+        return helpers.respondError(res, 403, "Not Authorized")
+      }
 
       const claims = quickApi.#parseJson(claimsJson)
       if (!claims) {
@@ -287,7 +287,6 @@ export const quickApi = new (class {
         claims: claims,
         signature: signature,
       }
-      return next()
     })
   }
 
@@ -299,8 +298,8 @@ export const quickApi = new (class {
     }
   }
 
-  async validateAuthToken(req, res, next) {
-    return await helpers.redirectCatch(next, async () => {
+  get validateAuthToken() {
+    return asyncMiddleware('quickApi.validateAuthToken', async (req, res) => {
       const client = res.locals.dentClient
       const {claimsJson, signature} = res.locals.dentParsedToken
       const isValid = simpleCrypto.verifySignatureHmac(signature, claimsJson, client.secret)
@@ -308,14 +307,12 @@ export const quickApi = new (class {
         console.warn(`Unauthorized: Signature is invalid - "${signature}" - ${claimsJson}`)
         return helpers.respondError(res, 403, "Not Authorized")
       }
-
-      return next()
     })
   }
 
 
-  async validateBodyData(req, res, next) {
-    return await helpers.redirectCatch(next, async () => {
+  get validateBodyData() {
+    return asyncMiddleware('quickApi.validateBodyData', async (req, res) => {
       const {claims} = res.locals.dentParsedToken
       const {dataJson: bodyDataJson, images} = res.locals.dentParsedBody
 
@@ -338,8 +335,6 @@ export const quickApi = new (class {
           return helpers.respondError(res, 403, "Not Authorized")
         }
       }
-
-      return next()
     })
   }
 

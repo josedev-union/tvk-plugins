@@ -44,25 +44,7 @@ export const helpers = new (class {
     return typeof(value) === 'string' && value !== '' && typeof(value) !== 'undefined'
   }
 
-  asyncCatchError(func) {
-    return (req, res, next) => {
-      return func(req, res, next).catch(next)
-    }
-  }
-
-  redirectCatch(catchCallback, behaviour) {
-    behaviour().catch(catchCallback)
-  }
-
-  async parseForm(req, extraOptions={}) {
-    return new Promise((resolve, reject) => {
-      let opts = { multiples: true }
-      const form = formidable(Object.assign(opts, extraOptions))
-      return parseFormPromise(form)
-    })
-  }
-
-  parseFormPromise(form, req) {
+  async parseForm(form, req) {
     return new Promise((resolve, reject) => {
       form.parse(req, (err, fields, files) => {
         if (err) reject(err)
@@ -74,5 +56,4 @@ export const helpers = new (class {
   toDataUrl(binary, mime) {
     return `data:${mime};base64,${simpleCrypto.base64(binary)}`
   }
-
 })()
