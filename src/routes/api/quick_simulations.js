@@ -4,7 +4,6 @@ import fs from 'fs'
 import {promisify} from "util"
 const readfile = promisify(fs.readFile)
 
-// import axios from 'axios'
 import express from 'express'
 const router = express.Router()
 
@@ -31,6 +30,10 @@ getModel.client,
 quickApi.enforceCors,
 quickApi.validateAuthToken,
 quickApi.rateLimit,
+timeout.blowIfTimedout,
+timeout.ensure({id: 'recaptcha-validation', timeoutSecs: env.quickApiRecaptchaTimeout}, [
+  quickApi.validateRecaptcha,
+]),
 timeout.blowIfTimedout,
 timeout.ensure({httpCodeOverride: 408, id: 'parse-body', timeoutSecs: env.quickApiInputUploadTimeout}, [
   quickApi.parseRequestBody,

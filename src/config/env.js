@@ -31,6 +31,7 @@ export const env = new (class {
   quickApiRouteTimeout = parseFloat(process.env.DENTRINO_QAPI_ROUTE_TIMEOUT || 60)
   quickApiInputUploadTimeout = parseFloat(process.env.DENTRINO_QAPI_INPUT_UPLOAD_TIMEOUT || 15)
   quickApiSimulationTimeout = parseFloat(process.env.DENTRINO_QAPI_SIMULATION_TIMEOUT || 15)
+  quickApiRecaptchaTimeout = parseFloat(process.env.DENTRINO_QAPI_RECAPTCHA_TIMEOUT || 15)
   quickApiResultsUploadTimeout = parseFloat(process.env.DENTRINO_QAPI_RESULTS_UPLOAD_TIMEOUT || 15)
   quickApiMaxUploadSizeMb = process.env.DENTRINO_QAPI_MAX_UPLOAD_SIZE_MB || 15
   quickApiMaxUploadSizeBytes = this.quickApiMaxUploadSizeMb * 1024 * 1024

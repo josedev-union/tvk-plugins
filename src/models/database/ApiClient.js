@@ -7,9 +7,11 @@ const {SECONDS, MINUTES, HOURS, DAYS} = timeInSeconds
 
 const API_CONFIG_ALLOWED_HOSTS = 'allowedHosts'
 const API_CONFIG_RATE_LIMIT = 'rateLimit'
+const API_CONFIG_RECAPTCHA = 'recaptcha'
 const API_CONFIG_DEFAULT = {
   [API_CONFIG_ALLOWED_HOSTS]: null,
   [API_CONFIG_RATE_LIMIT]: null,
+  [API_CONFIG_RECAPTCHA]: {}
 }
 
 const cache = Cache.build({
@@ -52,7 +54,18 @@ export class ApiClient {
     setMaxSuccessesPerSecond({api='default', value}) {
       const rateLimitCfg = this.#rawGetApiConfig({api, config: API_CONFIG_RATE_LIMIT}) || {}
       rateLimitCfg.maxSuccessesPerSecond = value
-      this.#setApiConfig({api, config: API_CONFIG_ALLOWED_HOSTS, value: rateLimitCfg})
+      this.#setApiConfig({api, config: API_CONFIG_RATE_LIMIT, value: rateLimitCfg})
+    }
+
+    apiRecaptcha({api='default'}) {
+      const recaptchaCfg = this.#getApiConfig({api, config: API_CONFIG_RECAPTCHA}) || {}
+      return recaptchaCfg
+    }
+
+    setApiRecaptcha({api='default'}, {secret, minScore}) {
+      const recaptchaCfg = this.#rawGetApiConfig({api, config: API_CONFIG_RECAPTCHA}) || {}
+      Object.assign(recaptchaCfg, {secret, minScore})
+      this.#setApiConfig({api, config: API_CONFIG_RECAPTCHA, value: recaptchaCfg})
     }
 
     save() {

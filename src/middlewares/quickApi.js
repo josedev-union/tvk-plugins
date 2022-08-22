@@ -2,6 +2,7 @@ import fs from 'fs'
 import {promisify} from "util"
 import formidable from 'formidable'
 import FileType from 'file-type'
+import axios from 'axios'
 
 import {cors} from './cors'
 import {api} from './api'
@@ -323,6 +324,7 @@ export const quickApi = new (class {
       const token = quickApi.#getToken(req)
       if (!token) {
         throw quickApi.#newAuthorizationError({
+          debugId: 'no-token',
           message: "Didn't received token",
         })
       }
@@ -362,6 +364,7 @@ export const quickApi = new (class {
       }
       if (!claims['client_id']) {
         throw quickApi.#newAuthorizationError({
+          debugId: 'no-client',
           message: `Missing 'client_id' on claims - "${token}`,
           details: {
             receivedToken: token,
@@ -384,6 +387,44 @@ export const quickApi = new (class {
         signature: signature,
       }
     })
+  }
+
+  get validateRecaptcha() {
+    return asyncMiddleware('quickApi.validateRecaptcha', async (req, res) => {
+      const {dentApiId: apiId, dentClient: client} = res.locals
+      const {claims} = res.locals.dentParsedToken
+      const {secret, minScore} = client.apiRecaptcha({api: apiId}) || {}
+      if (!secret) {
+        this.#addRecaptchaTag(res, 'skipped')
+        return
+      }
+      const token = claims['recaptcha_token']
+      const data = await quickApi.#requestRecaptcha({secret, token, minScore, ip: req.ip})
+      const isValid = data && data.success && data.score >= minScore
+      if (isValid) {
+        this.#addRecaptchaTag(res, 'accepted')
+      } else {
+        this.#addRecaptchaTag(res, 'refused')
+        throw quickApi.#newAuthorizationError({
+          debugId: 'failed-recaptcha',
+          message: `Failed on recaptcha validation`,
+          details: {
+            googleResponse: data,
+            minScore,
+          }
+        })
+      }
+    })
+  }
+
+  #addRecaptchaTag(res, tagValue) {
+    api.addTags(res, {'recaptcha:validation': tagValue})
+  }
+
+  async #requestRecaptcha({secret, token, minScore, ip}) {
+    if (typeof(minScore) === 'undefined' || minScore === null) minScore = 0.75
+    const {data} = await axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${secret}&response=${token}&remoteip=${ip}`)
+    return data
   }
 
   #parseJson(str) {
@@ -493,10 +534,10 @@ export const quickApi = new (class {
     })
   }
 
-  #newAuthorizationError({message, details={}}) {
+  #newAuthorizationError({message, debugId='bad-token', details={}}) {
     return new RichError({
       publicId: 'not-authorized',
-      debugId: 'bad-token',
+      debugId: debugId,
       httpCode: 403,
       debugMessage: message,
       debugDetails: details,
