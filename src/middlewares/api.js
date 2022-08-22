@@ -40,14 +40,18 @@ export const api = new (class {
   }
 
   convertToRichError(err, req, res, next) {
-    err = RichError.fromError(err)
+    const richError = RichError.fromError(err)
+    if (!richError) {
+      console.warn("Can't convert it to RichError", err)
+      return next(err)
+    }
     const requestInfo = api.getReqInfo(req)
     const apiInfo = api.getInfo(res)
-    err.addDebugDetails({
+    richError.addDebugDetails({
       requestInfo, apiInfo
     })
-    api.addTags(res, err.tags)
-    next(err)
+    api.addTags(res, richError.tags)
+    return next(richError)
   }
 
   #pick(obj, keys) {

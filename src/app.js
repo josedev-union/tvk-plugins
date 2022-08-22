@@ -61,9 +61,9 @@ app.use(function(req, res, next) {
       debugMessage: `X-Forwarded-For has suspecious value.`,
       logAsWarning: true,
     })
-    next(err)
+    return next(err)
   } else {
-    next()
+    return next()
   }
 });
 app.use(Sentry.Handlers.requestHandler());
@@ -99,7 +99,7 @@ app.use(function(req, res, next) {
     publicMessage: 'Not Found',
     doLog: false,
   })
-  next(err)
+  return next(err)
 });
 
 app.use(api.convertToRichError);
@@ -131,9 +131,9 @@ function redirectWwwToNonWww(req, res, next) {
     const nonWwwHost = host.replace(/^www\./i, '')
     const protocol = req.protocol
     const hostAndPath = path.join(nonWwwHost + req.url)
-    res.redirect(301, `${protocol}://${hostAndPath}`)
+    return res.redirect(301, `${protocol}://${hostAndPath}`)
   } else {
-    next()
+    return next()
   }
 }
 

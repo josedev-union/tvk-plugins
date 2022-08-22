@@ -3,9 +3,7 @@ import {getNowInSecs} from '../../utils/time'
 export class TimeoutManager {
   constructor({onTimeout, onBlow}={}) {
     this.timedout = false
-    this.expiredTimeoutId = null
-    this.expiredExtraData = null
-    this.expiredOnBlow = null
+    this.expiredTimeout = null
     this.timeouts = {}
     this.onBlowCb = onBlow || ((data) => {
       throw new Error(`Timeout: Operation took too long timeoutId:${data.id}`)

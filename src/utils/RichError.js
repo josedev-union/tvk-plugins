@@ -36,6 +36,7 @@ export class RichError extends Error {
       error = msg
     }
     if (typeof(error) === 'string') error = new Error(error)
+    if (!error instanceof Error) return null
     const richError = new RichError({
       debugId: `nodejs-error:${error.code}`,
       debugMessage: error.message,
@@ -72,14 +73,14 @@ export class RichError extends Error {
     let text = `[${this.debugId}]: ${this.debugMessage}`
     text += `\n${this.stack}`
     if (this.cause) {
-      text += `\n[cause]\n${RichError.logTextFor(this.cause)}`
+      text += `\n[cause] ${RichError.logTextFor(this.cause)}`
     }
     return text
   }
 
   static logTextFor(err) {
     if (err.logText) return err.logText()
-    else return util.inspect(err)
+    else return `${err.message}\n${err.stack}`
   }
 
   data({isDebug=false}) {

@@ -22,26 +22,26 @@ import {timeout} from "../../middlewares/timeout"
 import {quickApi} from "../../middlewares/quickApi"
 import {api} from '../../middlewares/api'
 
-router.post('/',
-api.setId('simulationsCosmetic'),
-timeout.ensure({id: 'full-route', timeoutSecs: env.quickApiRouteTimeout}),
-quickApi.parseAuthToken,
-getModel.client,
-quickApi.enforceCors,
-quickApi.validateAuthToken,
-quickApi.rateLimit,
-timeout.blowIfTimedout,
-timeout.ensure({id: 'recaptcha-validation', timeoutSecs: env.quickApiRecaptchaTimeout}, [
-  quickApi.validateRecaptcha,
-]),
-timeout.blowIfTimedout,
-timeout.ensure({httpCodeOverride: 408, id: 'parse-body', timeoutSecs: env.quickApiInputUploadTimeout}, [
-  quickApi.parseRequestBody,
-]),
-quickApi.validateBodyData,
-quickApi.dataToSimulationOptions,
-quickApi.getPhotoExtension(['img_photo']),
-asyncRoute(async (req, res) => {
+const middlewares = [
+  timeout.ensure({id: 'full-route', timeoutSecs: env.quickApiRouteTimeout}),
+  quickApi.parseAuthToken,
+  getModel.client,
+  quickApi.enforceCors,
+  quickApi.validateAuthToken,
+  quickApi.rateLimit,
+  timeout.blowIfTimedout,
+  timeout.ensure({id: 'recaptcha-validation', timeoutSecs: env.quickApiRecaptchaTimeout}, [
+    quickApi.validateRecaptcha,
+  ]),
+  timeout.blowIfTimedout,
+  timeout.ensure({httpCodeOverride: 408, id: 'parse-body', timeoutSecs: env.quickApiInputUploadTimeout}, [
+    quickApi.parseRequestBody,
+  ]),
+  quickApi.validateBodyData,
+  quickApi.getPhotoExtension(['img_photo']),
+]
+
+const quickSimulationRoute = asyncRoute(async (req, res) => {
   const timeoutManager = timeout.getManager(res)
   const data = res.locals.dentSimulationOptions
   const photo = res.locals.dentParsedBody.images['img_photo']
@@ -67,7 +67,32 @@ asyncRoute(async (req, res) => {
     resultUrl: getResultUrl,
     originalExt: photo.extension
   })
-}))
+})
+
+router.post('/cosmetic', [
+  api.setId('cosmetic-simulations'),
+  ...middlewares,
+  quickApi.dataToSimulationOptions({
+    force: {
+      synth: 'cosmetic',
+      blend: 'poisson',
+    },
+    customizable: ['mix_factor', 'style_mode', 'whiten', 'brightness'],
+  }),
+], quickSimulationRoute)
+
+router.post('/ortho', [
+  api.setId('ortho-simulations'),
+  ...middlewares,
+  quickApi.dataToSimulationOptions({
+    force: {
+      synth: 'ortho',
+      blend: 'poisson',
+      style_mode: 'auto',
+    },
+    customizable: [],
+  }),
+], quickSimulationRoute)
 
 async function uploadToFirestoreData({originalExt, original, before=null, result=null, info}) {
   const success = result !== null

@@ -11,16 +11,16 @@ export const timeout = new (class {
     let manager = res.locals.dentTimeout
     if (!manager) {
       res.locals.dentTimeout = manager = new TimeoutManager({
-        onBlow: (data) => {
-          const id = manager.expiredTimeoutId
+        onBlow: ({id, extraData: {overrideHttpCode}}) => {
+          const httpCode = overrideHttpCode || 504
           throw new RichError({
             publicId: 'timeout',
-            httpCode: data.extraData.overrideHttpCode || 504,
+            httpCode: httpCode,
             publicMessage: 'Operation took too long',
-            debugMessage: `Operation id:${data.id} took too long.`,
+            debugMessage: `Operation id:${id} took too long.`,
             logAsWarning: true,
             tags: {
-              'error:timeout': data.id,
+              'error:timeout': id,
             },
           })
         }

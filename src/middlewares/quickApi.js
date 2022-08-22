@@ -224,58 +224,75 @@ export const quickApi = new (class {
     })
   }
 
-  get dataToSimulationOptions() {
+  dataToSimulationOptions({customizable, force={}}={}) {
     return asyncMiddleware('quickApi.dataToSimulationOptions', async (req, res, next) => {
-      const SYNTH_VALUES = ['transform', 'interpolate']
+      const INPUT_DATA_KEYS = ['style_mode', 'mix_factor', 'mode', 'blend', 'brightness', 'whiten']
+      const STYLE_MODE_VALUES = ['auto', 'mix_manual']
       const MODE_VALUES = ['cosmetic', 'ortho']
       const BLEND_VALUES = ['poisson', 'replace']
 
-      const originalData = res.locals.dentParsedBody.data
-      let data = {}
-      data['synth'] = quickApi.#normalizeValue(originalData['synth'] || SYNTH_VALUES[0])
-      data['mix_factor'] = quickApi.#normalizeValue(originalData['mix_factor'])
-      data['mode'] = quickApi.#normalizeValue(originalData['mode'] || MODE_VALUES[0])
-      data['blend'] = quickApi.#normalizeValue(originalData['blend'] || BLEND_VALUES[0])
-      data['brightness'] = quickApi.#normalizeValue(originalData['brightness'] || '0.0')
-      data['whiten'] = quickApi.#normalizeValue(originalData['whiten'] || '0.0')
+      const originalData = Object.assign({}, res.locals.dentParsedBody.data, force)
+      if (typeof(customizable) !== 'undefined') {
+        Object.keys(originalData).forEach((key) => {
+          if (!customizable.includes(key)) {
+            delete originalData[key]
+          }
+        })
+      }
 
-      if (data['synth'] === 'interpolate') {
+      const data = {}
+      // mode
+      data['mode'] = quickApi.#normalizeValue(originalData['mode'] || MODE_VALUES[0])
+      quickApi.#validateValues(res, data, 'mode', MODE_VALUES)
+
+      // blend
+      data['blend'] = quickApi.#normalizeValue(originalData['blend'] || BLEND_VALUES[0])
+      quickApi.#validateValues(res, data, 'blend', BLEND_VALUES)
+
+      // brightness
+      data['brightness'] = quickApi.#normalizeValue(originalData['brightness'] || '0.0')
+      const {value: brightnessVal} = quickApi.#validateFloat(res, data, 'brightness', -1.0, 1.0)
+      data['brightness'] = brightnessVal + 1.0
+
+      // whiten
+      data['whiten'] = quickApi.#normalizeValue(originalData['whiten'] || '0.0')
+      const {value: whitenVal} = quickApi.#validateFloat(res, data, 'whiten', 0.0, 1.0)
+      data['whiten'] = whitenVal
+
+      // style_mode
+      data['style_mode'] = quickApi.#normalizeValue(originalData['style_mode'] || STYLE_MODE_VALUES[0])
+      data['mix_factor'] = quickApi.#normalizeValue(originalData['mix_factor'])
+
+      if (data['style_mode'] === 'mix_manual') {
         if (!data['mix_factor']) {
           throw quickApi.#newBadParamsError({
-            message: "'mix_factor' is mandatory on 'interpolate' synth"
+            message: "'mix_factor' is mandatory on 'mix_manual' style mode"
           })
         }
       } else {
         delete data['mix_factor']
       }
 
-      quickApi.#validateValues(res, data, 'synth', SYNTH_VALUES)
-      quickApi.#validateValues(res, data, 'mode', MODE_VALUES)
-      quickApi.#validateValues(res, data, 'blend', BLEND_VALUES)
-      const {value: whitenVal} = quickApi.#validateFloat(res, data, 'whiten', 0.0, 1.0)
-      data['whiten'] = whitenVal
-
-      const {value: brightnessVal} = quickApi.#validateFloat(res, data, 'brightness', -1.0, 1.0)
-      data['brightness'] = brightnessVal + 1.0
-
+      quickApi.#validateValues(res, data, 'style_mode', STYLE_MODE_VALUES)
       if (data['mix_factor']) {
         const {value: mixFactorVal} = quickApi.#validateFloat(res, data, 'mix_factor', 0.0, 1.0)
         data['mix_factor'] = mixFactorVal
       }
 
+      // createOptions
       res.locals.dentSimulationOptions = quickApi.#normalizedDataToSimulationOptions(data)
     })
   }
 
-  #normalizedDataToSimulationOptions(data) {
-    let options = {
-      'whiten': data['whiten'],
-      'brightness': data['brightness'],
+  #normalizedDataToSimulationOptions({whiten, brightness, mode, blend, style_mode, mix_factor}) {
+    const options = {
+      whiten,
+      brightness,
+      ortho: mode === 'ortho',
+      poisson: blend === 'poisson',
     }
-    options['ortho'] = data['mode'] === 'ortho'
-    options['poisson'] = data['blend'] === 'poisson'
-    if (data['synth'] === 'interpolate') {
-      options['mix_factor'] = data['mix_factor']
+    if (style_mode === 'mix_manual') {
+      options['mix_factor'] = mix_factor
     }
     return options
   }

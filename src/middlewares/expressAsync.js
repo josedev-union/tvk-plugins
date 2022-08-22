@@ -1,8 +1,8 @@
 export function asyncRoute(func) {
-  return asyncMiddleware('route', func, 'async')
+  return asyncMiddleware('route', func, {typename: 'async', skipNextCallOnSuccess: true})
 }
 
-export function asyncMiddleware(name, func, typename='asyncMiddleware') {
+export function asyncMiddleware(name, func, {typename='asyncMiddleware', skipNextCallOnSuccess=false}={}) {
   return async (req, res, next) => {
     console.debug(`[${typename}:${name}] Starting`)
     let nextCalled = false
@@ -12,6 +12,10 @@ export function asyncMiddleware(name, func, typename='asyncMiddleware') {
         return
       }
       nextCalled = true
+      if (skipNextCallOnSuccess && args.length === 0) {
+        console.debug(`[asyncMiddleware:${name}] skip next call on success is enabled. skipping call`)
+        return
+      }
       console.debug(`[${typename}:${name}] Calling Next: ${args}`)
       next(...args)
       console.debug(`[${typename}:${name}] After Next`)
@@ -19,7 +23,7 @@ export function asyncMiddleware(name, func, typename='asyncMiddleware') {
     const promise = asPromise(async () => {
       return func(req, res, wrappedNext)
     })
-    return await promise.then(wrappedNext).catch(wrappedNext)
+    return await promise.then(() => wrappedNext()).catch(wrappedNext)
   }
 }
 
