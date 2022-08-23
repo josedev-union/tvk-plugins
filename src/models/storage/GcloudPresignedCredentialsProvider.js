@@ -35,9 +35,10 @@ export class GcloudPresignedCredentialsProvider {
 
     async urlToGet(keyName, {expiresInSeconds}) {
         const options = {
-            version: 'v4',
-            action: 'read',
-            expires: Date.now() + expiresInSeconds * 1000,
+          version: 'v4',
+          action: 'read',
+          expires: Date.now() + expiresInSeconds * 1000,
+          virtualHostedStyle: true,
         }
         const [url] = await this.bucket.file(keyName).getSignedUrl(options)
 

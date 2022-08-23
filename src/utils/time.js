@@ -11,6 +11,10 @@ export function getNowInMillis() {
   return new Date().getTime()
 }
 
+export function nowReadable() {
+  return new Date().toLocaleString('en-US', {hour12: false});
+}
+
 function getMultipliers({oneSecond}) {
   const m = {}
   m.seconds = oneSecond

@@ -122,7 +122,7 @@ app.use(function(err, req, res, next) {
     console.trace()
     data = message
   }
-  res.status(statusCode).json({error: data});
+  res.status(statusCode).json({error: data, success: false});
 });
 
 function redirectWwwToNonWww(req, res, next) {

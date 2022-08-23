@@ -15,18 +15,22 @@ export class QuickSimulationClient {
   static pubsubRequestKey() { return `${PUBSUB_PREFIX}:request` }
   static pubsubResponseKey(id) { return `${PUBSUB_PREFIX}:${id}:response` }
 
-  async requestSimulation({photo, photoPath, expiresAt=0, options={}}) {
+  async requestSimulation({photo, photoPath, expiresAt=0, options={}, safe=false}) {
     const id = idGenerator.newOrderedId()
     logger.info(`[${id}] Requesting Simulation (${options})`)
     const photoRedisKey = `pipeline:listener:${id}:photo`
     if (!photo) photo = await readfile(photoPath)
     const photoBuffer = Buffer.from(photo, 'binary')
     await this.#publishRequest(id, photoBuffer, photoRedisKey, expiresAt, options)
-    const data = await this.#waitResponse(QuickSimulationClient.pubsubResponseKey(id))
+    const pubsubChannel = QuickSimulationClient.pubsubResponseKey(id)
+    const {result, before, error} = await this.#waitResponse({pubsubChannel, safe})
     return {
+      id,
+      before,
+      result,
+      error,
       original: photo,
-      before: data['before'],
-      result: data['result'],
+      success: !error,
     }
   }
 
@@ -46,22 +50,54 @@ export class QuickSimulationClient {
     logger.info(`[${id}]: Params Published: ${publishedMessage}`)
   }
 
-  async #waitResponse(pubsubChannel) {
+  async #waitResponse({pubsubChannel, safe}) {
     const messageStr = await redisSubscribe(pubsubChannel)
     logger.info(`Result Received ${pubsubChannel} - ${messageStr}`)
     const message = JSON.parse(messageStr)
+
     if (message['error']) {
-      throw new Error(message['error'])
+      return this.#throwError({message: message['error'], safe})
     }
+
     const resultRedisKey = message['data']['result_redis_key']
     const beforeRedisKey = message['data']['before_redis_key']
-    const resultPhoto = await redisGet(resultRedisKey)
-    const beforePhoto = await redisGet(beforeRedisKey)
+    const [resultPhoto, beforePhoto] = await Promise.all([
+      redisGet(resultRedisKey),
+      redisGet(beforeRedisKey),
+    ])
     redisDel(resultRedisKey)
     redisDel(beforeRedisKey)
-    return {
+
+    const response = {
       'result': resultPhoto,
       'before': beforePhoto
+    }
+    if (!resultPhoto) {
+      const errorObj = this.#throwError({
+        message: "Couldn't get simulation result",
+        safe,
+      })
+      Object.assign(response, errorObj)
+    }
+
+    return response
+  }
+
+  #throwError({message, safe}) {
+    if (!message) return
+    const error = new RichError({
+      publicId: 'simulation-error',
+      httpCode: 500,
+      publicMessage: "Error when executing simulation",
+      debugMessage: message,
+      logAsWarning: true,
+      tags: {'simulation:success': false},
+    })
+
+    if (safe) {
+      return {error}
+    } else {
+      throw error
     }
   }
 }
