@@ -12,6 +12,7 @@ import {rateLimit} from "./rateLimit"
 import {env} from "../config/env"
 import {simpleCrypto} from "../shared/simpleCrypto"
 import {RichError} from "../utils/RichError"
+import {logger} from '../instrumentation/logger'
 
 import {helpers} from '../routes/helpers'
 import {asyncMiddleware, invokeMiddleware, invokeMiddlewares} from './expressAsync'
@@ -234,7 +235,7 @@ export const quickApi = new (class {
       const originalData = Object.assign({}, res.locals.dentParsedBody.data, force)
       if (typeof(customizable) !== 'undefined') {
         Object.keys(originalData).forEach((key) => {
-          if (!customizable.includes(key)) {
+          if (!customizable.includes(key) && !(key in force)) {
             delete originalData[key]
           }
         })

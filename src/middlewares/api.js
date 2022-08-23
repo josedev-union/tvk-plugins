@@ -1,3 +1,4 @@
+import {logger} from '../instrumentation/logger'
 import {RichError} from '../utils/RichError'
 import {TagSet} from '../utils/TagSet'
 
@@ -42,7 +43,7 @@ export const api = new (class {
   convertToRichError(err, req, res, next) {
     const richError = RichError.fromError(err)
     if (!richError) {
-      console.warn("Can't convert it to RichError", err)
+      logger.warn("Can't convert it to RichError", err)
       return next(err)
     }
     const requestInfo = api.getReqInfo(req)

@@ -1,24 +1,26 @@
+import {logger} from '../instrumentation/logger'
+
 export function asyncRoute(func) {
   return asyncMiddleware('route', func, {typename: 'async', skipNextCallOnSuccess: true})
 }
 
 export function asyncMiddleware(name, func, {typename='asyncMiddleware', skipNextCallOnSuccess=false}={}) {
   return async (req, res, next) => {
-    console.debug(`[${typename}:${name}] Starting`)
+    logger.debugverbose(`[${typename}:${name}] Starting`)
     let nextCalled = false
     const wrappedNext = (...args) => {
       if (nextCalled) {
-        console.debug(`[asyncMiddleware:${name}] next was called already. skipping call`)
+        logger.debugverbose(`[asyncMiddleware:${name}] next was called already. skipping call`)
         return
       }
       nextCalled = true
       if (skipNextCallOnSuccess && args.length === 0) {
-        console.debug(`[asyncMiddleware:${name}] skip next call on success is enabled. skipping call`)
+        logger.debugverbose(`[asyncMiddleware:${name}] skip next call on success is enabled. skipping call`)
         return
       }
-      console.debug(`[${typename}:${name}] Calling Next: ${args}`)
+      logger.debugverbose(`[${typename}:${name}] Calling Next: ${args}`)
       next(...args)
-      console.debug(`[${typename}:${name}] After Next`)
+      logger.debugverbose(`[${typename}:${name}] After Next`)
     }
     const promise = asPromise(async () => {
       return func(req, res, wrappedNext)

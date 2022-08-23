@@ -11,7 +11,7 @@ export function redisSubscribe(channel) {
     try {
       const subscriber = redisPubsub.duplicate()
       subscriber.on('message', (channel, message) => {
-        logger.info(`MESSAGE RECEIVED ${message}`)
+        logger.verbose(`MESSAGE RECEIVED ${message}`)
         subscriber.unsubscribe()
         subscriber.quit()
         resolve(message)

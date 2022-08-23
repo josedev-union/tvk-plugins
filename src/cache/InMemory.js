@@ -1,3 +1,4 @@
+import {logger} from '../instrumentation/logger'
 import NodeCache from 'node-cache'
 
 import {timeInSeconds} from '../utils/time'
@@ -27,13 +28,13 @@ export class InMemory {
 
   async wrap({key, op, skipCache=false}) {
     if (skipCache) {
-      console.debug(`Cache SKIP: ${key}`)
+      logger.verbose(`Cache SKIP: ${key}`)
       return this.#exec(op)
     }
     const cKey = this.#cacheKey(key)
     const cached = this.cache.get(cKey)
     if (typeof(cached) !== 'undefined') {
-      console.debug(`cache.InMemory: Return Cached ${key}`)
+      logger.verbose(`cache.InMemory: Return Cached ${key}`)
       return cached
     }
 
@@ -49,7 +50,7 @@ export class InMemory {
 
   async #store(key, result) {
     if (this.#validToStore(result)) {
-      console.warn(`cache.InMemory (silent fail): Invalid result for key ${key}: ${result}`)
+      logger.warn(`cache.InMemory (silent fail): Invalid result for key ${key}: ${result}`)
     }
     const setCommands = []
     const cKey = this.#cacheKey(key)
@@ -61,9 +62,9 @@ export class InMemory {
     }
     const success = this.cache.mset(setCommands)
     if (success) {
-      console.debug(`cache.InMemory: Stored ${key}`)
+      logger.verbose(`cache.InMemory: Stored ${key}`)
     } else {
-      console.warn(`cache.InMemory (silent fail): Couldn't store ${key} with: ${result}`)
+      logger.warn(`cache.InMemory (silent fail): Couldn't store ${key} with: ${result}`)
     }
     return Promise.resolve(result)
   }
@@ -74,7 +75,7 @@ export class InMemory {
     if (typeof(staled) === 'undefined') {
       return Promise.reject(error)
     } else {
-      console.warn(`cache.InMemory: Failed to execute behaviour of ${key}, returning stale instead: ${staled}`)
+      logger.warn(`cache.InMemory: Failed to execute behaviour of ${key}, returning stale instead: ${staled}`)
       return Promise.resolve(staled)
     }
   }

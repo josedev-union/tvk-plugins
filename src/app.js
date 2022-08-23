@@ -15,6 +15,7 @@ import apiSmileTasks from './routes/api/smile_tasks'
 import apiQuickSimulations from './routes/api/quick_simulations'
 import internalApiSmileTasks from './routes/internal_api/smile_tasks'
 import webhooksSmileTasks from './routes/webhooks/smile_tasks'
+import {logger} from './instrumentation/logger'
 import {env} from './config/env'
 import {helpers} from './routes/helpers'
 import './config/config'
@@ -111,15 +112,14 @@ app.use(function(err, req, res, next) {
   if (err instanceof RichError) {
     const errLogLevel = err.logLevel()
     if (errLogLevel) {
-      console[errLogLevel](err.logText())
+      logger[errLogLevel](err.logText())
     }
     statusCode = err.httpCode
     data = err.data({isDebug: !env.isProduction()});
   } else {
     const message = err.message || err.error || `Unexpected Error: ${JSON.stringify(err)}`
     statusCode = err.status || 500
-    console.error(err)
-    console.trace()
+    logger.error(err)
     data = message
   }
   res.status(statusCode).json({error: data, success: false});

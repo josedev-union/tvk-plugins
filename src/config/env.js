@@ -6,6 +6,7 @@ export const env = new (class {
   masterHost = process.env.MASTER_HOST
   rateLimitDisabled = process.env.DENTRINO_RATE_LIMIT_DISABLED
   sentryDsn = process.env.SENTRY_DSN
+  logLevel = process.env.DENTRINO_LOG_LEVEL
   redis = {
       host: process.env.DENTRINO_REDIS_HOSTNAME,
       port: process.env.DENTRINO_REDIS_PORT,

@@ -1,3 +1,4 @@
+import {logger} from '../instrumentation/logger'
 import {env} from '../config/env'
 
 export class TagSet {
@@ -20,11 +21,11 @@ export class TagSet {
       if (!label) throw new Error(`Invalid tag label: ${originalLabel}`)
       this.tags[label] = value
     } catch(err) {
-      console.error(`(ignored on production) Couldn't Add tag pair ${originalLabel}:${originalValue}`)
+      logger.error(`(ignored on production) Couldn't Add tag pair ${originalLabel}:${originalValue}`)
       if (!env.isProduction()) {
         throw err
       } else {
-        console.error(err)
+        logger.error(err)
       }
     }
   }

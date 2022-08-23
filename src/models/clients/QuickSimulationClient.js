@@ -17,7 +17,7 @@ export class QuickSimulationClient {
 
   async requestSimulation({photo, photoPath, expiresAt=0, options={}, safe=false}) {
     const id = idGenerator.newOrderedId()
-    logger.info(`[${id}] Requesting Simulation (${options})`)
+    logger.verbose(`[${id}] Requesting Simulation (${JSON.stringify(options)})`)
     const photoRedisKey = `pipeline:listener:${id}:photo`
     if (!photo) photo = await readfile(photoPath)
     const photoBuffer = Buffer.from(photo, 'binary')
@@ -47,12 +47,12 @@ export class QuickSimulationClient {
       params: params
     })
     redisPubsub.publish(QuickSimulationClient.pubsubRequestKey(), publishedMessage)
-    logger.info(`[${id}]: Params Published: ${publishedMessage}`)
+    logger.verbose(`[${id}]: Params Published: ${publishedMessage}`)
   }
 
   async #waitResponse({pubsubChannel, safe}) {
     const messageStr = await redisSubscribe(pubsubChannel)
-    logger.info(`Result Received ${pubsubChannel} - ${messageStr}`)
+    logger.verbose(`Result Received ${pubsubChannel} - ${messageStr}`)
     const message = JSON.parse(messageStr)
 
     if (message['error']) {

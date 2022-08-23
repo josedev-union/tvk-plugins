@@ -81,7 +81,7 @@ const me = new (class {
       passthroughStream
       .pipe(file.createWriteStream())
       .on('finish', function() {
-        logger.info(`[SUCCESS] Upload: (${bucket}) ${filepath}`)
+        logger.verbose(`[SUCCESS] Upload: (${bucket}) ${filepath}`)
         resolve()
       })
       .on('error', function(err) {
