@@ -99,6 +99,7 @@
     "ignore": [
       "test/*",
       "public/*",
+      "stress-test/*",
       "tmp/*",
       "*.log"
     ],
