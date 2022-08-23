@@ -43,7 +43,8 @@ export class RateLimit {
 
     async #haveAvailableSlotsIn(bucketKey) {
       const usedSlotsCount = await zcountAsync(bucketKey, getNowInMillis()-this.expiresIn, '+inf')
-      return usedSlotsCount < this.limit
+      const isAvailable = usedSlotsCount < this.limit
+      return env.rateLimitIgnore ? true : isAvailable
     }
 
     async #addSlotIn(bucketKey) {
