@@ -85,7 +85,7 @@ router.post('/cosmetic', [
   ...middlewares,
   quickApi.dataToSimulationOptions({
     force: {
-      synth: 'cosmetic',
+      mode: 'cosmetic',
       blend: 'poisson',
     },
     customizable: ['mix_factor', 'style_mode', 'whiten', 'brightness'],
@@ -97,7 +97,7 @@ router.post('/ortho', [
   ...middlewares,
   quickApi.dataToSimulationOptions({
     force: {
-      synth: 'ortho',
+      mode: 'ortho',
       blend: 'poisson',
       style_mode: 'auto',
     },
