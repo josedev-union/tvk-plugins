@@ -421,6 +421,8 @@ export const quickApi = new (class {
       const isValid = data && data.success && data.score >= minScore
       if (isValid) {
         this.#addRecaptchaTag(res, 'accepted')
+      } else if (env.recaptchaIgnore) {
+        this.#addRecaptchaTag(res, 'ignored')
       } else {
         this.#addRecaptchaTag(res, 'refused')
         throw quickApi.#newAuthorizationError({

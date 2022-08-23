@@ -1,11 +1,14 @@
+const FALSE_STRINGS = ['', 'false', 'undefined', 'null', '0', 'no', '-1']
+
 export const env = new (class {
   name = process.env.NODE_ENV || 'development'
   gcloudBucket = process.env.DENTRINO_GCLOUD_BUCKET
   port = normalizePort(process.env.PORT || '3000')
   host = process.env.HOST || '0.0.0.0'
   masterHost = process.env.MASTER_HOST
-  rateLimitDisabled = process.env.DENTRINO_RATE_LIMIT_DISABLED
-  rateLimitIgnore = process.env.DENTRINO_RATE_LIMIT_IGNORE
+  rateLimitDisabled = parseBool(process.env.DENTRINO_RATE_LIMIT_DISABLED)
+  rateLimitIgnore = parseBool(process.env.DENTRINO_RATE_LIMIT_IGNORE)
+  recaptchaIgnore = parseBool(process.env.DENTRINO_RECAPTCHA_IGNORE)
   sentryDsn = process.env.SENTRY_DSN
   logLevel = process.env.DENTRINO_LOG_LEVEL
   redis = {
@@ -55,12 +58,12 @@ export const env = new (class {
   instSimMixFactor = parseFloat(process.env.DENTRINO_INSTSIM_MIX_FACTOR || 0.1)
   instSimBrightness = parseFloat(process.env.DENTRINO_INSTSIM_BRIGHTNESS || 1.0)
   instSimWhiten = parseFloat(process.env.DENTRINO_INSTSIM_WHITEN || 0.3)
-  instSimPoisson = !!process.env.DENTRINO_INSTSIM_POISSON
+  instSimPoisson = parseBool(process.env.DENTRINO_INSTSIM_POISSON)
   instSimGiveUpStartTimeout = this.instSimRouteTimeout - this.instSimEstimatedDuration
-  instSimRouter = !!process.env.DENTRINO_INSTSIM_ROUTER
-  instSimTokenDisabled = !!process.env.DENTRINO_INSTSIM_TOKEN_DISABLED
+  instSimRouter = parseBool(process.env.DENTRINO_INSTSIM_ROUTER)
+  instSimTokenDisabled = parseBool(process.env.DENTRINO_INSTSIM_TOKEN_DISABLED)
   instSimRecaptchaSecretKey = process.env.DENTRINO_INSTSIM_RECAPTCHA_SECRET_KEY
-  disableXForwardedForCheck = process.env.DENTRINO_INSTSIM_DISABLE_X_FORWARDED_FOR_CHECK
+  disableXForwardedForCheck = parseBool(process.env.DENTRINO_INSTSIM_DISABLE_X_FORWARDED_FOR_CHECK)
 
   isProduction() { return this.name === 'production' }
   isStaging() { return this.name === 'staging' }
@@ -84,4 +87,11 @@ function normalizePort(val) {
   }
 
   return false;
+}
+
+function parseBool(val) {
+  if (!val) return false
+  val = String(val).trim().toLowerCase()
+  if (!val || FALSE_STRINGS.includes(val)) return false
+  return true
 }
