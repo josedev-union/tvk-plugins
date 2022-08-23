@@ -18,7 +18,7 @@ export const timeout = new (class {
             httpCode: httpCode,
             publicMessage: 'Operation took too long',
             debugMessage: `Operation id:${id} took too long.`,
-            logAsWarning: true,
+            logLevel: 'debug',
             tags: {
               'error:timeout': id,
             },

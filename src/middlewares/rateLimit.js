@@ -23,7 +23,7 @@ export function rateLimit({limit, expiresIn, lookup = (req, res) => req.ip, onBl
           publicId: 'rate-limit',
           httpCode: 429,
           publicMessage: 'Too Many Requests',
-          logAsWarning: true,
+          logLevel: 'debug',
           tags: {'error:rate-limit': 'generic'},
         })
       }

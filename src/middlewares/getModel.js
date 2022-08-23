@@ -18,7 +18,7 @@ export const getModel = new (class {
           debugMessage: `Unauthorized: Could not find client "${clientId}"`,
           debugDetails: {clientId},
           publicMessage: 'Not Authorized',
-          logAsWarning: true,
+          logLevel: 'debug',
         })
       }
       res.locals.dentClient = client
@@ -35,7 +35,7 @@ export const getModel = new (class {
           publicId: 'user-not-found',
           publicMessage: 'User not found',
           debugDetails: {userId},
-          logAsWarning: true,
+          logLevel: 'debug',
         })
       }
       res.locals.dentUser = user
@@ -52,7 +52,7 @@ export const getModel = new (class {
           publicId: 'smiletask-not-found',
           publicMessage: 'SmileTask not found',
           debugDetails: {smileTaskId},
-          logAsWarning: true,
+          logLevel: 'debug',
         })
       }
       res.locals.dentSmileTask = smileTask

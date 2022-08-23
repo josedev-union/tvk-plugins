@@ -51,7 +51,7 @@ export const cors = new (class {
       debugMessage: message,
       debugDetails: details,
       publicMessage: 'Not Authorized',
-      doLog: false,
+      logLevel: 'debug',
     })
   }
 

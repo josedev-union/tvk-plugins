@@ -2,7 +2,7 @@ import util from 'util'
 import {TagSet} from './TagSet'
 
 export class RichError extends Error {
-  constructor({debugId, httpCode, debugMessage, publicId, publicMessage, cause, namespace, debugDetails={}, tags={}, logAsWarning=false, doLog=true}) {
+  constructor({debugId, httpCode, debugMessage, publicId, publicMessage, cause, namespace, debugDetails={}, tags={}, logLevel='error'}) {
     debugMessage = debugMessage || publicMessage
     super(debugMessage, {cause})
     if (cause) {
@@ -15,8 +15,7 @@ export class RichError extends Error {
     this.httpCode = httpCode || 500
     this.debugDetails = debugDetails
     this.publicMessage = publicMessage
-    this.logAsWarning = logAsWarning
-    this.doLog = doLog
+    this.logLevel = logLevel
     this.cause = cause
 
     this.tags = new TagSet()
@@ -46,7 +45,6 @@ export class RichError extends Error {
         'error:is-rich': false,
         'error:non-rich:code': String(error.code),
       },
-      logAsWarning: false,
       debugDetails: debugDetails,
     })
     return richError
@@ -64,13 +62,9 @@ export class RichError extends Error {
     this.debugDetails = Object.assign(this.debugDetails, details)
   }
 
-  logLevel() {
-    if (!this.doLog) return null
-    return this.logAsWarning ? 'warn' : 'error'
-  }
-
   logText() {
     let text = `[${this.debugId}]: ${this.debugMessage}`
+    text += `\nDETAILS: ${JSON.stringify(this.debugDetails || {})}`
     text += `\n${this.stack}`
     if (this.cause) {
       text += `\n[cause] ${RichError.logTextFor(this.cause)}`

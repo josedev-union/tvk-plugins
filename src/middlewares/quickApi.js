@@ -501,6 +501,7 @@ export const quickApi = new (class {
             details: {
               paramSignatureReceived: paramsSigned,
               paramSignatureExpected: verificationSignature,
+              originalValue: val,
             }
           })
         }
@@ -536,7 +537,7 @@ export const quickApi = new (class {
       httpCode: 429,
       publicMessage: 'Too Many Requests',
       debugMessage: message,
-      logAsWarning: true,
+      logLevel: 'debug',
       tags,
     })
   }
@@ -548,7 +549,7 @@ export const quickApi = new (class {
       debugMessage: message,
       debugDetails: details,
       publicMessage: 'Unprocessable Entity',
-      doLog: false,
+      logLevel: 'debug',
     })
   }
 
@@ -560,7 +561,7 @@ export const quickApi = new (class {
       debugMessage: message,
       debugDetails: details,
       publicMessage: 'Not Authorized',
-      doLog: false,
+      logLevel: 'debug',
     })
   }
 })()

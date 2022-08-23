@@ -90,7 +90,7 @@ export class QuickSimulationClient {
       httpCode: 500,
       publicMessage: "Error when executing simulation",
       debugMessage: message,
-      logAsWarning: true,
+      logLevel: 'debug',
       tags: {'simulation:success': false},
     })
 

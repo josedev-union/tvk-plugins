@@ -60,7 +60,7 @@ app.use(function(req, res, next) {
       publicMessage: 'Bad Request',
       debugId: 'bad-x-forwarded-for',
       debugMessage: `X-Forwarded-For has suspecious value.`,
-      logAsWarning: true,
+      logLevel: 'debug',
     })
     return next(err)
   } else {
@@ -98,7 +98,7 @@ app.use(function(req, res, next) {
     httpCode: 404,
     publicId: 'not-found',
     publicMessage: 'Not Found',
-    doLog: false,
+    logLevel: undefined,
   })
   return next(err)
 });
@@ -110,7 +110,7 @@ app.use(function(err, req, res, next) {
   let statusCode = 500
   let data = null
   if (err instanceof RichError) {
-    const errLogLevel = err.logLevel()
+    const errLogLevel = err.logLevel
     if (errLogLevel) {
       logger[errLogLevel](err.logText())
     }
