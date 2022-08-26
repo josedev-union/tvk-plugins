@@ -2,7 +2,6 @@ import createError from 'http-errors'
 import express from 'express'
 import path from 'path'
 import cookieParser from 'cookie-parser'
-import morgan from 'morgan'
 import compression from 'compression'
 import helmet from 'helmet'
 import buildStaticify from 'staticify'
@@ -20,6 +19,7 @@ import {env} from './config/env'
 import {helpers} from './routes/helpers'
 import './config/config'
 import {getModel} from './middlewares/getModel'
+import {morganLogger} from './middlewares/morganLogger'
 import {api} from './middlewares/api'
 import {RichError} from './utils/RichError'
 import * as Sentry from '@sentry/node'
@@ -68,7 +68,7 @@ app.use(function(req, res, next) {
   }
 });
 app.use(Sentry.Handlers.requestHandler());
-app.use(morgan(':date[iso] :method :url HTTP/:http-version" :status :res[content-length] [:remote-addr - :remote-user]'));
+app.use(morganLogger);
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(compression());
