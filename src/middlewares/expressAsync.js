@@ -51,9 +51,9 @@ async function asPromise(obj) {
     obj = f()
   }
   if (obj instanceof Error) {
-    return Promise.reject({error: obj})
-  } else if (obj && !!obj.error) {
     return Promise.reject(obj)
+  } else if (obj && !!obj.error) {
+    return Promise.reject(obj.error)
   } else {
     return Promise.resolve(obj)
   }
