@@ -41,7 +41,7 @@ export class Database {
     async getResults(constructor, query) {
         const rawResults = await query.get()
         let results = []
-        rawResults.forEach(raw => results.push(new constructor(raw.data())))
+        rawResults.forEach(raw => results.push(new constructor({id: raw.id, ...raw.data()})))
         return results
     }
 
