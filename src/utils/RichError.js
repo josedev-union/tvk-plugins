@@ -1,5 +1,6 @@
 import util from 'util'
 import {TagSet} from './TagSet'
+import {Blob, Buffer} from 'buffer'
 
 export class RichError extends Error {
   constructor({debugId, httpCode, debugMessage, publicId, publicMessage, cause, namespace, debugDetails={}, tags={}, logLevel='error'}) {
@@ -13,7 +14,8 @@ export class RichError extends Error {
     this.debugId = debugId || this.publicId
     this.namespace = namespace || 'internal'
     this.httpCode = httpCode || 500
-    this.debugDetails = debugDetails
+    this.debugDetails = {}
+    this.addDebugDetails(debugDetails)
     this.publicMessage = publicMessage
     this.logLevel = logLevel
     this.cause = cause
@@ -59,7 +61,55 @@ export class RichError extends Error {
   }
 
   addDebugDetails(details) {
-    this.debugDetails = Object.assign(this.debugDetails, details)
+    Object.assign(this.debugDetails, this.#simplify(details))
+  }
+
+  #simplify(obj) {
+    if (obj.constructor === Object) {
+      const newObj = {}
+      Object.entries(obj).forEach(([key, val]) => newObj[key] = this.#simplify(val))
+      return newObj
+    } else if (Array.isArray(obj)) {
+      return obj.map((val) => this.#simplify(val))
+    } else if (this.#hasSize(obj)) {
+      return this.#shortening(obj, 150)
+    } else {
+      return obj
+    }
+  }
+
+  #hasSize(obj) {
+    const t = typeof(obj)
+    return (t === 'object' && (typeof(obj['size']) !== 'undefined' || typeof(obj['length']) !== 'undefined'))
+  }
+
+  #shortening(obj, maxSizeChars) {
+    const asJson = JSON.stringify(obj)
+    if (asJson.length <= maxSizeChars) return obj
+
+    const simplified = {}
+    simplified['typeof'] = typeof(obj)
+    const sizeAttrs = ['size', 'length']
+    const allAttrs = ['type', 'constructor', ...sizeAttrs]
+    allAttrs.forEach((key) => {
+      if (typeof(obj[key]) !== 'undefined') {
+        simplified[key] = obj[key]
+      }
+    })
+
+    sizeAttrs.forEach((key) => {
+      if (typeof(simplified[key]) === 'function') {
+        simplified[key] = simplified[key]()
+      }
+    })
+
+    if (typeof(obj.slice) !== 'function') {
+      obj = asJson
+    }
+
+    const maxSize = typeof(obj) === 'string' ? maxSizeChars : Math.round(maxSizeChars/5.0)
+    simplified['slice'] = obj.slice(0, maxSize)
+    return simplified
   }
 
   logText() {
