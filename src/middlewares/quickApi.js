@@ -28,6 +28,34 @@ const readfile = promisify(fs.readFile)
 const DEFAULT_RATE_LIMIT_MAX_SUCCESSES_PER_SECOND = 1.0
 const SIGNATURE_HEADER = 'Authorization'
 
+// Params Constants
+const PKEY_STYLE_MODE = 'style_mode'
+const PKEY_MIX_FACTOR = 'mix_factor'
+const PKEY_MODE = 'mode'
+const PKEY_BLEND = 'blend'
+const PKEY_BRIGHTNESS = 'brightness'
+const PKEY_WHITEN = 'whiten'
+const ALL_PKEYS = [PKEY_STYLE_MODE, PKEY_MIX_FACTOR, PKEY_MODE, PKEY_BLEND, PKEY_BRIGHTNESS, PKEY_WHITEN]
+
+const PVALUE_STYLE_MODE_AUTO = 'auto'
+const PVALUE_STYLE_MODE_MIX = 'mix_manual'
+const STYLE_PVALUES = [PVALUE_STYLE_MODE_AUTO, PVALUE_STYLE_MODE_MIX]
+
+const PVALUE_MODE_COSMETIC = 'cosmetic'
+const PVALUE_MODE_ORTHO = 'ortho'
+const MODE_PVALUES = [PVALUE_MODE_COSMETIC, PVALUE_MODE_ORTHO]
+
+const PVALUE_BLEND_POISSON = 'poisson'
+const PVALUE_BLEND_REPLACE = 'replace'
+const BLEND_PVALUES = [PVALUE_BLEND_POISSON, PVALUE_BLEND_REPLACE]
+
+// Claims Constants
+const CLAIM_CLIENT_ID = 'client_id'
+const CLAIM_PARAMS_HASHED = 'params_hashed'
+const CLAIM_RECAPTCHA_TOKEN = 'recaptcha_token'
+const ALL_CLAIMS = [CLAIM_CLIENT_ID, CLAIM_RECAPTCHA_TOKEN, CLAIM_PARAMS_HASHED]
+const MANDATORY_CLAIMS = [CLAIM_CLIENT_ID, CLAIM_PARAMS_HASHED]
+
 export const quickApi = new (class {
   get enforceCors() {
     return asyncMiddleware('quickApi.enforceCors', async (req, res, next) => {
@@ -184,15 +212,7 @@ export const quickApi = new (class {
       if (timeoutManager) timeoutManager.onTimeout(() => form.pause())
       const {files, fields} = await helpers.parseForm(form, req)
       const {data: dataJson} = fields
-      const data = quickApi.#parseJson(dataJson)
-      if (!data) {
-        throw quickApi.#newBadParamsError({
-          message: `Bad format on data json`,
-          details: {
-            receivedDataJson: dataJson
-          }
-        })
-      }
+      const data = quickApi.#parseJson(dataJson) || {}
       const images = {}
       for (let fileKey in files) {
         if (fileKey.startsWith('img')) {
@@ -200,9 +220,9 @@ export const quickApi = new (class {
         }
       }
       res.locals.dentParsedBody = {
-        data: data,
-        dataJson: dataJson,
-        images: images,
+        data,
+        dataJson,
+        images,
       }
     })
   }
@@ -240,11 +260,6 @@ export const quickApi = new (class {
 
   dataToSimulationOptions({customizable, force={}}={}) {
     return asyncMiddleware('quickApi.dataToSimulationOptions', async (req, res, next) => {
-      const INPUT_DATA_KEYS = ['style_mode', 'mix_factor', 'mode', 'blend', 'brightness', 'whiten']
-      const STYLE_MODE_VALUES = ['auto', 'mix_manual']
-      const MODE_VALUES = ['cosmetic', 'ortho']
-      const BLEND_VALUES = ['poisson', 'replace']
-
       const originalData = Object.assign({}, res.locals.dentParsedBody.data, force)
       if (typeof(customizable) !== 'undefined') {
         Object.keys(originalData).forEach((key) => {
@@ -256,41 +271,41 @@ export const quickApi = new (class {
 
       const data = {}
       // mode
-      data['mode'] = quickApi.#normalizeValue(originalData['mode'] || MODE_VALUES[0])
-      quickApi.#validateValues(res, data, 'mode', MODE_VALUES)
+      data[PKEY_MODE] = quickApi.#normalizeValue(originalData[PKEY_MODE] || MODE_PVALUES[0])
+      quickApi.#validateValues(res, data, PKEY_MODE, MODE_PVALUES)
 
       // blend
-      data['blend'] = quickApi.#normalizeValue(originalData['blend'] || BLEND_VALUES[0])
-      quickApi.#validateValues(res, data, 'blend', BLEND_VALUES)
+      data[PKEY_BLEND] = quickApi.#normalizeValue(originalData[PKEY_BLEND] || BLEND_PVALUES[0])
+      quickApi.#validateValues(res, data, PKEY_BLEND, BLEND_PVALUES)
 
       // brightness
-      data['brightness'] = quickApi.#normalizeValue(originalData['brightness'] || '0.0')
-      const {value: brightnessVal} = quickApi.#validateFloat(res, data, 'brightness', -1.0, 1.0)
-      data['brightness'] = brightnessVal + 1.0
+      data[PKEY_BRIGHTNESS] = quickApi.#normalizeValue(originalData[PKEY_BRIGHTNESS] || '0.0')
+      const {value: brightnessVal} = quickApi.#validateFloat(res, data, PKEY_BRIGHTNESS, -1.0, 1.0)
+      data[PKEY_BRIGHTNESS] = brightnessVal + 1.0
 
       // whiten
-      data['whiten'] = quickApi.#normalizeValue(originalData['whiten'] || '0.0')
-      const {value: whitenVal} = quickApi.#validateFloat(res, data, 'whiten', 0.0, 1.0)
-      data['whiten'] = whitenVal
+      data[PKEY_WHITEN] = quickApi.#normalizeValue(originalData[PKEY_WHITEN] || '0.0')
+      const {value: whitenVal} = quickApi.#validateFloat(res, data, PKEY_WHITEN, 0.0, 1.0)
+      data[PKEY_WHITEN] = whitenVal
 
       // style_mode
-      data['style_mode'] = quickApi.#normalizeValue(originalData['style_mode'] || STYLE_MODE_VALUES[0])
-      data['mix_factor'] = quickApi.#normalizeValue(originalData['mix_factor'])
+      data[PKEY_STYLE_MODE] = quickApi.#normalizeValue(originalData[PKEY_STYLE_MODE] || STYLE_PVALUES[0])
+      data[PKEY_MIX_FACTOR] = quickApi.#normalizeValue(originalData[PKEY_MIX_FACTOR])
 
-      if (data['style_mode'] === 'mix_manual') {
-        if (!data['mix_factor']) {
+      if (data[PKEY_STYLE_MODE] === PVALUE_STYLE_MODE_MIX) {
+        if (!data[PKEY_MIX_FACTOR]) {
           throw quickApi.#newBadParamsError({
-            message: "'mix_factor' is mandatory on 'mix_manual' style mode"
+            message: `'${PKEY_MIX_FACTOR}' is mandatory when ${PKEY_STYLE_MODE}='${PVALUE_STYLE_MODE_MIX}'`
           })
         }
       } else {
-        delete data['mix_factor']
+        delete data[PKEY_MIX_FACTOR]
       }
 
-      quickApi.#validateValues(res, data, 'style_mode', STYLE_MODE_VALUES)
-      if (data['mix_factor']) {
-        const {value: mixFactorVal} = quickApi.#validateFloat(res, data, 'mix_factor', 0.0, 1.0)
-        data['mix_factor'] = mixFactorVal
+      quickApi.#validateValues(res, data, PKEY_STYLE_MODE, STYLE_PVALUES)
+      if (data[PKEY_MIX_FACTOR]) {
+        const {value: mixFactorVal} = quickApi.#validateFloat(res, data, PKEY_MIX_FACTOR, 0.0, 1.0)
+        data[PKEY_MIX_FACTOR] = mixFactorVal
       }
 
       // createOptions
@@ -302,11 +317,11 @@ export const quickApi = new (class {
     const options = {
       whiten,
       brightness,
-      ortho: mode === 'ortho',
-      poisson: blend === 'poisson',
+      ortho: mode === PVALUE_MODE_ORTHO,
+      poisson: blend === PVALUE_BLEND_POISSON,
     }
-    if (style_mode === 'mix_manual') {
-      options['mix_factor'] = mix_factor
+    if (style_mode === PVALUE_STYLE_MODE_MIX) {
+      options.mix_factor = mix_factor
     }
     return options
   }
@@ -393,18 +408,21 @@ export const quickApi = new (class {
           }
         })
       }
-      if (!claims['client_id']) {
-        throw quickApi.#newAuthorizationError({
-          debugId: 'no-client',
-          message: `Missing 'client_id' on claims - "${token}`,
-          details: {
-            receivedToken: token,
-            receivedClaims: claimsJson,
-          }
-        })
-      }
+      MANDATORY_CLAIMS.forEach((claimKey) => {
+        if (!claims[claimKey]) {
+          throw quickApi.#newAuthorizationError({
+            debugId: 'missing-claim',
+            message: `Missing '${claimKey}' on claims - "${token}`,
+            details: {
+              receivedToken: token,
+              receivedClaims: claimsJson,
+              mandatoryClaims: MANDATORY_CLAIMS,
+            }
+          })
+        }
+      })
 
-      const clientId = claims['client_id']
+      const clientId = claims[CLAIM_CLIENT_ID]
       api.addInfo(res, {
         "security": {
           "client-id": clientId,
@@ -429,7 +447,7 @@ export const quickApi = new (class {
         this.#addRecaptchaTag(res, 'skipped')
         return
       }
-      const token = claims['recaptcha_token']
+      const token = claims[CLAIM_RECAPTCHA_TOKEN]
       const data = await quickApi.#requestRecaptcha({secret, token, minScore, ip: req.ip})
       const isValid = data && data.success && data.score >= minScore
       if (isValid) {
@@ -491,14 +509,15 @@ export const quickApi = new (class {
       const {claims} = res.locals.dentParsedToken
       const {dataJson: bodyDataJson, images} = res.locals.dentParsedBody
 
-      const paramsSigned = claims['request_params_signed']
-      const signaturesKeys = Object.keys(paramsSigned)
-      const keys = Array.prototype.concat(Object.keys(images), ['data'])
-      if (!quickApi.#hasSameValues(signaturesKeys, keys)) {
+      const paramsHashed = claims[CLAIM_PARAMS_HASHED]
+      const hashesKeys = Object.keys(paramsHashed)
+      const keys = Object.keys(images)
+      if (bodyDataJson) keys.push('data')
+      if (!quickApi.#hasSameValues(hashesKeys, keys)) {
         throw quickApi.#newAuthorizationError({
-          message: `Request data does not match token claims - ${keys} - ${signaturesKeys}`,
+          message: `Request data does not match token claims - ${keys} - ${hashesKeys}`,
           details: {
-            signedParamsOnTokenClaims: signaturesKeys,
+            hashedParamsOnTokenClaims: hashesKeys,
             keysReceivedOnBody: keys,
           }
         })
@@ -508,14 +527,14 @@ export const quickApi = new (class {
       for (let i = 0; i < keysLength; i++) {
         const key = keys[i]
         const val = (key === 'data' ? bodyDataJson : images[key].content)
-        const signature = paramsSigned[key]
-        const verificationSignature = simpleCrypto.md5(val)
-        if (signature !== verificationSignature) {
+        const hash = paramsHashed[key]
+        const verificationHash = simpleCrypto.md5(val)
+        if (hash !== verificationHash) {
           throw quickApi.#newAuthorizationError({
-            message: `Signed param "${key}" does not match claims received on token`,
+            message: `Hashed param "${key}" does not match claims received on token`,
             details: {
-              paramSignatureReceived: paramsSigned,
-              paramSignatureExpected: verificationSignature,
+              paramHashReceived: paramsHashed,
+              paramHashExpected: verificationHash,
               originalValue: val,
             }
           })
