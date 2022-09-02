@@ -8,38 +8,31 @@ import {RichError} from '../utils/RichError'
 export const cors = new (class {
   enforceCors({hosts, methods, headers}) {
     return asyncMiddleware('cors.enforceCors', async (req, res, next) => {
-      const host = helpers.getOrigin(req)
-      const normalizedHost = cors.#normalizeHostForCors(host, req.protocol)
-      if (!host || !hosts || !hosts.length) {
+      const origin = helpers.normalizedOriginForCors(req)
+      if (!origin || !hosts || !hosts.length) {
         throw cors.#newCorsError({
           message: "Couldn't get origin or allowed origins aren't configured",
           details: {
-            originOnHeader: host,
-            originNormalized: normalizedHost,
+            originNormalized: origin,
             allowed: {hosts, methods, headers,},
           }
         })
       }
       const normalizedAllowedHosts = []
       for (let i = 0; i < hosts.length; i++) {
-        const allowedHost = cors.#normalizeHostForCors(hosts[i], 'https')
+        const allowedHost = helpers.normalizeOrigin(hosts[i], 'https')
         normalizedAllowedHosts.push(allowedHost)
       }
-      if (!normalizedAllowedHosts.includes(normalizedHost)) {
+      if (!normalizedAllowedHosts.includes(origin)) {
         throw cors.#newCorsError({
           message: "Origin on header doesn't match the allowed ones for this client",
           details: {
-            originOnHeader: host,
-            originNormalized: normalizedHost,
+            originNormalized: origin,
             allowed: {hosts, methods, headers,},
           },
         })
       }
-      helpers.setCors(res, {
-        hosts: hosts,
-        methods: methods,
-        headers: headers,
-      })
+      helpers.setAllowingCors(req, res)
     })
   }
 
@@ -53,12 +46,5 @@ export const cors = new (class {
       publicMessage: 'Not Authorized',
       logLevel: 'debug',
     })
-  }
-
-  #normalizeHostForCors(host, defaultProtocol) {
-    if (!host) return
-    const uri = new Uri(host)
-    if (!uri.protocol) uri.protocol = defaultProtocol
-    return uri.toString({path: false})
   }
 })()

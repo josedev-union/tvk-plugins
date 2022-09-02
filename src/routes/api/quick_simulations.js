@@ -80,6 +80,24 @@ const quickSimulationRoute = asyncRoute(async (req, res) => {
   })
 })
 
+const corsPreFlight = [
+  timeout.ensure({id: 'full-route', timeoutSecs: 1.0}),
+  quickApi.enforcePreflightCors,
+  asyncRoute(async (req, res) => {
+    res.status(200).end()
+  }),
+]
+
+router.options('/cosmetic', ...[
+  api.setId('cosmetic-simulations'),
+  ...corsPreFlight
+])
+
+router.options('/ortho', ...[
+  api.setId('ortho-simulations'),
+  ...corsPreFlight
+])
+
 router.post('/cosmetic', [
   api.setId('cosmetic-simulations'),
   ...middlewares,

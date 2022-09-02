@@ -122,7 +122,9 @@ app.use(function(err, req, res, next) {
     logger.error(err)
     data = message
   }
-  res.status(statusCode).json({error: data, success: false});
+
+  helpers.setAllowingCors(req, res)
+  return res.status(statusCode).json({success: false, error: data});
 });
 
 function redirectWwwToNonWww(req, res, next) {

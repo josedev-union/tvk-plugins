@@ -15,7 +15,7 @@ const API_CONFIG_DEFAULT = {
 }
 
 const cache = Cache.build({
-  cacheTTL: 1.0 * MINUTES,
+  cacheTTL: 5.0 * MINUTES,
   staleTTL: 3.0 * DAYS,
 })
 
@@ -45,6 +45,27 @@ export class ApiClient {
 
     apiAllowedHosts({api='default', host}) {
       return this.#getApiConfig({api, config: API_CONFIG_ALLOWED_HOSTS}) || []
+    }
+
+    static async all() {
+      return cache.wrap({
+        key: 'ApiClient.all',
+        op: async () => {
+          const db = Database.instance()
+          const query = db.startQuery(ApiClient.COLLECTION_NAME)
+          return db.getResults(ApiClient, query)
+        }
+      })
+    }
+
+    static async getAllAllowedHosts({api: apiId}) {
+      return cache.wrap({
+        key: `ApiClient.getAllAllowedHosts:${apiId}`,
+        op: async () => {
+          const clients = await ApiClient.all()
+          return clients.flatMap((c) => c.apiAllowedHosts({api: apiId}))
+        }
+      })
     }
 
     apiMaxSuccessesPerSecond({api='default'}) {

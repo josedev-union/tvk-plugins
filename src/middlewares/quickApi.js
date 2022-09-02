@@ -13,6 +13,7 @@ import {env} from "../config/env"
 import {simpleCrypto} from "../shared/simpleCrypto"
 import {RichError} from "../utils/RichError"
 import {logger} from '../instrumentation/logger'
+import {ApiClient} from "../models/database/ApiClient"
 
 import {helpers} from '../routes/helpers'
 import {asyncMiddleware, invokeMiddleware, invokeMiddlewares} from './expressAsync'
@@ -36,6 +37,18 @@ export const quickApi = new (class {
         hosts: hosts,
         methods: ['POST'],
         headers: [SIGNATURE_HEADER]
+      })
+      return await invokeMiddleware(enforce, req, res)
+    })
+  }
+
+  get enforcePreflightCors() {
+    return asyncMiddleware('quickApi.enforcePreflightCors', async (req, res, next) => {
+      const {dentApiId: apiId} = res.locals
+      const allowedHosts = await ApiClient.getAllAllowedHosts({api: apiId})
+      const enforce = cors.enforceCors({
+        hosts: allowedHosts,
+        methods: ['OPTIONS'],
       })
       return await invokeMiddleware(enforce, req, res)
     })

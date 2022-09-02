@@ -1,5 +1,6 @@
 import formidable from 'formidable'
 
+import {Uri} from '../models/tools/Uri'
 import {envShared} from '../shared/envShared'
 import {simpleCrypto} from '../shared/simpleCrypto'
 
@@ -23,6 +24,29 @@ export const helpers = new (class {
 
   respondError(res, status, data) {
     return res.status(status).json({error: data})
+  }
+
+  setAllowingCors(req, res) {
+    const normalizedHost = helpers.normalizedOriginForCors(req)
+    const allowedHeaders = ['authorization'].filter((h) => req.headers[h])
+    allowedHeaders.push('*')
+    return helpers.setCors(res, {
+      hosts: normalizedHost,
+      methods: req.method,
+      headers: allowedHeaders,
+    })
+  }
+
+  normalizedOriginForCors(req) {
+    const host = helpers.getOrigin(req)
+    return helpers.normalizeOrigin(host, req.protocol)
+  }
+
+  normalizeOrigin(host, defaultProtocol) {
+    if (!host) return
+    const uri = new Uri(host)
+    if (!uri.protocol) uri.protocol = defaultProtocol
+    return uri.toString({path: false})
   }
 
   setCors(res, {hosts, methods, headers}) {
