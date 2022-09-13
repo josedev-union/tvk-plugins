@@ -140,9 +140,13 @@ export class ApiClient {
         return Database.instance().delete(`/${ApiClient.COLLECTION_NAME}/${id}`)
     }
 
-    static build() {
+    static build({idSuffix}={}) {
+        let id = this.newId()
+        if (idSuffix) {
+          id = `${id}_${idSuffix}`
+        }
         return new ApiClient({
-            id: this.newId(),
+            id,
             secret: this.newSecret(),
             exposedSecret: this.newSecret(),
         })
