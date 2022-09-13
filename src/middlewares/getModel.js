@@ -1,6 +1,7 @@
 import {ApiClient} from '../models/database/ApiClient'
 import {User} from '../models/database/User'
 import {SmileTask} from '../models/database/SmileTask'
+import {RichError} from "../utils/RichError"
 
 import {helpers} from '../routes/helpers'
 import {asyncMiddleware} from './expressAsync'
