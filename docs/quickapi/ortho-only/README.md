@@ -1,34 +1,5 @@
 # Simulations API Documentation - Ortho
-
-## Script
-The script called `ortho.py` can be used to send test requests to the API.
-
-### Credentials
-By default it'll use the following credentials (for testing purposes only):
-```
-CLIENT_ID=ODMzNjkxOTc4NTE5Mk9tZT4rYVJ2_testext
-CLIENT_SECRET=7016d6ee59847abb24a56cb735335b10aa915f50755dfdcd41d926bb34808899
-```
-
-### Install Dependencies
-To run the script first install the dependencies by running:
-```
-# Install Dependencies
-pip install -r requirements.txt
-```
-
-### Sending Requests
-```
-# Sample Call
-python ortho.py ./face.jpg --client_id ODMzNjkxOTc4NTE5Mk9tZT4rYVJ2_testext --client_secret 7016d6ee59847abb24a56cb735335b10aa915f50755dfdcd41d926bb34808899
-# Or...
-python ortho.py ./face.jpg
-
-# See All Params
-python ortho.py --help
-```
-
-## Overview
+## API Overview ##
 This document describes how Simulations API's Ortho feature works.
 
 To execute a ortho simulation the client will need to do a single request `POST /api/simulations/ortho` sending the photo binary as `multipart/form-data`. The response will be in JSON format as detailed along this document.
@@ -41,7 +12,7 @@ This request is meant to be done via back-end, not directly by the front-end.
   - `Authorization: Bearer $SIGNATURE`
   - `Content-Type: multipart/form-data`
 - Body _(format: multipart/form-data)_
-  - `img_photo: $PHOTO_BLOB`
+  - `img_photo: $PHOTO_IMAGE`
 
 
 #### Illustrating with cURL
@@ -87,7 +58,41 @@ curl -XPOST \
 
 
 
-## Signature
+## Script
+The script called `ortho.py` can be used to send test requests to the API.
+
+### Credentials
+By default it'll use the following credentials (for testing purposes only):
+```
+CLIENT_ID=ODMzNjkxOTc4NTE5Mk9tZT4rYVJ2_testext
+CLIENT_SECRET=7016d6ee59847abb24a56cb735335b10aa915f50755dfdcd41d926bb34808899
+```
+
+
+
+### Install Dependencies
+To run the script first install the dependencies by running:
+```
+# Install Dependencies
+pip install -r requirements.txt
+```
+
+### Sending Requests
+```
+# Sample Call
+python ortho.py ./face.jpg \
+	--client_id ODMzNjkxOTc4NTE5Mk9tZT4rYVJ2_testext \
+	--client_secret 7016d6ee59847abb24a56cb735335b10aa915f50755dfdcd41d926bb34808899
+# Or...
+python ortho.py ./face.jpg
+
+# See All Params
+python ortho.py --help
+```
+
+
+
+## Signature ##
 ### Overview
 The signature informs which client is using the API and prevents data from being tampered. It needs to be generated before each request and sent in the `Authorization` header.
 
