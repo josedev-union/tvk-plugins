@@ -11,6 +11,13 @@ export const api = new (class {
     }
   }
 
+  corsOnError() {
+    return (req, res, next) => {
+      res.locals.dentCorsOnError = true
+      next()
+    }
+  }
+
   getTags(res) {
     if (!res.locals.dentApiTags) {
       res.locals.dentApiTags = new TagSet()
@@ -31,7 +38,7 @@ export const api = new (class {
   }
 
   getReqInfo(req) {
-    const reqInfo = api.#pick(req, ['route', 'method', 'headers', 'protocol', 'query', 'baseurl', 'ip', 'originalurl', 'path'])
+    const reqInfo = api.#pick(req, ['method', 'headers', 'protocol', 'query', 'baseurl', 'ip', 'originalurl', 'path'])
     return reqInfo
   }
 
@@ -56,7 +63,7 @@ export const api = new (class {
   }
 
   #pick(obj, keys) {
-    return keys.reduce((k,o) => Object.assign(o, {[k]: obj[k]}), {})
+    return keys.reduce((o,k) => Object.assign(o, {[k]: obj[k]}), {})
   }
 
   #tagsFor(req, res) {

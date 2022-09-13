@@ -10,7 +10,7 @@ export const idGenerator = new (class {
         return simpleCrypto.base64(`${reverseTimestamp}${simpleCrypto.genericUUID(uuidSize)}`, {padding: false})
     }
 
-    newSecret(key = 'dfbd7ac2509df92476f23be475606c8f080872f5') {
-        return simpleCrypto.base64(simpleCrypto.hmac(simpleCrypto.base64(simpleCrypto.genericUUID(10)), key), {padding: false})
+    newSecret() {
+        return simpleCrypto.newSecret()
     }
 })()

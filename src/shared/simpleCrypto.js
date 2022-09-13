@@ -4,8 +4,6 @@ import uuid from 'uuid/v4'
 import {promisify} from 'util'
 import crypto from 'crypto'
 
-const randomBytesAsync = promisify(crypto.randomBytes)
-
 export const simpleCrypto = new (class {
     base64(str, params = {padding: true}) {
         var b64 = Buffer.from(str).toString('base64')
@@ -69,8 +67,12 @@ export const simpleCrypto = new (class {
         return uuid
     }
 
-    async newSecret(size = 32) {
-      const crypto256Token = (await randomBytesAsync(size)).toString('hex')
+    uuid() {
+      return uuid()
+    }
+
+    newSecret() {
+      const crypto256Token = crypto.randomBytes(32).toString('hex')
       const uuidToken = uuid()
       return this.hmac(crypto256Token, uuidToken)
     }

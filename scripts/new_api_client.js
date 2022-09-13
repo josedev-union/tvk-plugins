@@ -4,6 +4,6 @@ async function create() {
   let client = ApiClient.build()
   await client.save()
 
-  console.log(`Client Created! ID: ${client.id} Secret: ${client.secret}`)
+  console.log(`Client Created! ID: ${client.id} Secret: ${client.secret} Exposed Secret: ${client.exposedSecret}`)
 }
 create().catch(err => console.error(err))

@@ -6,7 +6,7 @@ import {simpleCrypto} from '../shared/simpleCrypto'
 
 export const helpers = new (class {
   getOrigin(req) {
-    return this.normalizeParamValue(req.get('Origin') || req.get('Referer') || req.get('Host'))
+    return this.normalizeParamValue(req.get('Origin') || req.get('Referer'))
   }
 
   getSignature(req) {
@@ -28,6 +28,7 @@ export const helpers = new (class {
 
   setAllowingCors(req, res) {
     const normalizedHost = helpers.normalizedOriginForCors(req)
+    if (!normalizedHost) return
     const allowedHeaders = ['authorization'].filter((h) => req.headers[h])
     allowedHeaders.push('*')
     return helpers.setCors(res, {
@@ -39,6 +40,7 @@ export const helpers = new (class {
 
   normalizedOriginForCors(req) {
     const host = helpers.getOrigin(req)
+    if (!host) return undefined
     return helpers.normalizeOrigin(host, req.protocol)
   }
 

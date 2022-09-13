@@ -82,7 +82,7 @@ export const quickApi = new (class {
     })
   }
 
-  get rateLimit() {
+  rateLimit({ip: ipLimiting=true, client: clientLimiting=true}={}) {
     return asyncMiddleware('quickApi.rateLimit', async (req, res, next) => {
       const {dentApiId: apiId, dentClient: client} = res.locals
       const maxSuccessesPerSec = client.apiMaxSuccessesPerSecond({api: apiId}) || DEFAULT_RATE_LIMIT_MAX_SUCCESSES_PER_SECOND
@@ -174,22 +174,21 @@ export const quickApi = new (class {
         }
       })
 
-      const allRateLimits = [
-        // Limiting any requests
-        ipLimitRequestsPerMinute,
-        clientLimitRequestsPerSecond,
+      const all = []
+      // Limiting any requests
+      if (ipLimiting)     all.push(ipLimitRequestsPerMinute)
+      if (clientLimiting) all.push(clientLimitRequestsPerSecond)
 
-        // Limiting ip successes
-        ipLimitSuccessesPerHour,
-        ipLimitSuccessesPerDay,
+      // Limiting ip successes
+      if (ipLimiting)     all.push(ipLimitSuccessesPerHour)
+      if (ipLimiting)     all.push(ipLimitSuccessesPerDay)
 
-        // Limiting client successes
-        clientLimitSuccessesPerSecond,
-        clientLimitSuccessesPerMinute,
-        clientLimitSuccessesPerHour,
-      ]
+      // Limiting client successes
+      if (clientLimiting) all.push(clientLimitSuccessesPerSecond)
+      if (clientLimiting) all.push(clientLimitSuccessesPerMinute)
+      if (clientLimiting) all.push(clientLimitSuccessesPerHour)
 
-      return await invokeMiddlewares(allRateLimits, req, res)
+      return await invokeMiddlewares(all, req, res)
     })
   }
 
@@ -211,6 +210,7 @@ export const quickApi = new (class {
       const timeoutManager = timeout.getManager(res)
       if (timeoutManager) timeoutManager.onTimeout(() => form.pause())
       const {files, fields} = await helpers.parseForm(form, req)
+      api.addInfo(res, {multipartData: {files, fields}})
       const {data: dataJson} = fields
       const data = quickApi.#parseJson(dataJson) || {}
       const images = {}
@@ -227,40 +227,15 @@ export const quickApi = new (class {
     })
   }
 
-  getPhotoExtension(imgFields) {
-    return asyncMiddleware('quickApi.getPhotoExtension', async (req, res, next) => {
-      const images = res.locals.dentParsedBody.images
-      const fields = Object.keys(images)
-      for (var i = 0; i < fields.length; i++) {
-        const field = fields[i]
-        const photo = images[field]
-
-        if (!photo || photo.size === 0) {
-          throw quickApi.#newBadParamsError({
-            message: `A photo param ${field} is mandatory`,
-            details: {
-              imgParamsReceived: Object.keys(images)
-            }
-          })
-        }
-
-        const {ext: extension} = (await FileType.fromBuffer(photo.content)) || {}
-
-        if (!extension || !extension.match(/.*(jpe?g|png)$/i)) {
-          throw quickApi.#newBadParamsError({
-            message: `Invalid photo type of ${field}`,
-            details: {
-              receivedPhotoType: extension
-            }
-          })
-        }
-      }
-    })
-  }
-
   dataToSimulationOptions({customizable, force={}}={}) {
     return asyncMiddleware('quickApi.dataToSimulationOptions', async (req, res, next) => {
-      const originalData = Object.assign({}, res.locals.dentParsedBody.data, force)
+      const {data: bodyData, images: bodyImages} = res.locals.dentParsedBody
+      await quickApi.#processImageFields({
+        images: bodyImages,
+        imgFields: ['img_photo'],
+      })
+
+      const originalData = Object.assign({}, bodyData, force)
       if (typeof(customizable) !== 'undefined') {
         Object.keys(originalData).forEach((key) => {
           if (!customizable.includes(key) && !(key in force)) {
@@ -363,6 +338,33 @@ export const quickApi = new (class {
   #normalizeValue(val) {
     if (typeof(val) === 'undefined' || val === null) return null
     return val.toString().trim().toLowerCase()
+  }
+
+  async #processImageFields({images, imgFields}) {
+    for (var i = 0; i < imgFields.length; i++) {
+      const field = imgFields[i]
+      const photo = images[field]
+
+      if (!photo || !photo.content || photo.size === 0) {
+        throw quickApi.#newBadParamsError({
+          message: `A photo param ${field} is mandatory`,
+          details: {
+            imgParamsReceived: Object.keys(images)
+          }
+        })
+      }
+
+      const {ext: extension} = (await FileType.fromBuffer(photo.content)) || {}
+
+      if (!extension || !extension.match(/.*(jpe?g|png)$/i)) {
+        throw quickApi.#newBadParamsError({
+          message: `Invalid photo type of ${field}`,
+          details: {
+            receivedPhotoType: extension
+          }
+        })
+      }
+    }
   }
 
   get parseAuthToken() {
@@ -486,11 +488,11 @@ export const quickApi = new (class {
     }
   }
 
-  get validateAuthToken() {
+  validateAuthToken({secretKey}) {
     return asyncMiddleware('quickApi.validateAuthToken', async (req, res) => {
       const client = res.locals.dentClient
       const {claimsJson, signature} = res.locals.dentParsedToken
-      const isValid = simpleCrypto.verifySignatureHmac(signature, claimsJson, client.secret)
+      const isValid = simpleCrypto.verifySignatureHmac(signature, claimsJson, client[secretKey])
       if (!isValid) {
         throw quickApi.#newAuthorizationError({
           message: `Claims JSON signature doesn't match it`,

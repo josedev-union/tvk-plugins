@@ -5,9 +5,16 @@ import {Blob, Buffer} from 'buffer'
 export class RichError extends Error {
   constructor({debugId, httpCode, debugMessage, publicId, publicMessage, cause, namespace, debugDetails={}, tags={}, logLevel='error'}) {
     debugMessage = debugMessage || publicMessage
-    super(debugMessage, {cause})
     if (cause) {
+      //super(debugMessage, {cause})
+      super(debugMessage)
+      //this.cause = cause
+      this.originalCause = cause
       Object.assign(this, cause)
+      //Error.captureStackTrace(this)
+      this.stack = cause.stack
+    } else {
+      super(debugMessage)
     }
     this.debugMessage = debugMessage
     this.publicId = publicId || 'internal-error'
@@ -18,7 +25,6 @@ export class RichError extends Error {
     this.addDebugDetails(debugDetails)
     this.publicMessage = publicMessage
     this.logLevel = logLevel
-    this.cause = cause
 
     this.tags = new TagSet()
     this.tags.add('error:id', `${this.namespace}:${this.debugId}`)
@@ -65,16 +71,104 @@ export class RichError extends Error {
   }
 
   #simplify(obj) {
-    if (obj.constructor === Object) {
-      const newObj = {}
-      Object.entries(obj).forEach(([key, val]) => newObj[key] = this.#simplify(val))
-      return newObj
-    } else if (Array.isArray(obj)) {
-      return obj.map((val) => this.#simplify(val))
-    } else if (this.#hasSize(obj)) {
-      return this.#shortening(obj, 150)
+    const t = typeof(obj)
+    if (!obj || (t !== 'string' && t !== 'object')) {
+      return obj
+    }
+
+    const asArray = this.#asArray(obj)
+    if (asArray) {
+      return this.#simplifiedArray(obj, asArray)
+    } else if (t === 'string') {
+      return this.#simplifyString(obj)
+    } else if (t === 'object') {
+      return this.#simplifiedObject(obj)
     } else {
       return obj
+    }
+  }
+
+  #asArray(obj) {
+    let asArray = undefined
+    if (obj.buffer instanceof ArrayBuffer) {
+      asArray = [...obj]
+    } else if (obj instanceof ArrayBuffer) {
+      asArray = [...new Uint8Array(obj)]
+    } else if (Array.isArray(obj)) {
+      asArray = obj
+    }
+    return asArray
+  }
+
+  #isTypedArray(obj) {
+    return obj instanceof ArrayBuffer || obj.buffer instanceof ArrayBuffer
+  }
+
+  #simplifiedObject(obj) {
+    const newObj = Object.assign({}, obj)
+
+    Object.entries(obj).forEach(([key, val]) => {
+      if (key.startsWith('_')) {
+        delete newObj[key]
+      } else {
+        newObj[key] = this.#simplify(val)
+      }
+    })
+
+    if (obj.constructor !== Object) {
+      newObj['[!]CONSTRUCTOR'] = obj.constructor.name
+    }
+
+    if (Object.keys(obj).length > 25) {
+      let asStr = null
+      try {
+        asStr = JSON.stringify(newObj)
+      } catch {
+        asStr = String(newObj)
+      }
+      return `[!] ${this.#simplify(asStr)}`
+    } else {
+      return newObj
+    }
+  }
+
+  #simplifiedArray(obj, asArray) {
+    if (obj.constructor !== Array) {
+      return this.#simplify({
+        "[!] CONSTRUCTOR": obj.constructor.name,
+        "[!] values": asArray,
+      })
+    }
+
+    const simpleTypesCount = {
+      'null': 0,
+      'number': 0,
+      'string': 0,
+      'boolean': 0,
+      'undefined': 0,
+      'all': 0,
+    }
+    obj.forEach((val) => {
+      const t = val === null ? 'null' : typeof(val)
+      if (t in simpleTypesCount) {
+        simpleTypesCount[t]++
+        simpleTypesCount['all']++
+      }
+    })
+    //const areAllSimple = simpleTypesCount['all'] === obj.length
+    const areAllNumbers = simpleTypesCount['number'] === obj.length
+    let maxLength = 7
+    if (areAllNumbers) {
+      maxLength = 20
+    }
+    const simplified = obj.slice(0, maxLength).map((val) => this.#simplify(val))
+    if (simplified.length != obj.length) {
+      simplified.push('[!]...')
+    }
+    if (areAllNumbers) {
+      return `[!] ${this.#simplify(JSON.stringify(simplified))}`
+    } else {
+      return simplified
     }
   }
 
@@ -83,42 +177,21 @@ export class RichError extends Error {
     return (t === 'object' && (typeof(obj['size']) !== 'undefined' || typeof(obj['length']) !== 'undefined'))
   }
 
-  #shortening(obj, maxSizeChars) {
-    const asJson = JSON.stringify(obj)
-    if (asJson.length <= maxSizeChars) return obj
-
-    const simplified = {}
-    simplified['typeof'] = typeof(obj)
-    const sizeAttrs = ['size', 'length']
-    const allAttrs = ['type', 'constructor', ...sizeAttrs]
-    allAttrs.forEach((key) => {
-      if (typeof(obj[key]) !== 'undefined') {
-        simplified[key] = obj[key]
-      }
-    })
-
-    sizeAttrs.forEach((key) => {
-      if (typeof(simplified[key]) === 'function') {
-        simplified[key] = simplified[key]()
-      }
-    })
-
-    if (typeof(obj.slice) !== 'function') {
-      obj = asJson
+  #simplifyString(obj) {
+    let simplified = obj.slice(0, 150)
+    if (simplified.length !== obj.length) {
+      simplified += ' [!]...'
     }
-
-    const maxSize = typeof(obj) === 'string' ? maxSizeChars : Math.round(maxSizeChars/5.0)
-    simplified['slice'] = obj.slice(0, maxSize)
     return simplified
   }
 
   logText() {
     let text = `[${this.debugId}]: ${this.debugMessage}`
-    text += `\nDETAILS: ${JSON.stringify(this.debugDetails || {})}`
     text += `\n${this.stack}`
     if (this.cause) {
       text += `\n[cause] ${RichError.logTextFor(this.cause)}`
     }
+    text += `\nDETAILS: ${JSON.stringify(this.debugDetails || {})}`
     return text
   }
 

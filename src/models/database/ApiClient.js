@@ -22,9 +22,10 @@ const cache = Cache.build({
 export class ApiClient {
     static get COLLECTION_NAME() {return 'api_clients'}
 
-    constructor({id, secret, createdAt = null, updatedAt = null, apisConfig = null}) {
+    constructor({id, secret, exposedSecret, createdAt = null, updatedAt = null, apisConfig = null}) {
         this.id = id
         this.secret = secret
+        this.exposedSecret = exposedSecret
         this.createdAt = createdAt || Database.toTimestamp(new Date())
         this.updatedAt = updatedAt || this.createdAt
         this.apisConfig = apisConfig || {
@@ -143,11 +144,12 @@ export class ApiClient {
         return new ApiClient({
             id: this.newId(),
             secret: this.newSecret(),
+            exposedSecret: this.newSecret(),
         })
     }
 
     static newId() {
-        return idGenerator.newOrderedId({uuidSize: 15})
+        return idGenerator.newOrderedId()
     }
 
     static newSecret() {

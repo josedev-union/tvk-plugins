@@ -86,7 +86,8 @@ if (env.instSimRouter) {
 } else {
   app.use('/', indexRouter);
   app.use('/api/users/:userId/smile-tasks/', getModel.user, apiSmileTasks);
-  app.use('/api/quick-simulations/', apiQuickSimulations);
+  app.use('/public-api/simulations/', apiQuickSimulations({clientIsFrontend: true}));
+  app.use('/api/simulations/', apiQuickSimulations({clientIsFrontend: false}));
   app.use('/api/67a4abe/smile-tasks/:smileTaskId/', getModel.smileTask, internalApiSmileTasks);
   app.use('/webhooks/828ffbc/smile-tasks/', webhooksSmileTasks);
   app.use(Sentry.Handlers.errorHandler());
@@ -123,7 +124,9 @@ app.use(function(err, req, res, next) {
     data = message
   }
 
-  helpers.setAllowingCors(req, res)
+  if (res.locals.dentCorsOnError) {
+    helpers.setAllowingCors(req, res)
+  }
   return res.status(statusCode).json({success: false, error: data});
 });
 
