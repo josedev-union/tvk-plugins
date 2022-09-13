@@ -62,3 +62,4 @@ typings/
 public/assets
 dist
 .secret
+docs/

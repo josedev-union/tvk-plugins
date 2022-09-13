@@ -1,0 +1,39 @@
+body {
+  padding: 50px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+.loading, .error, .result {
+  display: none;
+}
+
+.loading.show {
+  display: block;
+}
+
+.error.show {
+  display: block;
+}
+
+.result.show {
+  display: inline;
+}
+
+.debug-set {
+  width: 720px;
+}
+
+.debug-title {
+  font-weight: bold;
+}
+
+.debug-content, .debug-content * {
+  font-family: monospace;
+  word-wrap: break-word;
+  word-break: break-all;
+  overflow-wrap: "anywhere";
+}
+
+.error {
+	color: hsl(348, 100%, 61%);
+}

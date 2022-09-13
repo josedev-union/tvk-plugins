@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Simulations API Demo</title>
+    <link href="./style.css" rel="stylesheet">
+    <!-- bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous">
+  </head>
+  <body>
+    <h1>Simulations API Demo</h1>
+    <form id="upload-form" class="row">
+      <div class="mb-3 col-auto">
+        <h2 for="img_photo" class="form-label">Upload Selfie</h2>
+        <input class="file-input form-control form-control-lg" type="file" name="img_photo" id="img_photo" accept="image/*" />
+      </div>
+    </form>
+
+    <div class="result-container">
+      <h2>Simulation Results</h2>
+      <p class="loading">Loading...</p>
+      <p id="response-error-message" class="error"></p>
+      <div id="imgs-container" class="result container">
+        <figure class="figure">
+          <img width="320px" id="img-before" class="figure-img img-fluid rounded" alt="Before">
+          <figcaption class="figure-caption text-center">Before</figcaption>
+        </figure>
+        <figure class="figure">
+          <img width="320px" id="img-result" class="figure-img img-fluid rounded" alt="After">
+          <figcaption class="figure-caption text-center">After</figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class='debug-container'>
+      <h2>Debug Info</h2>
+      <div class="recaptcha-token debug-set">
+        <p class="debug-title">Recaptcha v3 Token</p>
+        <p class="loading">Loading...</p>
+        <p id="id-token" class="debug-content"></p>
+      </div>
+      <div class="response-info debug-set">
+        <p class="debug-title">Response Status Code</p>
+        <p class="loading">Loading...</p>
+        <p id="response-status" class="debug-content"></p>
+
+        <p class="debug-title">Response JSON</p>
+        <p class="loading">Loading...</p>
+        <pre id="response-json" class="debug-content"></pre>
+      </div>
+    </div>
+
+    <div id="captcha_container"></div>
+
+    <!-- polyfills -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?version=3.111.0&features=default%2Ces2015%2Cfetch%2Chtml5shiv%2CJSON%2CXMLHttpRequest%2CBlob%2Ces2016%2Ces2017%2Ces2018%2Ces2019%2Ces2020%2Ces2021%2Ces2022%2Ces5%2Ces6%2Ces7" crossorigin="anonymous"></script>
+
+    <!-- formdata (polyfill) -->
+    <script src="https://cdn.jsdelivr.net/npm/formdata-polyfill@4.0.10/formdata.min.js" integrity="sha256-aXqXMrfnwup3Epj+ACDdgHl7KAo85Sil0wRMifiR8dQ=" crossorigin="anonymous"></script>
+
+    <!-- bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa" crossorigin="anonymous"></script>
+
+    <!-- cryptojs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js" integrity="sha512-E8QSvWZ0eCLGk4km3hxSsNmGWbLtSCSUcewDQPQWZF6pEU8GlT8a5fF32wOl1i8ftdMhssTrF/OhyGWwonTcXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <!-- axios (http request) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js" integrity="sha512-odNmoc1XJy5x1TMVMdC7EMs3IVdItLPlCeL5vSUPN2llYKMJ2eByTTAIiiuqLg+GdNr9hF6z81p27DArRFKT7A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <!-- app scripts -->
+    <script src="./js/Recaptcha.js"></script>
+    <script src="./js/ApiSimulationClient.js"></script>
+    <script src="./js/UI.js"></script>
+    <script src="./js/main.js"></script>
+  </body>
+</html>

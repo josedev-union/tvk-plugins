@@ -100,6 +100,7 @@
       "test/*",
       "public/*",
       "stress-test/*",
+      "docs/*",
       "tmp/*",
       "*.log"
     ],
