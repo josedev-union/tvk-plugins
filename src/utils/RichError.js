@@ -202,7 +202,7 @@ export class RichError extends Error {
 
   data({isDebug=false}) {
     const dt = {
-      id: this.publidId || 'internal-error',
+      id: this.publicId || 'internal-error',
       message: this.publicMessage || 'Unexpected Internal Error',
     }
     if (isDebug) {
