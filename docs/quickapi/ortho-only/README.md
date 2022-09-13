@@ -4,7 +4,7 @@
 The script called `ortho.py` can be used to send test requests to the API.
 
 ### Credentials
-You can use the following credentials for initial tests:
+By default it'll use the following credentials (for testing purposes only):
 ```
 CLIENT_ID=ODMzNjkxOTc4NTE5Mk9tZT4rYVJ2_testext
 CLIENT_SECRET=7016d6ee59847abb24a56cb735335b10aa915f50755dfdcd41d926bb34808899
@@ -20,7 +20,9 @@ pip install -r requirements.txt
 ### Sending Requests
 ```
 # Sample Call
-python ortho.py ./face.jpg -ci ODMzNjkxOTc4NTE5Mk9tZT4rYVJ2_testext -cs 7016d6ee59847abb24a56cb735335b10aa915f50755dfdcd41d926bb34808899
+python ortho.py ./face.jpg --client_id ODMzNjkxOTc4NTE5Mk9tZT4rYVJ2_testext --client_secret 7016d6ee59847abb24a56cb735335b10aa915f50755dfdcd41d926bb34808899
+# Or...
+python ortho.py ./face.jpg
 
 # See All Params
 python ortho.py --help
