@@ -27,7 +27,7 @@ parser.add_argument('mode', type=str, choices=[ORTHO_OPT_MODE, COSMETIC_OPT_MODE
 parser.add_argument('img_path', type=str, help='Image path to be processed')
 parser.add_argument('-ci', '--client_id', required=True, type=str, help='Client ID (given by TastyTech)')
 parser.add_argument('-cs', '--client_secret', required=True, type=str, help='Client Secret or Exposed Secret (given by TastyTech)')
-parser.add_argument('-ho', '--host', default='http://localhost:3000', type=str, help='Host of the API')
+parser.add_argument('-ho', '--host', default='https://api.e91efc7.dentrino.ai', type=str, help='Host of the API')
 parser.add_argument('-he', '--header', action='append', default=[], help='Additional header to send in the request', metavar='HEADER:VALUE')
 parser.add_argument('-d', '--output_dir', default='./tmp/', type=str, help='Output of the images downloaded')
 

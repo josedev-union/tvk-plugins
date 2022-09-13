@@ -81,8 +81,8 @@ describe(`on a successful request`, () => {
 
 function postSimulation(photoPath, mixFactor, ip='127.0.0.0') {
   const form = new FormData()
-  form.append('mix_factor', mixFactor)
-  form.append('photo', fs.readFileSync(photoPath), {filename: 'photo.jpg', contentType: 'image/jpeg'})
+  form.append('data', JSON.stringify({mix_factor: mixFactor}))
+  form.append('img_photo', fs.readFileSync(photoPath), {filename: 'photo.jpg', contentType: 'image/jpeg'})
 
   return request
     .post(`/api/quick-simulations`)
@@ -96,14 +96,18 @@ async function mockWorkerRequest() {
   const simulationRequestJson = await redisSubscribe(QuickSimulationClient.pubsubRequestKey())
   const simulationRequest = JSON.parse(simulationRequestJson)
   simulationRequest.photoReaded = await redisGet(simulationRequest.params.photo_redis_key)
-  const responseRedisKey = `test-simulation:response:${simulationRequest.id}`
+  const resultRedisKey = `test-simulation:response:${simulationRequest.id}`
+  const beforeRedisKey = `test-simulation:before:${simulationRequest.id}`
   const photoAfterSimulation = await readfile('./test/fixtures/photo_after_simulation.jpg')
-  await redisSetex(responseRedisKey, 5, Buffer.from(photoAfterSimulation, 'binary'))
+  const photoBefore = await readfile('./test/fixtures/photo.jpg')
+  await redisSetex(resultRedisKey, 5, Buffer.from(photoAfterSimulation, 'binary'))
+  await redisSetex(beforeRedisKey, 5, Buffer.from(photoBefore, 'binary'))
   const responseChannel = QuickSimulationClient.pubsubResponseKey(simulationRequest.id)
   const responseMessage = {
     status: 'success',
-    result: {
-      redis_key: responseRedisKey
+    data: {
+      result_redis_key: resultRedisKey,
+      before_redis_key: beforeRedisKey
     }
   }
   redisPubsub.publish(responseChannel, JSON.stringify(responseMessage))
