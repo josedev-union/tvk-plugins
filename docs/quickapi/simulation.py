@@ -21,12 +21,16 @@ ORTHO_PATH = 'simulations/ortho'
 ORTHO_OPT_MODE = 'ortho'
 COSMETIC_OPT_MODE = 'cosmetic'
 
+DEFAULT_CLIENT_ID = 'ODMzNjkxMTQ4NTY2OXo+bzk2MUdm_default_test'
+DEFAULT_CLIENT_SECRET = '8cf23bceb0f34a868da2fcd2e59eede16ac6d5953d3b77f6bc9827aa4cac8209'
+DEFAULT_CLIENT_EXPOSED_SECRET = 'a493e5c386bf6e32951010fc4f1844810a722a798fda824168f79913eda6489c'
+
 # OPTIONS
 parser = argparse.ArgumentParser()
 parser.add_argument('mode', type=str, choices=[ORTHO_OPT_MODE, COSMETIC_OPT_MODE], help='"cosmetic" or "ortho"')
 parser.add_argument('img_path', type=str, help='Image path to be processed')
-parser.add_argument('-ci', '--client_id', default='ODMzNjkxMTQ4NTY2OXo+bzk2MUdm_default_test', type=str, help='Client ID (given by TastyTech)')
-parser.add_argument('-cs', '--client_secret', default='8cf23bceb0f34a868da2fcd2e59eede16ac6d5953d3b77f6bc9827aa4cac8209', type=str, help='Client Secret or Exposed Secret (given by TastyTech)')
+parser.add_argument('-ci', '--client_id', default=DEFAULT_CLIENT_ID, type=str, help='Client ID (given by TastyTech)')
+parser.add_argument('-cs', '--client_secret', default=None, type=str, help='Client Secret or Exposed Secret (given by TastyTech)')
 parser.add_argument('-ho', '--host', default='https://api.e91efc7.dentrino.ai', type=str, help='Host of the API')
 parser.add_argument('-he', '--header', action='append', default=[], help='Additional header to send in the request', metavar='HEADER:VALUE')
 parser.add_argument('-d', '--output_dir', default='./tmp/', type=str, help='Output of the images downloaded')
@@ -44,6 +48,9 @@ args = parser.parse_args()
 
 is_cosmetic = args.mode == COSMETIC_OPT_MODE
 is_ortho = args.mode == ORTHO_OPT_MODE
+
+if args.client_secret is None:
+    args.client_secret = DEFAULT_CLIENT_EXPOSED_SECRET if args.public else DEFAULT_CLIENT_SECRET
 
 def tobytes(value):
     if type(value) == str:
