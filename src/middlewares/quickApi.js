@@ -82,6 +82,18 @@ export const quickApi = new (class {
     })
   }
 
+  get validateApiVisibility() {
+    return asyncMiddleware('quickApi.validateApiVisibility', async (req, res, next) => {
+      const {dentApiId: apiId, dentClient: client} = res.locals
+      if (!client.apiIsEnabled({api: apiId})) {
+        throw quickApi.#newAuthorizationError({
+          debugId: 'no-access-to-route',
+          message: "The client aren't authorized to access this route",
+        })
+      }
+    })
+  }
+
   rateLimit({ip: ipLimiting=true, client: clientLimiting=true}={}) {
     return asyncMiddleware('quickApi.rateLimit', async (req, res, next) => {
       const {dentApiId: apiId, dentClient: client} = res.locals

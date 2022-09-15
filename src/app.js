@@ -95,12 +95,7 @@ if (env.instSimRouter) {
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-  const err = new RichError({
-    httpCode: 404,
-    publicId: 'not-found',
-    publicMessage: 'Not Found',
-    logLevel: undefined,
-  })
+  const err = api.newNotFoundError()
   return next(err)
 });
 

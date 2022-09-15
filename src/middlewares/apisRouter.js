@@ -43,11 +43,12 @@ export const apisRouter = new (class {
     }
     return [
       // before
-      api.setId(apiId),
+      api.setId({apiId, clientIsFrontend}),
       timeout.ensure({id: 'full-route', timeoutSecs: env.quickApiRouteTimeout}),
       ...setCorsFlag,
       quickApi.parseAuthToken,
       getModel.client,
+      quickApi.validateApiVisibility,
 
       // frontend-call or backend-call middlewares
       ...apisRouter.#getApiTypeMiddlewares({clientIsFrontend}),

@@ -5,10 +5,12 @@ import {InMemory as Cache} from '../../cache/InMemory'
 import {timeInSeconds} from '../../utils/time'
 const {SECONDS, MINUTES, HOURS, DAYS} = timeInSeconds
 
+const API_CONFIG_ENABLED = 'enabled'
 const API_CONFIG_ALLOWED_HOSTS = 'allowedHosts'
 const API_CONFIG_RATE_LIMIT = 'rateLimit'
 const API_CONFIG_RECAPTCHA = 'recaptcha'
 const API_CONFIG_DEFAULT = {
+  [API_CONFIG_ENABLED]: {},
   [API_CONFIG_ALLOWED_HOSTS]: null,
   [API_CONFIG_RATE_LIMIT]: null,
   [API_CONFIG_RECAPTCHA]: {}
@@ -46,6 +48,18 @@ export class ApiClient {
 
     apiAllowedHosts({api='default', host}) {
       return this.#getApiConfig({api, config: API_CONFIG_ALLOWED_HOSTS}) || []
+    }
+
+    apiIsEnabled({api='default'}) {
+      const configValue = this.#getApiConfig({api, config: API_CONFIG_ENABLED})
+      if (typeof(configValue) === 'undefined') return true
+      return configValue
+    }
+    enableApi({api='default'}) {
+      return this.#setApiConfig({api, config: API_CONFIG_ENABLED, value: true})
+    }
+    disableApi({api='default', value}) {
+      return this.#setApiConfig({api, config: API_CONFIG_ENABLED, value: false})
     }
 
     static async all() {

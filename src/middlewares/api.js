@@ -3,7 +3,10 @@ import {RichError} from '../utils/RichError'
 import {TagSet} from '../utils/TagSet'
 
 export const api = new (class {
-  setId(apiId) {
+  setId({apiId, clientIsFrontend=false}) {
+    if (clientIsFrontend) {
+      apiId = `public-${apiId}`
+    }
     return (req, res, next) => {
       res.locals.dentApiId = apiId
       this.addInfo(res, {api: apiId})
@@ -16,6 +19,15 @@ export const api = new (class {
       res.locals.dentCorsOnError = true
       next()
     }
+  }
+
+  newNotFoundError() {
+    return new RichError({
+      httpCode: 404,
+      publicId: 'not-found',
+      publicMessage: 'Not Found',
+      logLevel: undefined,
+    })
   }
 
   getTags(res) {
