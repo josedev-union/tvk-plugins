@@ -103,7 +103,12 @@ def printjson(value):
     pretty = None
     if value is not None:
         if type(value) == str:
-            value = json.loads(value)
+            try:
+                value = json.loads(value)
+            except json.JSONDecodeError:
+                print("! COULDN'T DECODE JSON.")
+                print(value)
+                return value
         pretty = json.dumps(dict(value), indent=4)
     print(pretty)
     return pretty
@@ -139,7 +144,12 @@ print("\n## BODY")
 printjson(response.text)
 
 
-res = json.loads(response.text)
+res = None
+try:
+    res = json.loads(response.text)
+except Exception:
+    res = {'success': False}
+
 if not res['success']:
     sys.exit()
 
