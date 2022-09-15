@@ -1,6 +1,7 @@
 import {logger} from '../instrumentation/logger'
 import {RichError} from '../utils/RichError'
 import {TagSet} from '../utils/TagSet'
+import {env} from '../config/env'
 
 export const api = new (class {
   setId({apiId, clientIsFrontend=false}) {
@@ -79,8 +80,11 @@ export const api = new (class {
     }
     const requestInfo = api.getReqInfo(req)
     const apiInfo = api.getInfo(res)
+    const envInfo = api.getEnvInfo()
     richError.addDebugDetails({
-      requestInfo, apiInfo
+      requestInfo,
+      apiInfo,
+      envInfo,
     })
     api.addTags(res, richError.tags)
     return next(richError)
