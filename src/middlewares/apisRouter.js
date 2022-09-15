@@ -48,6 +48,7 @@ export const apisRouter = new (class {
       ...setCorsFlag,
       quickApi.parseAuthToken,
       getModel.client,
+      quickApi.validateClient,
       quickApi.validateApiVisibility,
 
       // frontend-call or backend-call middlewares

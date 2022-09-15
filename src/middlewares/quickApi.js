@@ -94,6 +94,18 @@ export const quickApi = new (class {
     })
   }
 
+  get validateClient() {
+    return asyncMiddleware('quickApi.validateClient', async (req, res, next) => {
+      const {dentClient: client} = res.locals
+      if (client.isRevoked()) {
+        throw quickApi.#newAuthorizationError({
+          debugId: 'token-revoked',
+          message: "This client access was revoked",
+        })
+      }
+    })
+  }
+
   rateLimit({ip: ipLimiting=true, client: clientLimiting=true}={}) {
     return asyncMiddleware('quickApi.rateLimit', async (req, res, next) => {
       const {dentApiId: apiId, dentClient: client} = res.locals

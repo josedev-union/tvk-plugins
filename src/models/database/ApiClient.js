@@ -24,12 +24,13 @@ const cache = Cache.build({
 export class ApiClient {
     static get COLLECTION_NAME() {return 'api_clients'}
 
-    constructor({id, secret, exposedSecret, createdAt = null, updatedAt = null, apisConfig = null}) {
+    constructor({id, secret, exposedSecret, createdAt = null, updatedAt = null, revoked=false, apisConfig = null}) {
         this.id = id
         this.secret = secret
         this.exposedSecret = exposedSecret
         this.createdAt = createdAt || Database.toTimestamp(new Date())
         this.updatedAt = updatedAt || this.createdAt
+        this.revoked = revoked
         this.apisConfig = apisConfig || {
           default: {...API_CONFIG_DEFAULT},
         }
@@ -60,6 +61,10 @@ export class ApiClient {
     }
     disableApi({api='default', value}) {
       return this.#setApiConfig({api, config: API_CONFIG_ENABLED, value: false})
+    }
+
+    isRevoked() {
+      return this.revoked === true
     }
 
     static async all() {
