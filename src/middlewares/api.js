@@ -38,8 +38,20 @@ export const api = new (class {
   }
 
   getReqInfo(req) {
-    const reqInfo = api.#pick(req, ['method', 'headers', 'protocol', 'query', 'baseurl', 'ip', 'originalurl', 'path'])
-    return reqInfo
+    return api.#pick(req, ['method', 'headers', 'protocol', 'query', 'baseurl', 'ip', 'originalurl', 'path'])
+  }
+
+  getEnvInfo() {
+    return {
+      env: env.name,
+      logLevel: env.logLevel,
+      isProduction: env.isProduction(),
+      isStaging: env.isStaging(),
+      isTest: env.isTest(),
+      isDevelopment: env.isDevelopment(),
+      isLocal: env.isLocal(),
+      isNonLocal: env.isNonLocal(),
+    }
   }
 
   addInfo(res, extraInfo) {
