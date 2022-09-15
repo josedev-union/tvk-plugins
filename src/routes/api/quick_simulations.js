@@ -35,7 +35,8 @@ export default apisRouter.newRouterBuilder((newApiRoute) => {
         force: {
           mode: 'ortho',
           blend: 'poisson',
-          style_mode: 'auto',
+          style_mode: 'mix_manual',
+          mix_factor: 0,
         },
         customizable: [],
       }),
