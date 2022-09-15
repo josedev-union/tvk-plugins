@@ -3,6 +3,7 @@ import {env} from '../../config/env'
 import {logger} from '../../instrumentation/logger'
 import {idGenerator} from '../../models/tools/idGenerator'
 import {redisPubsub, buffersRedis, redisSubscribe} from "../../config/redis"
+import {RichError} from "../../utils/RichError"
 import {promisify} from "util"
 
 const readfile = promisify(fs.readFile)
