@@ -2,9 +2,9 @@
 
 (function() {
   // Constants
-  var API_HOST = 'http://localhost:3000'; // 'https://api.e91efc7.dentrino.ai';
-  var CLIENT_ID = 'ODMzOTc3MjE1MTY4NXptT2tqKDh3T2U3KGV7Tg';
-  var CLIENT_EXPOSED_SECRET = '1939bab1f861a44227d9588cf2ae56c767b6e6cd83461d86ba5e4ef2812c28c9';
+  var API_HOST = 'https://api.e91efc7.dentrino.ai';
+  var CLIENT_ID = 'ODMzNDQwMDMzNzU4OFdLIztKNFJd_testext_front';
+  var CLIENT_EXPOSED_SECRET = '2dba220dc7b1ffbbf96104bd4cdce7fabf2ec00af8083ccbb8fa51ba12c2924e';
   var RECAPTCHA_KEY = '6LchqJohAAAAAFDSqgRsIeICsXduWJtRkF4bw7Hk';
 
 

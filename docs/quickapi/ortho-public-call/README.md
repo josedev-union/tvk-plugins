@@ -1,17 +1,18 @@
-# Simulations API Documentation - Ortho
+# Simulations API Documentation - Ortho (public)
 
 ## Overview
-This document describes how Simulations API's Ortho feature works.
+This document describes how Simulations API's public Ortho feature works.
 
-To execute a ortho simulation the client will need to do a single request `POST /api/quick-simulations/ortho` sending the photo binary as `multipart/form-data`. The response will be in JSON format as detailed along this document.
+To execute a ortho simulation the client will need to do a single request `POST /public-api/simulations/ortho` sending the photo binary as `multipart/form-data`. The response will be in JSON format as detailed along this document.
 
-This request is meant to be done directly by the client (via web browser or mobile devices), using a server as middleman won't work since we have ip rate limiting to prevent abuse usage.
+This request is meant to be done directly by the client (via web browser or mobile devices), using a server as middleman won't work since we have ip rate limiting to prevent malicious usage.
 
 ### Request Structure
-- POST /api/quick-simulations/ortho
+- POST /public-api/simulations/ortho
 - Headers
   - `Authorization: Bearer $SIGNATURE`
   - `Content-Type: multipart/form-data`
+  - `Origin: https://client-host.com` (for CORS)
 - Body _(format: multipart/form-data)_
   - `img_photo: $PHOTO_BLOB`
 
@@ -21,8 +22,9 @@ This request is meant to be done directly by the client (via web browser or mobi
 curl -XPOST \
   -H "Authorization: Bearer $SIGNATURE" \
   -H "Content-Type: multipart/form-data" \
+  -H "Origin: https://client-host.com" \
 	-F "img_photo=@$PHOTO_PATH" \
-	"https://api.e91efc7.dentrino.ai/api/quick-simulations/ortho"
+	"https://api.e91efc7.dentrino.ai/public-api/simulations/ortho"
 ```
 
 ### Response Structure
@@ -107,3 +109,31 @@ All the parameters sent in the body as `multipart/form-data` must be hashed as M
   }
 }
 ```
+
+
+## Demo
+
+### Install Dependencies
+To run serve the demo webapp first install the dependencies by running:
+```
+# Install Dependencies
+pip install -r requirements.txt
+```
+
+
+### Credentials
+By default it'll use the following credentials (for testing purposes only):
+```
+CLIENT_ID=ODMzNDQwMDMzNzU4OFdLIztKNFJd_testext_front
+CLIENT_SECRET=2dba220dc7b1ffbbf96104bd4cdce7fabf2ec00af8083ccbb8fa51ba12c2924e
+```
+
+### Sending requests via webapp
+This folder can be served as a small webapp that send requests to the api. To do that run:
+```
+httpserver
+
+# Starting server on ('127.0.0.1', 8080)
+```
+
+After starting the server access `http://localhost:8080` to send photos to the api. You can also read the files `index.html` and `js/*` to understand better how to make those requests.
