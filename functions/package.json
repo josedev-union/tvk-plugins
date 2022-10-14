@@ -6,7 +6,7 @@
     "shell": "firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase -P dentrino-staging deploy --only functions:simulations_api",
-    "import_config": "firebase -P dentrino-staging functions:config:get > .runtimeconfig.json",
+    "save_config": "firebase -P dentrino-staging functions:config:get > .runtimeconfig.json",
     "logs": "firebase functions:log"
   },
   "engines": {
@@ -15,7 +15,7 @@
   "main": "index.js",
   "dependencies": {
     "@slack/web-api": "^6.7.2",
-    "firebase-admin": "^10.0.2",
+    "firebase-admin": "^11.0.1",
     "firebase-functions": "^3.18.0",
     "uuid": "^9.0.0"
   },
