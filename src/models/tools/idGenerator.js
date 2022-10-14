@@ -7,7 +7,7 @@ const MAX_TIMESTAMP = 9999999999999
 export const idGenerator = new (class {
     newOrderedId({uuidSize = 8} = {}) {
         const reverseTimestamp = MAX_TIMESTAMP - getNowInMillis()
-        return simpleCrypto.base64(`${reverseTimestamp}${simpleCrypto.genericUUID(uuidSize)}`, {padding: false})
+        return simpleCrypto.urlSafeBase64(`${reverseTimestamp}${simpleCrypto.genericUUID(uuidSize)}`, {padding: false})
     }
 
     newSecret() {
