@@ -185,18 +185,20 @@ export class RichError extends Error {
     return simplified
   }
 
-  logText() {
+  logText({details=true}={}) {
     let text = `[${this.debugId}]: ${this.debugMessage}`
     text += `\n${this.stack}`
     if (this.cause) {
-      text += `\n[cause] ${RichError.logTextFor(this.cause)}`
+      text += `\n[cause] ${RichError.logTextFor(this.cause, {details})}`
     }
-    text += `\nDETAILS: ${JSON.stringify(this.debugDetails || {})}`
+    if (details) {
+      text += `\nDETAILS: ${JSON.stringify(this.debugDetails || {})}`
+    }
     return text
   }
 
-  static logTextFor(err) {
-    if (err.logText) return err.logText()
+  static logTextFor(err, opts={}) {
+    if (err.logText) return err.logText(opts)
     else return `${err.message}\n${err.stack}`
   }
 
@@ -212,6 +214,7 @@ export class RichError extends Error {
         message: this.debugMessage,
         details: this.debugDetails,
         tags: this.tags,
+        errorLog: this.logText({details: false}),
       }
     }
     return dt
