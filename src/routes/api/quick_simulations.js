@@ -87,6 +87,7 @@ function newQuickSimulationRoute() {
     } = uploadResults
 
     res.status(200).json({
+      id: simulation.id,
       success: true,
       originalExt: photo.extension,
       beforeUrl,
