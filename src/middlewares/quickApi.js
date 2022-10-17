@@ -400,68 +400,103 @@ export const quickApi = new (class {
           message: "Didn't received token",
         })
       }
-      const parts = token.split(':')
-      if (parts.length !== 2 || !parts[0] || !parts[1]) {
-        throw quickApi.#newAuthorizationError({
-          message: `Token invalid "${token}"`,
-          details: {
-            receivedToken: token,
-          }
-        })
-      }
 
-      const b64Claims = parts[0]
-      const signature = parts[1]
-
-      const claimsJson = simpleCrypto.base64Decode(b64Claims)
-      if (!claimsJson) {
-        throw quickApi.#newAuthorizationError({
-          message: `Couldn't decode claims json "${b64Claims}"`,
-          details: {
-            receivedToken: token,
-            receivedClaimsInBase64: b64Claims,
-          }
-        })
-      }
-
-      const claims = quickApi.#parseJson(claimsJson)
-      if (!claims) {
-        throw quickApi.#newAuthorizationError({
-          message: `claims is not a valid json - ${claimsJson}`,
-          details: {
-            receivedToken: token,
-            receivedClaims: claimsJson,
-          }
-        })
-      }
-      MANDATORY_CLAIMS.forEach((claimKey) => {
-        if (!claims[claimKey]) {
-          throw quickApi.#newAuthorizationError({
-            debugId: 'missing-claim',
-            message: `Missing '${claimKey}' on claims - "${token}`,
-            details: {
-              receivedToken: token,
-              receivedClaims: claimsJson,
-              mandatoryClaims: MANDATORY_CLAIMS,
-            }
-          })
-        }
-      })
-
-      const clientId = claims[CLAIM_CLIENT_ID]
+      const {clientId, parsedToken} = quickApi.#parseToken(token)
       api.addInfo(res, {
         "security": {
           "client-id": clientId,
-          "signature": signature,
+          "signature": parsedToken.signature,
         },
       })
+
       res.locals.dentClientId = clientId
-      res.locals.dentParsedToken = {
-        claimsJson: claimsJson,
-        claims: claims,
-        signature: signature,
+      res.locals.dentParsedToken = parsedToken
+    })
+  }
+
+  #parseToken(token) {
+    if (token.includes(':')) {
+      return quickApi.#parseSignedClaims(token)
+    } else {
+      return quickApi.#parseSimpleClaims(token)
+    }
+  }
+
+  #parseSimpleClaims(b64Claims) {
+    const {claims, claimsJson} = quickApi.#decodeClaimsJson(b64Claims)
+    const clientId = claims[CLAIM_CLIENT_ID]
+    const parsedToken = {
+      claims,
+      claimsJson,
+    }
+    return {
+      clientId,
+      parsedToken,
+    }
+  }
+
+  #parseSignedClaims(token) {
+    const parts = token.split(':')
+    if (parts.length !== 2 || !parts[0] || !parts[1]) {
+      throw quickApi.#newAuthorizationError({
+        message: `Token invalid "${token}"`,
+        details: {
+          receivedToken: token,
+        }
+      })
+    }
+
+    const b64Claims = parts[0]
+    const signature = parts[1]
+
+    const {claims, claimsJson} = quickApi.#decodeClaimsJson(b64Claims)
+    MANDATORY_CLAIMS.forEach((claimKey) => {
+      if (!claims[claimKey]) {
+        throw quickApi.#newAuthorizationError({
+          debugId: 'missing-claim',
+          message: `Missing '${claimKey}' on claims - "${token}`,
+          details: {
+            receivedToken: token,
+            receivedClaims: claimsJson,
+            mandatoryClaims: MANDATORY_CLAIMS,
+          }
+        })
       }
     })
+
+    const clientId = claims[CLAIM_CLIENT_ID]
+    const parsedToken = {
+      claimsJson,
+      claims,
+      signature,
+    }
+
+    return {clientId, parsedToken}
+  }
+
+  #decodeClaimsJson(b64Claims) {
+    const claimsJson = simpleCrypto.base64Decode(b64Claims)
+    if (!claimsJson) {
+      throw quickApi.#newAuthorizationError({
+        message: `Couldn't decode claims json "${b64Claims}"`,
+        details: {
+          receivedToken: token,
+          receivedClaimsInBase64: b64Claims,
+        }
+      })
+    }
+
+    const claims = quickApi.#parseJson(claimsJson)
+    if (!claims) {
+      throw quickApi.#newAuthorizationError({
+        message: `claims is not a valid json - ${claimsJson}`,
+        details: {
+          receivedToken: token,
+          receivedClaims: claimsJson,
+        }
+      })
+    }
+    return {claims, claimsJson}
   }
 
   get validateRecaptcha() {
@@ -470,18 +505,18 @@ export const quickApi = new (class {
       const {claims} = res.locals.dentParsedToken
       const {secret, minScore} = client.apiRecaptcha({api: apiId}) || {}
       if (!secret) {
-        this.#addRecaptchaTag(res, 'skipped')
+        quickApi.#addRecaptchaTag(res, 'skipped')
         return
       }
       const token = claims[CLAIM_RECAPTCHA_TOKEN]
       const data = await quickApi.#requestRecaptcha({secret, token, minScore, ip: req.ip})
       const isValid = data && data.success && data.score >= minScore
       if (isValid) {
-        this.#addRecaptchaTag(res, 'accepted')
+        quickApi.#addRecaptchaTag(res, 'accepted')
       } else if (env.recaptchaIgnore) {
-        this.#addRecaptchaTag(res, 'ignored')
+        quickApi.#addRecaptchaTag(res, 'ignored')
       } else {
-        this.#addRecaptchaTag(res, 'refused')
+        quickApi.#addRecaptchaTag(res, 'refused')
         throw quickApi.#newAuthorizationError({
           debugId: 'failed-recaptcha',
           message: `Failed on recaptcha validation`,
@@ -514,7 +549,8 @@ export const quickApi = new (class {
 
   validateAuthToken({secretKey}) {
     return asyncMiddleware('quickApi.validateAuthToken', async (req, res) => {
-      const client = res.locals.dentClient
+      const {dentClient: client, dentIsFrontendRoute: isFrontEndRoute} = res.locals
+      if (!isFrontEndRoute) return
       const {claimsJson, signature} = res.locals.dentParsedToken
       const isValid = simpleCrypto.verifySignatureHmac(signature, claimsJson, client[secretKey])
       if (!isValid) {
@@ -532,6 +568,9 @@ export const quickApi = new (class {
 
   get validateBodyData() {
     return asyncMiddleware('quickApi.validateBodyData', async (req, res) => {
+      if (!res.locals.dentIsFrontendRoute) {
+        return
+      }
       const {claims} = res.locals.dentParsedToken
       const {dataJson: bodyDataJson, images} = res.locals.dentParsedBody
 

@@ -10,6 +10,7 @@ export const api = new (class {
     }
     return (req, res, next) => {
       res.locals.dentApiId = apiId
+      res.locals.dentIsFrontendRoute = clientIsFrontend
       this.addInfo(res, {api: apiId})
       next()
     }
