@@ -70,7 +70,12 @@ app.use(function(req, res, next) {
 app.use(Sentry.Handlers.requestHandler());
 app.use(morganLogger);
 app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+app.use(express.json({
+  limit: '2mb',
+  verify: (req, res, buf, encoding) => {
+    req.rawBodyJson = buf.toString(encoding || 'utf8')
+  },
+}));
 app.use(compression());
 app.use(helmet());
 app.use(cookieParser());

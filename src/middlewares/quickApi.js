@@ -218,23 +218,7 @@ export const quickApi = new (class {
 
   get parseRequestBody() {
     return asyncMiddleware('quickApi.parseRequestBody', async (req, res, next) => {
-      const form = formidable({
-        multiples: true,
-        maxFileSize: env.quickApiMaxUploadSizeBytes,
-        maxFieldsSize: 1*1024*1024,
-        allowEmptyFiles: false,
-        fileWriteStreamHandler: (file) => {
-          const writable = new BufferWritable()
-          writable.on('finish', () => {
-            file.content = writable.content
-          })
-          return writable
-        }
-      })
-      const timeoutManager = timeout.getManager(res)
-      if (timeoutManager) timeoutManager.onTimeout(() => form.pause())
-      const {files, fields} = await helpers.parseForm(form, req)
-      api.addInfo(res, {multipartData: {files, fields}})
+      const {fields, files} = await quickApi.#readBody(req, res)
       const {data: dataJson} = fields
       const data = quickApi.#parseJson(dataJson) || {}
       const images = {}
@@ -249,6 +233,38 @@ export const quickApi = new (class {
         images,
       }
     })
+  }
+
+  async #readBody(req, res) {
+    if (req.rawBodyJson) {
+      return {
+        fields: {data: req.rawBodyJson},
+        files: {},
+      }
+    } else {
+      return quickApi.#readBodyForm(req, res)
+    }
+  }
+
+  async #readBodyForm(req, res) {
+    const form = formidable({
+      multiples: true,
+      maxFileSize: env.quickApiMaxUploadSizeBytes,
+      maxFieldsSize: 1*1024*1024,
+      allowEmptyFiles: false,
+      fileWriteStreamHandler: (file) => {
+        const writable = new BufferWritable()
+        writable.on('finish', () => {
+          file.content = writable.content
+        })
+        return writable
+      }
+    })
+    const timeoutManager = timeout.getManager(res)
+    if (timeoutManager) timeoutManager.onTimeout(() => form.pause())
+    const {files, fields} = await helpers.parseForm(form, req)
+    api.addInfo(res, {multipartData: {files, fields}})
+    return {fields, files}
   }
 
   dataToSimulationOptions({customizable, force={}}={}) {
