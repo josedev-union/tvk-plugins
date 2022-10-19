@@ -30,8 +30,8 @@ export class Database {
         return admin.firestore.Timestamp.fromDate(date)
     }
 
-    save(obj, objPath, overwrite=false) {
-        return this.#getRef(objPath).set(adaptObj(obj), {merge: !overwrite})
+    save(obj, objPath, overwrite=false, attrs=undefined) {
+        return this.#getRef(objPath).set(adaptObj(obj, {attrs}), {merge: !overwrite})
     }
 
     startQuery(collectionName) {
@@ -65,20 +65,22 @@ export class Database {
     }
 }
 
-function adaptObj(value) {
+function adaptObj(value, {attrs}={}) {
     if (typeof(value) !== 'object') return value
-    var obj = Object.assign({}, value)
+    const obj = {}
+    if (!attrs) {
+      Object.assign(obj, value)
+    } else {
+      attrs.forEach(attr => {
+        obj[attr] = value[attr]
+      })
+    }
     Object.keys(obj).forEach(key => {
         if (obj[key] instanceof admin.firestore.Timestamp) {
             obj[key] = obj[key].toDate()
         }
     })
     return obj
-    // var obj = {}
-    // Object.keys(value).forEach(key => {
-    //     obj[key] = value[key]
-    // })
-    // return obj
 }
 
 function normalizePath(objPath) {

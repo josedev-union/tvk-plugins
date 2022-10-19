@@ -27,6 +27,12 @@ const REQUESTER_METADATA = {
   },
 }
 
+const METADATA_WHITELIST = [
+  'mode', 'blend',
+  'mix_factor', 'style_mode', 'whiten', 'brightness',
+  'feedback_score', 'capture_type', 'external_customer_id',
+]
+
 export class SmileTask {
   static get COLLECTION_NAME() { return 'smile_tasks' }
   static get RequesterType() { return RequesterType }
@@ -46,6 +52,7 @@ export class SmileTask {
     this.filepathPreprocessed = attrs.filepathPreprocessed
     this.filepathSideBySide = attrs.filepathSideBySide
     this.filepathSideBySideSmall = attrs.filepathSideBySideSmall
+    this.metadata = {}
 
     this.requester = attrs.requester
   }
@@ -59,8 +66,13 @@ export class SmileTask {
     return this.status === 'finished'
   }
 
-  async save() {
-    return Database.instance().save(this, `${SmileTask.COLLECTION_NAME}/${this.id}`)
+  async save({attrs}={}) {
+    return Database.instance().save(this, `${SmileTask.COLLECTION_NAME}/${this.id}`, false, attrs)
+  }
+
+  addMetadata(metadata) {
+    metadata = sanitizer.onlyKeys(metadata, METADATA_WHITELIST)
+    Object.assign(this.metadata, metadata)
   }
 
   uploadsDir() {
@@ -81,6 +93,12 @@ export class SmileTask {
     const data = await Database.instance().get(`${SmileTask.COLLECTION_NAME}/${id}`)
     if (!data) return null
     return new SmileTask(data)
+  }
+
+  static async all() {
+    const db = Database.instance()
+    const query = db.startQuery(SmileTask.COLLECTION_NAME)
+    return await db.getResults(SmileTask, query)
   }
 
   static newId(createdAt) {

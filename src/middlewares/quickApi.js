@@ -14,6 +14,7 @@ import {simpleCrypto} from "../shared/simpleCrypto"
 import {RichError} from "../utils/RichError"
 import {logger} from '../instrumentation/logger'
 import {ApiClient} from "../models/database/ApiClient"
+import {QuickSimulation} from "../models/database/QuickSimulation"
 
 import {helpers} from '../routes/helpers'
 import {asyncMiddleware, invokeMiddleware, invokeMiddlewares} from './expressAsync'
@@ -27,27 +28,6 @@ const readfile = promisify(fs.readFile)
 
 const DEFAULT_RATE_LIMIT_MAX_SUCCESSES_PER_SECOND = 1.0
 const SIGNATURE_HEADER = 'Authorization'
-
-// Params Constants
-const PKEY_STYLE_MODE = 'style_mode'
-const PKEY_MIX_FACTOR = 'mix_factor'
-const PKEY_MODE = 'mode'
-const PKEY_BLEND = 'blend'
-const PKEY_BRIGHTNESS = 'brightness'
-const PKEY_WHITEN = 'whiten'
-const ALL_PKEYS = [PKEY_STYLE_MODE, PKEY_MIX_FACTOR, PKEY_MODE, PKEY_BLEND, PKEY_BRIGHTNESS, PKEY_WHITEN]
-
-const PVALUE_STYLE_MODE_AUTO = 'auto'
-const PVALUE_STYLE_MODE_MIX = 'mix_manual'
-const STYLE_PVALUES = [PVALUE_STYLE_MODE_AUTO, PVALUE_STYLE_MODE_MIX]
-
-const PVALUE_MODE_COSMETIC = 'cosmetic'
-const PVALUE_MODE_ORTHO = 'ortho'
-const MODE_PVALUES = [PVALUE_MODE_COSMETIC, PVALUE_MODE_ORTHO]
-
-const PVALUE_BLEND_POISSON = 'poisson'
-const PVALUE_BLEND_REPLACE = 'replace'
-const BLEND_PVALUES = [PVALUE_BLEND_POISSON, PVALUE_BLEND_REPLACE]
 
 // Claims Constants
 const CLAIM_CLIENT_ID = 'client_id'
@@ -267,117 +247,39 @@ export const quickApi = new (class {
     return {fields, files}
   }
 
-  dataToSimulationOptions({customizable, force={}}={}) {
+  dataToQuickSimulation({customizable, force={}}={}) {
     return asyncMiddleware('quickApi.dataToSimulationOptions', async (req, res, next) => {
+      const clientId = res.locals.dentClientId
       const {data: bodyData, images: bodyImages} = res.locals.dentParsedBody
       await quickApi.#processImageFields({
         images: bodyImages,
         imgFields: ['img_photo'],
       })
 
-      const originalData = Object.assign({}, bodyData, force)
+      const params = Object.assign({}, bodyData, force)
       if (typeof(customizable) !== 'undefined') {
-        Object.keys(originalData).forEach((key) => {
+        Object.keys(params).forEach((key) => {
           if (!customizable.includes(key) && !(key in force)) {
-            delete originalData[key]
+            delete params[key]
           }
         })
       }
 
-      const data = {}
-      // mode
-      data[PKEY_MODE] = quickApi.#normalizeValue(originalData[PKEY_MODE] || MODE_PVALUES[0])
-      quickApi.#validateValues(res, data, PKEY_MODE, MODE_PVALUES)
-
-      // blend
-      data[PKEY_BLEND] = quickApi.#normalizeValue(originalData[PKEY_BLEND] || BLEND_PVALUES[0])
-      quickApi.#validateValues(res, data, PKEY_BLEND, BLEND_PVALUES)
-
-      // brightness
-      data[PKEY_BRIGHTNESS] = quickApi.#normalizeValue(originalData[PKEY_BRIGHTNESS] || '0.0')
-      const {value: brightnessVal} = quickApi.#validateFloat(res, data, PKEY_BRIGHTNESS, -1.0, 1.0)
-      data[PKEY_BRIGHTNESS] = brightnessVal + 1.0
-
-      // whiten
-      data[PKEY_WHITEN] = quickApi.#normalizeValue(originalData[PKEY_WHITEN] || '0.0')
-      const {value: whitenVal} = quickApi.#validateFloat(res, data, PKEY_WHITEN, 0.0, 1.0)
-      data[PKEY_WHITEN] = whitenVal
-
-      // style_mode
-      data[PKEY_STYLE_MODE] = quickApi.#normalizeValue(originalData[PKEY_STYLE_MODE] || STYLE_PVALUES[0])
-      data[PKEY_MIX_FACTOR] = quickApi.#normalizeValue(originalData[PKEY_MIX_FACTOR])
-
-      if (data[PKEY_STYLE_MODE] === PVALUE_STYLE_MODE_MIX) {
-        if (!data[PKEY_MIX_FACTOR]) {
-          throw quickApi.#newBadParamsError({
-            message: `'${PKEY_MIX_FACTOR}' is mandatory when ${PKEY_STYLE_MODE}='${PVALUE_STYLE_MODE_MIX}'`
-          })
-        }
-      } else {
-        delete data[PKEY_MIX_FACTOR]
-      }
-
-      quickApi.#validateValues(res, data, PKEY_STYLE_MODE, STYLE_PVALUES)
-      if (data[PKEY_MIX_FACTOR]) {
-        const {value: mixFactorVal} = quickApi.#validateFloat(res, data, PKEY_MIX_FACTOR, 0.0, 1.0)
-        data[PKEY_MIX_FACTOR] = mixFactorVal
-      }
-
-      // createOptions
-      res.locals.dentSimulationOptions = quickApi.#normalizedDataToSimulationOptions(data)
-    })
-  }
-
-  #normalizedDataToSimulationOptions({whiten, brightness, mode, blend, style_mode, mix_factor}) {
-    const options = {
-      whiten,
-      brightness,
-      ortho: mode === PVALUE_MODE_ORTHO,
-      poisson: blend === PVALUE_BLEND_POISSON,
-    }
-    if (style_mode === PVALUE_STYLE_MODE_MIX) {
-      options.mix_factor = mix_factor
-    }
-    return options
-  }
-
-  #validateFloat(res, data, key, min, max) {
-    const FLOAT_REGEXP = /^-?[0-9]+(\.[0-9]+)?$/
-    const val = data[key]
-    if (val.match(FLOAT_REGEXP)) {
-      const fval = parseFloat(val)
-      if ((fval-min) >= -0.0001 && (max-fval) >= -0.0001) {
-        return {value: fval}
-      }
-    }
-
-    throw quickApi.#newBadParamsError({
-      message: `'${val}' is not valid value for '${key}' option`,
-      details: {
-        key: key,
-        receivedValue: val
-      }
-    })
-  }
-
-  #validateValues(res, data, key, values) {
-    const val = data[key]
-    if (!values.includes(val)) {
-      throw quickApi.#newBadParamsError({
-        message: `'${val}' is not valid value for '${key}' option`,
-        details: {
-          key: key,
-          receivedValue: val,
-          validValues: values,
-        }
+      const quickSimulation = QuickSimulation.build({
+        clientId,
+        params,
+        metadata: bodyData,
       })
-    }
-    return {success: true}
-  }
-
-  #normalizeValue(val) {
-    if (typeof(val) === 'undefined' || val === null) return null
-    return val.toString().trim().toLowerCase()
+      quickSimulation.normalizeData()
+      const errors = quickSimulation.validationErrors()
+      if (errors.length > 0) {
+        const {message} = errors[0]
+        throw quickApi.#newBadParamsError({
+          message,
+        })
+      }
+      res.locals.dentQuickSimulation = quickSimulation
+    })
   }
 
   async #processImageFields({images, imgFields}) {

@@ -10,7 +10,7 @@ import {timeInSeconds, nowReadable} from '../../utils/time'
 const {SECONDS, MINUTES, HOURS, DAYS} = timeInSeconds
 
 const me = new (class {
-  async upload({simulation, uploadsConfig, info, clientId}) {
+  async upload({bucket, simulation, uploadsConfig, info, clientId}) {
     const success = simulation.success
     const folder = path.join((success ? 'success' : 'fail'), `${simulation.id}SIM_${clientId}CLI`)
     const rawUploadsConfig = [{
@@ -34,6 +34,7 @@ const me = new (class {
       rawUploadsConfig.push(cfg.rawCfg)
     })
     await me.rawUpload({
+      bucket,
       uploads: rawUploadsConfig,
       folder: folder,
     })
@@ -46,13 +47,13 @@ const me = new (class {
     return results
   }
 
-  async rawUpload({uploads = [], folder, root='.api-simulations/'}) {
+  async rawUpload({bucket, uploads = [], folder, root='.api-simulations/'}) {
     const fullfolder = path.join(root, folder)
     uploads.forEach((up) => {
       up.filepath = path.join(fullfolder, up.filename)
     })
 
-    const uploadTasks = uploads.map((up) => me.#upload(up))
+    const uploadTasks = uploads.map((up) => me.#upload(bucket, up))
     await Promise.all(uploadTasks)
 
     const gcloudSigner = GcloudPresignedCredentialsProvider.build()
@@ -69,8 +70,7 @@ const me = new (class {
     return uploads
   }
 
-  async #upload({content, filepath}) {
-    const bucket = env.gcloudBucket
+  async #upload(bucket, {content, filepath}) {
     await new Promise((resolve, reject) => {
       const file = storageFactory()
       .bucket(bucket)

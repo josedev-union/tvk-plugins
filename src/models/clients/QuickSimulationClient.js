@@ -16,8 +16,8 @@ export class QuickSimulationClient {
   static pubsubRequestKey() { return `${PUBSUB_PREFIX}:request` }
   static pubsubResponseKey(id) { return `${PUBSUB_PREFIX}:${id}:response` }
 
-  async requestSimulation({photo, photoPath, expiresAt=0, options={}, safe=false}) {
-    const id = idGenerator.newOrderedId()
+  async requestSimulation({id, photo, photoPath, expiresAt=0, options={}, safe=false}) {
+    if (!id) id = idGenerator.newOrderedId()
     logger.verbose(`[${id}] Requesting Simulation (${JSON.stringify(options)})`)
     const photoRedisKey = `pipeline:listener:${id}:photo`
     if (!photo) photo = await readfile(photoPath)
