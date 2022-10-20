@@ -45,17 +45,17 @@ export default apisRouter.newRouterBuilder((newApiRoute) => {
     ]
   }, newQuickSimulationRoute())
 
-  newApiRoute({
-    apiId: 'get-simulation',
-    method: 'GET',
-    path: '/:id',
-  }, getSimulationRoute())
+  // newApiRoute({
+  //   apiId: 'get-simulation',
+  //   method: 'GET',
+  //   path: '/:id',
+  // }, getSimulationRoute())
 
-  newApiRoute({
-    apiId: 'list-simulations',
-    method: 'GET',
-    path: '/',
-  }, listSimulationsRoute())
+  // newApiRoute({
+  //   apiId: 'list-simulations',
+  //   method: 'GET',
+  //   path: '/',
+  // }, listSimulationsRoute())
 
   newApiRoute({
     apiId: 'patch-simulation',
