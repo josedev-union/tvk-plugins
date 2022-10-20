@@ -148,8 +148,12 @@ export class QuickSimulation {
     }
 
     // Metadata
-    this.metadata[MDATA_KEY_SCORE] = normalizer.toFloat(this.metadata[MDATA_KEY_SCORE])
-    this.metadata[MDATA_KEY_CAPTURE] = normalizer.toChoicesString(this.metadata[MDATA_KEY_CAPTURE])
+    if (typeof(this.metadata[MDATA_KEY_SCORE]) !== 'undefined') {
+      this.metadata[MDATA_KEY_SCORE] = normalizer.toFloat(this.metadata[MDATA_KEY_SCORE])
+    }
+    if (typeof(this.metadata[MDATA_KEY_CAPTURE]) !== 'undefined') {
+      this.metadata[MDATA_KEY_CAPTURE] = normalizer.toChoicesString(this.metadata[MDATA_KEY_CAPTURE])
+    }
   }
 
   validationErrors() {

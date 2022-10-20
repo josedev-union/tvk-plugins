@@ -183,7 +183,7 @@ function simulationAsJson(dbSimulation) {
   return {
     id: dbSimulation.id,
     createdAt: dbSimulation.createdAt.toDate(),
-    params: dbSimulation.params,
     metadata: dbSimulation.metadata,
+    // params: dbSimulation.params,
   }
 }

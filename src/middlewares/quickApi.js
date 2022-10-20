@@ -315,14 +315,24 @@ export const quickApi = new (class {
   get parseAuthToken() {
     return asyncMiddleware('quickApi.parseAuthToken', async (req, res) => {
       const token = quickApi.#getToken(req)
-      if (!token) {
+      const queryClientId = req.query.clientId
+      delete req.query.clientId
+      if (!token && !queryClientId) {
         throw quickApi.#newAuthorizationError({
           debugId: 'no-token',
           message: "Didn't received token",
         })
       }
 
-      const {clientId, parsedToken} = quickApi.#parseToken(token)
+      let clientId = undefined
+      let parsedToken = {}
+      if (token) {
+        const tokenProcessed = quickApi.#parseToken(token)
+        clientId = tokenProcessed.clientId
+        parsedToken = tokenProcessed.parsedToken
+      } else {
+        clientId = queryClientId
+      }
       api.addInfo(res, {
         "security": {
           "client-id": clientId,

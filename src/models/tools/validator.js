@@ -1,5 +1,3 @@
-
-
 export const validator = new (class {
   validateNumber(options) {
     const errors = []
@@ -52,13 +50,15 @@ export const validator = new (class {
     return true
   }
 
-  #checkType({options: {value}, type, fieldName, addTo: errors}) {
+  #checkType({options: {value, fieldName}, type, addTo: errors}) {
+    if (!validator.#isPresent(value)) return false
     if (typeof(value) === type) return false
     errors.push({message: `${fieldName} must be of type ${type} (received ${value})`})
     return true
   }
 
   #checkMinMax({options: {value, min, max, fieldName}, addTo: errors}) {
+    if (!validator.#isPresent(value)) return false
     const vmin = typeof(min) === 'undefined' ? Number.MIN_VALUE : min
     const vmax = typeof(max) === 'undefined' ? Number.MAX_VALUE : max
     if ((value-vmin) >= -0.0001 && (vmax-value) >= -0.0001) {
@@ -77,7 +77,7 @@ export const validator = new (class {
   }
 
   #checkChoices({options: {value, choices, fieldName}, addTo: errors}) {
-    if (typeof(choices) === 'undefined') return false
+    if (!validator.#isPresent(value)) return false
     if (choices.includes(value)) return false
     errors.push({message: `${fieldName} must be one of the options: ${choices.join(', ')} (received ${value})`})
     return true
