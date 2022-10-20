@@ -116,7 +116,8 @@ export class RichError extends Error {
     })
 
     if (obj.constructor !== Object) {
-      newObj['[!]CONSTRUCTOR'] = obj.constructor.name
+      let constructor = obj.constructor ? obj.constructor.name : undefined
+      newObj['[!]CONSTRUCTOR'] = constructor
     }
 
     if (Object.keys(obj).length > 25) {
