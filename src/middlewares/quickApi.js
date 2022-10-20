@@ -1,6 +1,6 @@
 import fs from 'fs'
 import {promisify} from "util"
-import formidable from 'formidable'
+import multer from 'multer'
 import FileType from 'file-type'
 import axios from 'axios'
 
@@ -35,6 +35,14 @@ const CLAIM_PARAMS_HASHED = 'params_hashed'
 const CLAIM_RECAPTCHA_TOKEN = 'recaptcha_token'
 const ALL_CLAIMS = [CLAIM_CLIENT_ID, CLAIM_RECAPTCHA_TOKEN, CLAIM_PARAMS_HASHED]
 const MANDATORY_CLAIMS = [CLAIM_CLIENT_ID, CLAIM_PARAMS_HASHED]
+
+const multerUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fieldSize: 1*1024*1024,
+    fileSize: env.quickApiMaxUploadSizeBytes,
+  }
+})
 
 export const quickApi = new (class {
   get enforceCors() {
@@ -227,22 +235,17 @@ export const quickApi = new (class {
   }
 
   async #readBodyForm(req, res) {
-    const form = formidable({
-      multiples: true,
-      maxFileSize: env.quickApiMaxUploadSizeBytes,
-      maxFieldsSize: 1*1024*1024,
-      allowEmptyFiles: false,
-      fileWriteStreamHandler: (file) => {
-        const writable = new BufferWritable()
-        writable.on('finish', () => {
-          file.content = writable.content
-        })
-        return writable
-      }
+    await invokeMiddleware(multerUpload.any(), req, res)
+    const fields = req.body || {}
+    const allFiles = req.files || []
+    const files = {}
+    allFiles.forEach((file) => {
+      file.originalFilename = file.originalname
+      file.content = file.buffer
+      delete file.buffer
+      files[file.fieldname] = file
     })
-    const timeoutManager = timeout.getManager(res)
-    if (timeoutManager) timeoutManager.onTimeout(() => form.pause())
-    const {files, fields} = await helpers.parseForm(form, req)
+
     api.addInfo(res, {multipartData: {files, fields}})
     return {fields, files}
   }
