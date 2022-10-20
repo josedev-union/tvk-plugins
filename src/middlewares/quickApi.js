@@ -30,9 +30,9 @@ const DEFAULT_RATE_LIMIT_MAX_SUCCESSES_PER_SECOND = 1.0
 const SIGNATURE_HEADER = 'Authorization'
 
 // Claims Constants
-const CLAIM_CLIENT_ID = 'client_id'
-const CLAIM_PARAMS_HASHED = 'params_hashed'
-const CLAIM_RECAPTCHA_TOKEN = 'recaptcha_token'
+const CLAIM_CLIENT_ID = 'clientId'
+const CLAIM_PARAMS_HASHED = 'paramsHashed'
+const CLAIM_RECAPTCHA_TOKEN = 'recaptchaToken'
 const ALL_CLAIMS = [CLAIM_CLIENT_ID, CLAIM_RECAPTCHA_TOKEN, CLAIM_PARAMS_HASHED]
 const MANDATORY_CLAIMS = [CLAIM_CLIENT_ID, CLAIM_PARAMS_HASHED]
 
@@ -256,7 +256,7 @@ export const quickApi = new (class {
       const {data: bodyData, images: bodyImages} = res.locals.dentParsedBody
       await quickApi.#processImageFields({
         images: bodyImages,
-        imgFields: ['img_photo'],
+        imgFields: ['imgPhoto'],
       })
 
       const params = Object.assign({}, bodyData, force)

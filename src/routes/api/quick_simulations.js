@@ -23,7 +23,7 @@ export default apisRouter.newRouterBuilder((newApiRoute) => {
           mode: 'cosmetic',
           blend: 'poisson',
         },
-        customizable: ['mix_factor', 'style_mode', 'whiten', 'brightness'],
+        customizable: ['mixFactor', 'styleMode', 'whiten', 'brightness'],
       }),
     ]
   }, newQuickSimulationRoute())
@@ -37,8 +37,8 @@ export default apisRouter.newRouterBuilder((newApiRoute) => {
         force: {
           mode: 'ortho',
           blend: 'poisson',
-          style_mode: 'mix_manual',
-          mix_factor: 0,
+          styleMode: 'mix_manual',
+          mixFactor: 0,
         },
         customizable: [],
       }),
@@ -50,13 +50,25 @@ export default apisRouter.newRouterBuilder((newApiRoute) => {
     method: 'GET',
     path: '/:id',
   }, getSimulationRoute())
+
+  newApiRoute({
+    apiId: 'list-simulations',
+    method: 'GET',
+    path: '/',
+  }, listSimulationsRoute())
+
+  newApiRoute({
+    apiId: 'patch-simulation',
+    method: 'PATCH',
+    path: '/:id',
+  }, patchSimulationRoute())
 })
 
 function newQuickSimulationRoute() {
   return asyncRoute(async (req, res) => {
     const timeoutManager = timeout.getManager(res)
     const dbSimulation = res.locals.dentQuickSimulation
-    const photo = res.locals.dentParsedBody.images['img_photo']
+    const photo = res.locals.dentParsedBody.images['imgPhoto']
     const clientId = res.locals.dentClientId
     const bucket = env.gcloudBucket
 
@@ -103,12 +115,15 @@ function newQuickSimulationRoute() {
       result: {getUrlSigned: resultUrl},
     } = uploadResults
 
-    res.status(200).json({
-      id: dbSimulation.id,
+    res.status(201).json({
       success: true,
-      originalExt: photo.extension,
-      beforeUrl,
-      resultUrl,
+      simulation: {
+        ...simulationAsJson(dbSimulation),
+        storage: {
+          beforeUrl,
+          resultUrl,
+        }
+      }
     })
   })
 }
@@ -116,16 +131,59 @@ function newQuickSimulationRoute() {
 function getSimulationRoute() {
   return asyncRoute(async (req, res) => {
     const simulationId = req.params.id
+    const clientId = res.locals.dentClientId
     const dbSimulation = await QuickSimulation.get(simulationId)
-    if (!dbSimulation) {
+    if (!dbSimulation || dbSimulation.clientId !== clientId) {
       throw api.newNotFoundError()
     }
 
     res.status(200).json({
-      id: dbSimulation.id,
-      params: dbSimulation.params,
-      metadata: dbSimulation.metadata,
       success: true,
+      simulation: simulationAsJson(dbSimulation),
     })
   })
+}
+
+function patchSimulationRoute() {
+  return asyncRoute(async (req, res) => {
+    const simulationId = req.params.id
+    const clientId = res.locals.dentClientId
+    const dbSimulation = await QuickSimulation.get(simulationId)
+    if (!dbSimulation || dbSimulation.clientId !== clientId) {
+      throw api.newNotFoundError()
+    }
+
+    const {data} = res.locals.dentParsedBody
+    dbSimulation.addMetadata(data)
+    const {errors} = await dbSimulation.save({attrs: ['metadata']})
+
+    res.status(200).json({
+      success: true,
+      simulation: simulationAsJson(dbSimulation),
+    })
+  })
+}
+
+function listSimulationsRoute() {
+  return asyncRoute(async (req, res) => {
+    const clientId = res.locals.dentClientId
+    const params = Object.assign({}, req.query)
+    params.clientId = clientId
+    const listParams = {filters: params}
+    const dbSimulations = await QuickSimulation.list(listParams)
+
+    res.status(200).json({
+      success: true,
+      simulations: dbSimulations.map(s => simulationAsJson(s))
+    })
+  })
+}
+
+function simulationAsJson(dbSimulation) {
+  return {
+    id: dbSimulation.id,
+    createdAt: dbSimulation.createdAt.toDate(),
+    params: dbSimulation.params,
+    metadata: dbSimulation.metadata,
+  }
 }

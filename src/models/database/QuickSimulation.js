@@ -7,8 +7,8 @@ import {Enum} from '../tools/Enum'
 import * as path from 'path'
 
 // Params Constants
-const PARAM_KEY_STYLE_MODE = 'style_mode'
-const PARAM_KEY_MIX_FACTOR = 'mix_factor'
+const PARAM_KEY_STYLE_MODE = 'styleMode'
+const PARAM_KEY_MIX_FACTOR = 'mixFactor'
 const PARAM_KEY_MODE = 'mode'
 const PARAM_KEY_BLEND = 'blend'
 const PARAM_KEY_BRIGHTNESS = 'brightness'
@@ -49,9 +49,9 @@ const PARAM_VALUE_DEFAULT_BRIGHTNESS = 0.0
 const PARAM_VALUE_DEFAULT_WHITEN = 0.0
 
 // Metadata Constants
-const MDATA_KEY_SCORE = 'feedback_score'
-const MDATA_KEY_CAPTURE = 'capture_type'
-const MDATA_KEY_CUSTOMER_ID = 'external_customer_id'
+const MDATA_KEY_SCORE = 'feedbackScore'
+const MDATA_KEY_CAPTURE = 'captureType'
+const MDATA_KEY_CUSTOMER_ID = 'externalCustomerId'
 const ALL_MDATA_KEYS = [
   MDATA_KEY_SCORE,
   MDATA_KEY_CAPTURE,
@@ -72,10 +72,10 @@ const PARAMS_WHITELIST = ALL_PARAM_KEYS
 const METADATA_WHITELIST = ALL_MDATA_KEYS
 const STORAGE_WHITELIST = [
   'bucket',
-  'directory_path',
-  'before_path',
-  'original_path',
-  'result_path',
+  'directoryPath',
+  'beforePath',
+  'originalPath',
+  'resultPath',
 ]
 
 export class QuickSimulation {
@@ -102,8 +102,18 @@ export class QuickSimulation {
     return simulation
   }
 
-  async save({attrs}={}) {
-    return Database.instance().save(this, `${QuickSimulation.COLLECTION_NAME}/${this.id}`, false, attrs)
+  async save({attrs, skipNormalization, skipValidation}={}) {
+    if (!skipNormalization) {
+      this.normalizeData()
+    }
+    if (!skipValidation) {
+      const errors = this.validationErrors()
+      if (errors.length > 0) {
+        return {errors}
+      }
+    }
+    const result = Database.instance().save(this, `${QuickSimulation.COLLECTION_NAME}/${this.id}`, false, attrs)
+    return {result}
   }
 
   addMetadata(metadata) {
@@ -229,9 +239,17 @@ export class QuickSimulation {
     return new QuickSimulation(data)
   }
 
-  static async all() {
+  static async list({orderBy='id', orderAsc=false, filters={}}) {
     const db = Database.instance()
-    const query = db.startQuery(QuickSimulation.COLLECTION_NAME)
+    let query = db.startQuery(QuickSimulation.COLLECTION_NAME)
+
+    Object.entries(filters).forEach(([field, value]) => {
+      query = query.where(field, '==', value)
+    })
+
+    query = query
+      .orderBy(orderBy, (orderAsc ? 'asc' : 'desc'))
+      .limit(100)
     return await db.getResults(QuickSimulation, query)
   }
 
