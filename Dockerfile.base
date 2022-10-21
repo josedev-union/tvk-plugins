@@ -1,6 +1,6 @@
 FROM node:16.16.0-alpine3.16
 MAINTAINER support@tastytech.ca
-LABEL tastytech.dentrino-web.base.version="1.0.5"
+LABEL tastytech.dentrino-web.base.version="1.0.6"
 
 # Dependencies Pre-downloading
 ARG BUILD_DIR=/build
