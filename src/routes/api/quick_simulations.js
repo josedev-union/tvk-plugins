@@ -96,12 +96,20 @@ function newQuickSimulationRoute() {
         },
         info: {
           ip: req.ip,
+          params: dbSimulation.params,
+          metadata: dbSimulation.metadata,
         },
       })
     }, {id: 'wait-firestorage-upload'})
 
-    Object.entries(uploadResults).forEach(([resultName, result]) => {
-      dbSimulation.addStorageData({[`${resultName}Path`]: result.filepath})
+    Object.entries(uploadResults.results).forEach(([resultName, result]) => {
+      if (result.filepath) {
+        dbSimulation.addStorageData({[`${resultName}Path`]: result.filepath})
+      }
+    })
+    dbSimulation.addStorageData({
+      bucket,
+      directoryPath: uploadResults.folderpath,
     })
 
     await dbSimulation.save()
@@ -113,7 +121,7 @@ function newQuickSimulationRoute() {
     const {
       before: {getUrlSigned: beforeUrl},
       result: {getUrlSigned: resultUrl},
-    } = uploadResults
+    } = uploadResults.results
 
     res.status(201).json({
       success: true,

@@ -64,7 +64,7 @@ export const apisRouter = new (class {
     ]
   }
 
-  #getApiTypeMiddlewares({clientIsFrontend=false}) {
+  #getApiTypeMiddlewares({clientIsFrontend}) {
     if (clientIsFrontend) {
       return [
         quickApi.enforceCors,

@@ -40,7 +40,8 @@ const multerUpload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fieldSize: 1*1024*1024,
-    fileSize: env.quickApiMaxUploadSizeBytes,
+    fileSize: env.quickApiMaxUploadSizeBytes+1024,
+    files: 1,
   }
 })
 
@@ -50,9 +51,10 @@ export const quickApi = new (class {
       const {dentApiId: apiId, dentClient: client} = res.locals
       const hosts = client.apiAllowedHosts({api: apiId})
       const enforce = cors.enforceCors({
-        hosts: hosts,
+        hosts,
         methods: ['POST'],
-        headers: [SIGNATURE_HEADER]
+        headers: [SIGNATURE_HEADER],
+        skipValidation: !hosts || hosts.length === 0,
       })
       return await invokeMiddleware(enforce, req, res)
     })
@@ -244,6 +246,16 @@ export const quickApi = new (class {
       file.content = file.buffer
       delete file.buffer
       files[file.fieldname] = file
+
+      if (file.size >= env.quickApiMaxUploadSizeBytes) {
+        file.content = '[HIDDEN]'
+        throw quickApi.#newBadParamsError({
+          message: `The param ${file.fieldname} is too big`,
+          details: {
+            receivedFile: file,
+          }
+        })
+      }
     })
 
     api.addInfo(res, {multipartData: {files, fields}})
@@ -434,13 +446,14 @@ export const quickApi = new (class {
     return asyncMiddleware('quickApi.validateRecaptcha', async (req, res) => {
       const {dentApiId: apiId, dentClient: client} = res.locals
       const {claims} = res.locals.dentParsedToken
-      const {secret, minScore} = client.apiRecaptcha({api: apiId}) || {}
+      const {secret, minScore=0.75} = client.apiRecaptcha({api: apiId}) || {}
       if (!secret) {
         quickApi.#addRecaptchaTag(res, 'skipped')
         return
       }
       const token = claims[CLAIM_RECAPTCHA_TOKEN]
-      const data = await quickApi.#requestRecaptcha({secret, token, minScore, ip: req.ip})
+
+      const data = await quickApi.#requestRecaptcha({secret, token, ip: req.ip})
       const isValid = data && data.success && data.score >= minScore
       if (isValid) {
         quickApi.#addRecaptchaTag(res, 'accepted')
@@ -464,8 +477,7 @@ export const quickApi = new (class {
     api.addTags(res, {'recaptcha:validation': tagValue})
   }
 
-  async #requestRecaptcha({secret, token, minScore, ip}) {
-    if (typeof(minScore) === 'undefined' || minScore === null) minScore = 0.75
+  async #requestRecaptcha({secret, token, ip}) {
     const {data} = await axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${secret}&response=${token}&remoteip=${ip}`)
     return data
   }
@@ -483,7 +495,7 @@ export const quickApi = new (class {
       const {dentClient: client, dentIsFrontendRoute: isFrontEndRoute} = res.locals
       if (!isFrontEndRoute) return
       const {claimsJson, signature} = res.locals.dentParsedToken
-      const isValid = simpleCrypto.verifySignatureHmac(signature, claimsJson, client[secretKey])
+      const isValid = claimsJson && simpleCrypto.verifySignatureHmac(signature, claimsJson, client[secretKey])
       if (!isValid) {
         throw quickApi.#newAuthorizationError({
           message: `Claims JSON signature doesn't match it`,

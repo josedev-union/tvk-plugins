@@ -1,109 +1,718 @@
 import fs from 'fs'
 import {promisify} from "util"
 import FormData from 'form-data'
+import { Factory } from 'rosie'
 
-import {redisPubsub, buffersRedis, redisSubscribe, clearRedis} from '../../src/config/redis'
-import {env} from '../../src/config/env'
+import axios from 'axios'
+
+import {redisPubsub, buffersRedis, redisSubscribe, clearRedis, redisUnsubscribeAll} from '../../src/config/redis'
 import {QuickSimulationClient} from "../../src/models/clients/QuickSimulationClient"
+import {QuickSimulation} from "../../src/models/database/QuickSimulation"
+import {ApiSimulationClient} from "../helpers/ApiSimulationClient"
+import {firebaseHelpers} from '../helpers/firebaseHelpers'
+import querystring from 'querystring'
+
+import {env} from '../../src/config/env'
+jest.mock('../../src/config/env' , () => {
+  const {env: originalEnv} = jest.requireActual('../../src/config/env')
+  const env = {...originalEnv}
+  env.quickApiRouteTimeout = 0.5
+  env.quickApiMaxUploadSizeMb = 0.3
+  env.quickApiMaxUploadSizeBytes = env.quickApiMaxUploadSizeMb * 1024 * 1024
+  return {
+    __esModule: true,
+    env,
+  }
+})
+
+import {storageFactory} from '../../src/models/storage/storageFactory'
+jest.mock('../../src/models/storage/storageFactory', () => {
+  const path = require('path')
+  const { BufferWritable } = require('../../src/utils/BufferWritable')
+  const fac = {
+    bucket: jest.fn().mockImplementation((bucketname) => {
+      fac.bucketname = bucketname
+      return fac
+    }),
+
+    file: jest.fn().mockImplementation((filepath) => {
+      fac.filepath = filepath
+      fac.filename = filepath.match(/[^\/]+\..*$/)
+      return fac
+    }),
+
+    createWriteStream: jest.fn().mockImplementation(() => {
+      if (!fac.uploads) fac.uploads = {}
+      if (!fac.uploads[fac.bucketname]) fac.uploads[fac.bucketname] = {}
+      const filepath = fac.filepath
+      const filename = fac.filename
+
+      const writable = new BufferWritable()
+      writable.on('finish', () => {
+        fac.uploads[fac.bucketname][filepath] = writable.content
+        fac.uploads[fac.bucketname][filename] = writable.content
+      })
+      return writable
+    }),
+
+    getSignedUrl: jest.fn().mockImplementation((opts) => {
+      if (!fac.signedUrls) fac.signedUrls = {}
+      const filepath = fac.filepath
+      const filename = fac.filename
+      const signedUrl = `http://gcloud.presigned.com/${fac.bucketname}/${fac.filepath}`
+      fac.signedUrls[filename] = signedUrl
+      return Promise.resolve([signedUrl])
+    })
+  }
+  return {
+    storageFactory: () => fac
+  }
+})
+
+jest.mock('axios', () => {
+  return {
+    post: jest.fn().mockImplementation(async (url) => {
+      if (!url.includes('/recaptcha/')) {
+        throw new Error('Axios was mocked for test and only accepts recaptcha requests')
+      }
+
+      const successMatch = url.match(/success_([0-9.]+)/)
+      if (successMatch) {
+        const score = parseFloat(successMatch[1])
+        return {data: {success: true, score: score}}
+      } else if (url.includes('error')) {
+        throw new Error('Fake exception on recaptcha verify')
+      } else {
+        return {data: {success: false}}
+      }
+    })
+  }
+})
 
 import app from '../../src/app'
 app.enable('trust proxy')
-import supertest from 'supertest'
-const request = supertest(app)
+import request from 'supertest'
 
 const readfile = promisify(fs.readFile)
 const redisSetex = promisify(buffersRedis.setex).bind(buffersRedis)
 const redisGet = promisify(buffersRedis.get).bind(buffersRedis)
+const storage = storageFactory()
 
-beforeEach(async () => {
-  await clearRedis()
+let photoAfterSimulation
+let photoBefore
+let photoInput
+let bigPhotoInput
+
+beforeAll(async () => {
+  await firebaseHelpers.ensureTestEnv()
+  photoAfterSimulation = await readfile('./test/fixtures/photo_after_simulation.jpg')
+  photoBefore = await readfile('./test/fixtures/photo.jpg')
+  photoInput = await readfile('./test/fixtures/photo.jpg')
+  bigPhotoInput = await readfile('./test/fixtures/face-1.1mb.jpg')
 })
 
-describe(`on a successful request`, () => {
-  let response
-  let simulationRequest
+const VALID_FORMAT_COMBINATIONS = [
+  {isPublicCall: true , auth: 'signed-claims'        , body: 'formdata'},
+  {isPublicCall: false, auth: 'signed-claims'        , body: 'formdata'},
+  {isPublicCall: false, auth: 'simple-claims'        , body: 'formdata'},
+  {isPublicCall: false, auth: 'querystring-client-id', body: 'formdata'},
+]
 
-  beforeEach(async () => {
-    const photoPath = './test/fixtures/photo.jpg'
-    //const photo = await readfile(photoPath)
-    const mixFactor = 0.85
-    setTimeout(() => mockWorkerRequest(), 0)
-    await new Promise(r => setTimeout(r, 100));
-    response = await postSimulation(photoPath, mixFactor)
-    //simulationRequest, response = await Promise.all([
-    //  mockWorkerRequest(),
-    //  postSimulation(photoPath, mixFactor)
-    //])
+describe('POST simulations/ortho', () => {
+  describeCommonErrors({mode: 'ortho'})
+  describeSimulationErrors({mode: 'ortho'})
+  describe.each(VALID_FORMAT_COMBINATIONS)(`on a successful request (format = %o)`, (formatCfg) => {
+    let response
+    let bucketname = 'dentrino-test.appspot.com'
+
+    beforeAll(async () => {
+      const result = await prepareAndRunSimulation({
+        mode: 'ortho',
+        requestCfg: {
+          format: formatCfg,
+        }
+      })
+      response = result.response
+    })
+
+    describeSimulationMetadataChanges(() => {
+      return {response}
+    })
+    describeSimulationStorageChanges(() => {
+      return {response, bucketname}
+    })
+
+    test(`respond 201`, async () => {
+      const err = response.body.error || {}
+      expect(response.status).toBe(201)
+      expect(response.body.success).toEqual(true)
+    })
+
+    test(`create a new simulation with the params used`, async () => {
+      const simulation = await QuickSimulation.get(response.body.simulation.id)
+      expect(simulation.params).toEqual({
+        mode: 'ortho',
+        blend: 'poisson',
+        styleMode: 'mix_manual',
+        mixFactor: 0,
+        whiten: 0,
+        brightness: 0,
+      })
+    })
   })
-
-  test(`respond 200`, async () => {
-    console.log(response.body)
-    expect(response.status).toBe(200)
-  })
-
-  //test(`response json has a descriptor on how to upload the image`, async () => {
-  //  expect(response.body.uploadDescriptor).toEqual({
-  //    verb: 'put',
-  //    url: `${UPLOAD_SIGNED_URL}/smile.jpg`,
-  //    headers: {
-  //      'Content-Type': CONTENT_TYPE,
-  //      'Content-MD5': IMAGE_MD5,
-  //      'x-goog-content-length-range': `0,${UPLOAD_MAX_SIZE}`
-  //    }
-  //  })
-  //})
-
-  //test(`response json has smile task id`, async () => {
-  //  const smileTaskId = response.body.smileTaskId
-  //  const smileTask = await SmileTask.get(smileTaskId)
-  //  expect(smileTask.id).toEqual(smileTaskId)
-  //})
-
-  //test(`response json has result and original images path`, async () => {
-  //  const smileTaskId = response.body.smileTaskId
-  //  const smileTask = await SmileTask.get(smileTaskId)
-  //  expect(response.body.resultPath).toEqual(smileTask.filepathResult)
-  //  expect(response.body.originalPath).toEqual(smileTask.filepathUploaded)
-  //  expect(response.body.preprocessedPath).toEqual(smileTask.filepathPreprocessed)
-  //  expect(response.body.sideBySidePath).toEqual(smileTask.filepathSideBySide)
-  //  expect(response.body.sideBySideSmallPath).toEqual(smileTask.filepathSideBySideSmall)
-  //})
-
-  //test(`response json has the websockets path to track the progress`, async () => {
-  //  const wsPath = response.body.progressWebsocket
-  //  const smileTaskId = response.body.smileTaskId
-  //  const smileTask = await SmileTask.get(smileTaskId)
-
-  //  expect(wsPath).toEqual(`/ws/smile-tasks/${smileTask.id}`)
-  //  expect(smileTask).toBeTruthy()
-  //})
 })
 
-function postSimulation(photoPath, mixFactor, ip='127.0.0.0') {
-  const form = new FormData()
-  form.append('data', JSON.stringify({mix_factor: mixFactor}))
-  form.append('img_photo', fs.readFileSync(photoPath), {filename: 'photo.jpg', contentType: 'image/jpeg'})
+describe('POST simulations/cosmetic', () => {
+  describeCommonErrors({mode: 'cosmetic'})
+  describeSimulationErrors({mode: 'cosmetic'})
 
-  return request
-    .post(`/api/quick-simulations`)
-    .set('Content-Type', 'multipart/form-data;boundary='+form.getBoundary())
-    //.set('Authorization', `Bearer ${token}`)
-    .set('X-Forwarded-For', ip)
-    .send(form.getBuffer())
+  describe.each(VALID_FORMAT_COMBINATIONS)(`on a successful request (format = %o)`, (formatCfg) => {
+    let response
+    let bucketname = 'dentrino-test.appspot.com'
+
+    beforeAll(async () => {
+      const result = await prepareAndRunSimulation({
+        mode: 'cosmetic',
+        requestCfg: {
+          format: formatCfg,
+          params: {
+            data: {
+              captureType: "camera",
+              externalCustomerId: "customer123",
+              feedbackScore: 2.75,
+              ignoredField: 'ignoredvalue',
+              whiten: 0.5,
+              brightness: 0.6,
+              styleMode: 'mix_manual',
+              mixFactor: 0.7,
+            },
+          },
+        }
+      })
+      response = result.response
+    })
+
+    describeSimulationMetadataChanges(() => {
+      return {response, bucketname}
+    })
+    describeSimulationStorageChanges(() => {
+      return {response, bucketname}
+    })
+
+    test(`respond 201`, async () => {
+      const err = response.body.error || {}
+      expect(response.status).toBe(201)
+      expect(response.body.success).toEqual(true)
+    })
+
+    test(`create a new simulation with the params used`, async () => {
+      const simulation = await QuickSimulation.get(response.body.simulation.id)
+      expect(simulation.params).toEqual({
+        mode: 'cosmetic',
+        blend: 'poisson',
+        styleMode: 'mix_manual',
+        mixFactor: 0.7,
+        whiten: 0.5,
+        brightness: 0.6,
+      })
+    })
+  })
+})
+
+describe('PATCH simulations/:id', () => {
+  describeCommonErrors({mode: 'update'})
+  describeSingleSimulationErrors({mode: 'update'})
+
+  const PATCH_FORMAT_COMBINATIONS = [
+    {isPublicCall: true , auth: 'signed-claims'        , body: 'json'},
+    {isPublicCall: false, auth: 'querystring-client-id', body: 'json'},
+    {isPublicCall: false, auth: 'signed-claims'        , body: 'formdata'},
+  ]
+  describe.each(PATCH_FORMAT_COMBINATIONS)(`on a successful request (format = %o)`, (formatCfg) => {
+    let response
+
+    beforeAll(async () => {
+      const result = await prepareAndRunSimulation({
+        mode: 'update',
+        mockWorker: false,
+        simulationCfg: {
+          metadata: {
+            captureType: "file",
+            externalCustomerId: "old-customer123",
+            feedbackScore: 1.0,
+          },
+        },
+        requestCfg: {
+          format: formatCfg,
+          params: {
+            data: {
+              captureType: "camera",
+              externalCustomerId: "customer123",
+              feedbackScore: 2.75,
+              ignoredField: 'ignoredvalue',
+            }
+          }
+        }
+      })
+
+      response = result.response
+    })
+
+    describeSimulationMetadataChanges(() => {
+      return {response}
+    })
+
+    test(`respond 200`, async () => {
+      expect(response.status).toBe(200)
+      expect(response.body.success).toEqual(true)
+    })
+  })
+})
+
+function describeSimulationErrors({mode}) {
+  describe('simulation error scenarios', () => {
+    test(`respond 504 on timeout`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mockWorker: false,
+        mode,
+      })
+
+      expect(response.status).toBe(504)
+    })
+
+    test(`respond 422 when can't detect face`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mockWorkerError: `Generic simulation error`,
+        mode,
+      })
+
+      expect(response.status).toBe(422)
+      expect(response.body.error.id).toBe('simulation-error')
+      expect(response.body.error.message).toBe(`Error when executing simulation`)
+    })
+
+    test(`respond 422 on no face error`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mockWorkerError: `Couldn't detect face`,
+        mode,
+      })
+
+      expect(response.status).toBe(422)
+      expect(response.body.error.id).toBe('simulation-error')
+      expect(response.body.error.message).toBe(`Couldn't detect face`)
+    })
+
+    test(`respond 504 when worker get the task from the queue too late`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mockWorkerError: `Timeout: Celery got the task too late to execute`,
+        mode,
+      })
+
+      expect(response.status).toBe(504)
+      expect(response.body.error.id).toBe('timeout')
+    })
+
+    test(`respond 422 when image is too big`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mode,
+        requestCfg: {
+          params: {imgPhoto: bigPhotoInput}
+        }
+      })
+
+      expect(response.status).toBe(422)
+      expect(response.body.error.id).toBe('bad-params')
+    })
+  })
 }
 
-async function mockWorkerRequest() {
-  const simulationRequestJson = await redisSubscribe(QuickSimulationClient.pubsubRequestKey())
+function describeCommonErrors({mode}) {
+  describe('common error scenarios', () => {
+    test(`respond 403 on recaptcha fails`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mode,
+        requestCfg: {
+          recaptchaToken: 'fails',
+        }
+      })
+
+      expect(response.status).toBe(403)
+    })
+
+    test(`respond 403 on recaptcha low score`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mode,
+        apiClientCfg: {
+          recaptchaMinScore: 0.85,
+        },
+        requestCfg: {
+          recaptchaToken: 'success_0.8',
+        }
+      })
+
+      expect(response.status).toBe(403)
+    })
+
+    test(`ignores recaptcha failing when secret wasn't configured`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mode,
+        apiClientCfg: {
+          recaptchaSecret: null,
+        },
+        requestCfg: {
+          recaptchaToken: 'fails',
+        }
+      })
+
+      expect(response.status).toBeLessThan(299)
+    })
+
+    test(`respond 403 on not allowed origin`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mode,
+        apiClientCfg: {
+          allowedHosts: ['http://localhost:8080'],
+        },
+        requestCfg: {
+          origin: 'http://localhost:3000',
+        },
+      })
+
+      expect(response.status).toBe(403)
+    })
+
+    test(`respond 403 when origin is mandatory`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mode,
+        apiClientCfg: {
+          allowedHosts: ['http://localhost:8080'],
+        },
+        requestCfg: {
+          origin: null,
+        },
+      })
+
+      expect(response.status).toBe(403)
+    })
+
+    test(`ignores origin (CORS) validation when allowedHosts wasn't configured`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mode,
+        apiClientCfg: {
+          allowedHosts: [],
+        },
+        requestCfg: {
+          origin: 'http://localhost:3000',
+        }
+      })
+
+      expect(response.status).toBeLessThan(299)
+    })
+
+    test(`ignores CORS and recaptcha on backend call`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mode,
+        apiClientCfg: {
+          recaptchaSecret: 'recaptcha-secret',
+          allowedHosts: ['http://localhost:8080'],
+        },
+        requestCfg: {
+          origin: 'http://localhost:3000',
+          recaptchaToken: 'fails',
+          format: {isPublicCall: false}
+        },
+      })
+
+      expect(response.status).toBeLessThan(299)
+    })
+
+    test(`respond 403 on frontend call with simple claims auth format`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mode,
+        requestCfg: {
+          format: {
+            isPublicCall: true,
+            auth: 'simple-claims',
+          }
+        },
+      })
+
+      expect(response.status).toBe(403)
+    })
+
+    test(`respond 403 on frontend call with query string client_id auth format`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mode,
+        requestCfg: {
+          format: {
+            isPublicCall: true,
+            auth: 'querystring-client-id',
+          }
+        },
+      })
+
+      expect(response.status).toBe(403)
+    })
+
+    test(`respond 403 on bad client id`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mode,
+        requestCfg: {
+          clientId: 'no-client',
+          format: {
+            isPublicCall: false,
+            auth: 'querystring-client-id',
+          }
+        },
+      })
+
+      expect(response.status).toBe(403)
+    })
+
+    test(`respond 403 on bad client secret`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mode,
+        requestCfg: {
+          clientSecret: 'bad-secret',
+          format: {
+            isPublicCall: true,
+            auth: 'signed-claims',
+          }
+        },
+      })
+
+      expect(response.status).toBe(403)
+    })
+  })
+}
+
+function describeSingleSimulationErrors({mode}) {
+  describe('single simulation error scenarios', () => {
+    test(`respond 404 when simulation doesn't exist`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mode,
+        requestCfg: {
+          simulationId: 'inexistent-simulation-id',
+        }
+      })
+
+      expect(response.status).toBe(404)
+    })
+
+    test(`respond 404 when simulation belongs to other client`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mode,
+        simulationCfg: {
+          clientId: 'inexistent-client-id',
+        },
+        formatCfg: {
+          isPublicCall: false,
+          auth: 'querystring-client-id',
+        },
+      })
+
+      expect(response.status).toBe(404)
+    })
+  })
+}
+
+
+function describeSimulationMetadataChanges(getParams) {
+  describe(`common metadata changes`, () => {
+    let response
+
+    beforeEach(() => {
+      const params = getParams()
+      response = params.response
+    })
+
+    test(`create a new simulation`, async () => {
+      const simulation = await QuickSimulation.get(response.body.simulation.id)
+      expect(simulation).toBeTruthy()
+    })
+
+    test(`simulation has metadata`, async () => {
+      const simResponded = response.body.simulation
+      const simulation = await QuickSimulation.get(simResponded.id)
+      expect(simulation.id).toEqual(simResponded.id)
+      expect(simulation.metadata).toEqual({
+        captureType: 'camera',
+        externalCustomerId: 'customer123',
+        feedbackScore: 2.75,
+      })
+    })
+
+    test(`respond simulation metadata`, async () => {
+      const simResponded = response.body.simulation
+      const simulation = await QuickSimulation.get(simResponded.id)
+      expect(simResponded.metadata).toEqual(simulation.metadata)
+    })
+  })
+}
+
+function describeSimulationStorageChanges(getParams) {
+  describe(`storage data`, () => {
+    let response
+    let bucketname
+
+    beforeEach(() => {
+      const params = getParams()
+      response = params.response
+      bucketname = params.bucketname
+    })
+
+    test(`simulation has storage data`, async () => {
+      const simulation = await QuickSimulation.get(response.body.simulation.id)
+      expect(simulation.storage.bucket).toEqual(bucketname)
+      expect(simulation.storage.directoryPath).toBeDefined()
+      expect(simulation.storage.originalPath).toBeDefined()
+      expect(simulation.storage.resultPath).toBeDefined()
+      expect(simulation.storage.beforePath).toBeDefined()
+    })
+
+    test(`respond get signed urls`, async () => {
+      const simResponded = response.body.simulation
+      expect(simResponded.storage.resultUrl).toEqual(storage.signedUrls['result.jpg'])
+      expect(simResponded.storage.beforeUrl).toEqual(storage.signedUrls['before.jpg'])
+    })
+
+    test(`uploads original image`, async () => {
+      const uploaded = storage.uploads[bucketname]['original.jpg']
+      expect(uploaded).toEqual(photoInput)
+    })
+
+    test(`uploads result image`, async () => {
+      const uploaded = storage.uploads[bucketname]['result.jpg']
+      expect(uploaded).toEqual(photoAfterSimulation)
+    })
+
+    test(`uploads preprocessed image`, async () => {
+      const uploaded = storage.uploads[bucketname]['before.jpg']
+      expect(uploaded).toEqual(photoBefore)
+    })
+  })
+}
+
+async function prepareAndRunSimulation({mode='ortho', apiClientCfg={}, requestCfg={}, simulationCfg={}, mockWorker=true, mockWorkerError, doClearData=true}) {
+  const {
+    recaptchaSecret = 'recaptcha-secret',
+    recaptchaMinScore = 0.75,
+    allowedHosts = ['http://localhost:8080'],
+  } = apiClientCfg
+  let {
+    simulationId,
+    clientId,
+    clientSecret,
+    recaptchaToken = 'success_1.0',
+    origin = 'http://localhost:8080',
+    params = {},
+    format = {
+      isPublicCall: true,
+      auth: 'signed-claims',
+      body: 'formdata',
+    },
+  } = requestCfg
+  params = Object.assign({
+    imgPhoto: photoInput,
+    data: {
+      captureType: "camera",
+      externalCustomerId: "customer123",
+      feedbackScore: 2.75,
+      ignoredField: 'ignoredvalue',
+    },
+  }, params)
+
+  if (doClearData) {
+    await clearData()
+  }
+
+  if (mockWorker) {
+    mockWorkerRequest({error: mockWorkerError})
+  } else {
+    resetWorkerRequestMock()
+  }
+
+  const client = Factory.build('api_client', {})
+  const recaptchaAttrs = {}
+  if (recaptchaSecret) recaptchaAttrs.secret = recaptchaSecret
+  if (recaptchaMinScore) recaptchaAttrs.minScore = recaptchaMinScore
+  if (Object.keys(recaptchaAttrs).length > 0) {
+    client.setApiRecaptcha({api:'default'}, recaptchaAttrs)
+  }
+  allowedHosts.forEach((origin) => {
+    client.addApiAllowedHost({api:'default', host: origin})
+  })
+  await client.save()
+
+  let simulation = null
+  if (mode === 'update') {
+    simulationCfg = Object.assign({clientId: client.id}, simulationCfg)
+    simulation = Factory.build('quick_simulation', simulationCfg)
+    await simulation.save()
+  }
+
+  const simulationClient = new ApiSimulationClient({
+    sendRequest: sendSimulation,
+  })
+
+  if (!simulationId && simulation) {
+    simulationId = simulation.id
+  }
+  const response = await simulationClient.doRequest({
+    id: simulationId,
+    mode,
+    params,
+    origin,
+    format,
+    credentials: {
+      recaptchaToken,
+      clientId: clientId || client.id,
+      clientSecret: clientSecret || client.exposedSecret,
+    },
+  })
+  await new Promise(r => setTimeout(r, 200))
+  return {apiClient: client, response}
+}
+
+async function sendSimulation({method, url: path, query, headers={}, data}) {
+  if (Object.keys(query).length > 0) {
+    path += '?' + querystring.encode(query)
+  }
+  let req = request(app)[method](path)
+  Object.entries(headers).forEach(([header, value]) => {
+    req = req.set(header, value)
+  })
+
+  req = req.send(data)
+  return await new Promise((resolve, reject) => {
+    req.end((err, res) => {
+      if (err) reject(err)
+      else resolve(res)
+    })
+  })
+}
+
+function resetWorkerRequestMock() {
+  const channel = QuickSimulationClient.pubsubRequestKey()
+  redisUnsubscribeAll({channel})
+}
+
+async function mockWorkerRequest({error}) {
+  resetWorkerRequestMock()
+  const channel = QuickSimulationClient.pubsubRequestKey()
+  const simulationRequestJson = await redisSubscribe(channel)
   const simulationRequest = JSON.parse(simulationRequestJson)
   simulationRequest.photoReaded = await redisGet(simulationRequest.params.photo_redis_key)
   const resultRedisKey = `test-simulation:response:${simulationRequest.id}`
   const beforeRedisKey = `test-simulation:before:${simulationRequest.id}`
-  const photoAfterSimulation = await readfile('./test/fixtures/photo_after_simulation.jpg')
-  const photoBefore = await readfile('./test/fixtures/photo.jpg')
-  await redisSetex(resultRedisKey, 5, Buffer.from(photoAfterSimulation, 'binary'))
-  await redisSetex(beforeRedisKey, 5, Buffer.from(photoBefore, 'binary'))
+  if (error === 'no-result-on-redis') {
+    error = null
+  } else {
+    await redisSetex(resultRedisKey, 5, Buffer.from(photoAfterSimulation, 'binary'))
+    await redisSetex(beforeRedisKey, 5, Buffer.from(photoBefore, 'binary'))
+  }
   const responseChannel = QuickSimulationClient.pubsubResponseKey(simulationRequest.id)
-  const responseMessage = {
+  const responseMessage = error ? {error} : {
     status: 'success',
     data: {
       result_redis_key: resultRedisKey,
@@ -112,4 +721,9 @@ async function mockWorkerRequest() {
   }
   redisPubsub.publish(responseChannel, JSON.stringify(responseMessage))
   return simulationRequest
+}
+
+async function clearData() {
+  await firebaseHelpers.clearFirestore()
+  await clearRedis()
 }

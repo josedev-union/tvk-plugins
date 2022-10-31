@@ -9,11 +9,13 @@ const API_CONFIG_ENABLED = 'enabled'
 const API_CONFIG_ALLOWED_HOSTS = 'allowedHosts'
 const API_CONFIG_RATE_LIMIT = 'rateLimit'
 const API_CONFIG_RECAPTCHA = 'recaptcha'
-const API_CONFIG_DEFAULT = {
-  [API_CONFIG_ENABLED]: {},
-  [API_CONFIG_ALLOWED_HOSTS]: null,
-  [API_CONFIG_RATE_LIMIT]: null,
-  [API_CONFIG_RECAPTCHA]: {}
+const NEW_API_CONFIG_DEFAULT = () => {
+  return {
+    [API_CONFIG_ENABLED]: {},
+    [API_CONFIG_ALLOWED_HOSTS]: null,
+    [API_CONFIG_RATE_LIMIT]: null,
+    [API_CONFIG_RECAPTCHA]: {},
+  }
 }
 
 const cache = Cache.build({
@@ -32,7 +34,7 @@ export class ApiClient {
         this.updatedAt = updatedAt || this.createdAt
         this.revoked = revoked
         this.apisConfig = apisConfig || {
-          default: {...API_CONFIG_DEFAULT},
+          default: NEW_API_CONFIG_DEFAULT(),
         }
     }
 
@@ -105,7 +107,8 @@ export class ApiClient {
 
     setApiRecaptcha({api='default'}, {secret, minScore}) {
       const recaptchaCfg = this.#rawGetApiConfig({api, config: API_CONFIG_RECAPTCHA}) || {}
-      Object.assign(recaptchaCfg, {secret, minScore})
+      if (secret) recaptchaCfg.secret = secret
+      if (minScore) recaptchaCfg.minScore = minScore
       this.#setApiConfig({api, config: API_CONFIG_RECAPTCHA, value: recaptchaCfg})
     }
 

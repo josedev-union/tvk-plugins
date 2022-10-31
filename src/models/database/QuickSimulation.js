@@ -112,7 +112,7 @@ export class QuickSimulation {
         return {errors}
       }
     }
-    const result = Database.instance().save(this, `${QuickSimulation.COLLECTION_NAME}/${this.id}`, false, attrs)
+    const result = await Database.instance().save(this, `${QuickSimulation.COLLECTION_NAME}/${this.id}`, false, attrs)
     return {result}
   }
 

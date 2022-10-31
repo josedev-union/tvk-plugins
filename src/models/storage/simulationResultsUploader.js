@@ -10,9 +10,9 @@ import {timeInSeconds, nowReadable} from '../../utils/time'
 const {SECONDS, MINUTES, HOURS, DAYS} = timeInSeconds
 
 const me = new (class {
-  async upload({bucket, simulation, uploadsConfig, info, clientId}) {
+  async upload({bucket, simulation, uploadsConfig, info, clientId, root='.api-simulations/'}) {
     const success = simulation.success
-    const folder = path.join((success ? 'success' : 'fail'), `${simulation.id}SIM_${clientId}CLI`)
+    const folderpath = path.join(root, (success ? 'success' : 'fail'), `${simulation.id}SIM_${clientId}CLI`)
     const rawUploadsConfig = [{
       filename: 'info.json',
       content: me.#prettyJSON({
@@ -36,7 +36,7 @@ const me = new (class {
     await me.rawUpload({
       bucket,
       uploads: rawUploadsConfig,
-      folder: folder,
+      folderpath,
     })
 
     const results = {}
@@ -44,13 +44,15 @@ const me = new (class {
       const {rawCfg} = uploadsConfig[cfgKey]
       results[cfgKey] = rawCfg || {}
     })
-    return results
+    return {
+      results,
+      folderpath,
+    }
   }
 
-  async rawUpload({bucket, uploads = [], folder, root='.api-simulations/'}) {
-    const fullfolder = path.join(root, folder)
+  async rawUpload({bucket, uploads = [], folderpath}) {
     uploads.forEach((up) => {
-      up.filepath = path.join(fullfolder, up.filename)
+      up.filepath = path.join(folderpath, up.filename)
     })
 
     const uploadTasks = uploads.map((up) => me.#upload(bucket, up))

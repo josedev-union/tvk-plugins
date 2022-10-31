@@ -3,22 +3,24 @@ import {User} from '../src/models/database/User'
 import {Database} from '../src/models/database/Database'
 import {ApiClient} from '../src/models/database/ApiClient'
 import {SmileTask} from '../src/models/database/SmileTask'
+import {QuickSimulation} from '../src/models/database/QuickSimulation'
 import {simpleCrypto} from '../src/shared/simpleCrypto'
 import {idGenerator} from '../src/models/tools/idGenerator'
-import uuid from 'uuid/v4'
+import {v4 as uuid} from 'uuid'
 
 Factory.define('user', User)
-  .sequence('id', (i) => simpleCrypto.sha1(simpleCrypto.genericUUID()))
+  .sequence('id', (i) => simpleCrypto.sha1(uuid()))
   .sequence('email', (i) => `smilesuser${i}@fgmail.com`)
   .sequence('fullName', (i) => `Smiles User${i}`)
   .sequence('company', (i) => `Company ${i}`)
 
 Factory.define('api_client', ApiClient)
-  .sequence('id', (i) => simpleCrypto.sha1(simpleCrypto.genericUUID()))
-  .sequence('secret', (i) => simpleCrypto.sha1(simpleCrypto.genericUUID() + "abcdef"))
+  .sequence('id', (i) => simpleCrypto.sha1(uuid()))
+  .sequence('secret', (i) => simpleCrypto.sha1(uuid() + "abcdef"))
+  .sequence('exposedSecret', (i) => simpleCrypto.sha1(uuid() + "ghijkl"))
 
 Factory.define('smile_task', SmileTask)
-  .sequence('id', (i) => simpleCrypto.sha1(simpleCrypto.genericUUID()))
+  .sequence('id', (i) => simpleCrypto.sha1(uuid()))
   .sequence('userId', (i) => Factory.build('user').id)
   .sequence('clientId', (i) => Factory.build('api_client').id)
   .sequence('createdAt', (i) => Database.toTimestamp(new Date()))
@@ -35,4 +37,21 @@ Factory.define('smile_task', SmileTask)
       'type': SmileTask.RequesterType.inhouseClient(),
       'info': {'ip': '127.0.0.1'}
     }
+  })
+
+Factory.define('quick_simulation', QuickSimulation)
+  .sequence('id', (i) => simpleCrypto.sha1(uuid()))
+  .sequence('clientId', (i) => Factory.build('api_client').id)
+  .sequence('createdAt', (i) => Database.toTimestamp(new Date()))
+  .attrs({
+    metadata: {},
+    storage: {},
+    params: {
+      mode: 'cosmetic',
+      blend: 'poisson',
+      styleMode: 'mix_manual',
+      mixFactor: 0.7,
+      whiten: 0.5,
+      brightness: 0.6,
+    },
   })

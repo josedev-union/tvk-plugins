@@ -73,9 +73,9 @@ export class QuickSimulationClient {
       'result': resultPhoto,
       'before': beforePhoto
     }
-    if (!resultPhoto) {
+    if (!resultPhoto || !beforePhoto) {
       const errorObj = this.#throwError({
-        message: "Couldn't get simulation result",
+        message: "Couldn't find simulation result recorded",
         safe,
       })
       Object.assign(response, errorObj)
@@ -86,19 +86,49 @@ export class QuickSimulationClient {
 
   #throwError({message, safe}) {
     if (!message) return
+    if (message.match(/timeout/i)) {
+      return this.#throwTimeoutError({message, safe})
+    }
+    let publicMessage = 'Error when executing simulation'
+    let errorTag = 'generic'
+
+    if (message.match(/detect/i)) {
+      publicMessage = message
+      errorTag = 'no-face'
+    } else if (message.match(/find.*result/)) {
+      errorTag = 'no-result-recorded'
+    }
     const error = new RichError({
       publicId: 'simulation-error',
-      httpCode: 500,
-      publicMessage: "Error when executing simulation",
+      httpCode: 422,
+      publicMessage,
       debugMessage: message,
-      logLevel: 'debug',
-      tags: {'simulation:success': false},
+      logLevel: 'error',
+      tags: {
+        'simulation:success': false,
+        'simulation:error': errorTag,
+      },
     })
 
-    if (safe) {
-      return {error}
-    } else {
-      throw error
-    }
+    if (safe) return {error}
+    else throw error
+  }
+
+  #throwTimeoutError({message, safe}) {
+    const error = new RichError({
+      publicId: 'timeout',
+      httpCode: 504,
+      publicMessage: 'Operation took too long',
+      debugMessage: message,
+      logLevel: 'error',
+      tags: {
+        'simulation:success': false,
+        'error:timeout': 'simulation-queue-wait',
+        'simulation:error': 'queue-wait',
+      },
+    })
+
+    if (safe) return {error}
+    else throw error
   }
 }

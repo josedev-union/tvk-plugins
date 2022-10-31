@@ -2,7 +2,7 @@ const FALSE_STRINGS = ['', 'false', 'undefined', 'null', '0', 'no', '-1']
 
 export const env = new (class {
   name = process.env.NODE_ENV || 'development'
-  gcloudBucket = process.env.DENTRINO_GCLOUD_BUCKET
+  gcloudBucket = process.env.DENTRINO_GCLOUD_BUCKET || 'dentrino-test.appspot.com'
   port = normalizePort(process.env.PORT || '3000')
   host = process.env.HOST || '0.0.0.0'
   masterHost = process.env.MASTER_HOST
@@ -65,12 +65,12 @@ export const env = new (class {
   instSimRecaptchaSecretKey = process.env.DENTRINO_INSTSIM_RECAPTCHA_SECRET_KEY
   disableXForwardedForCheck = parseBool(process.env.DENTRINO_INSTSIM_DISABLE_X_FORWARDED_FOR_CHECK)
 
-  isProduction() { return this.name === 'production' }
-  isStaging() { return this.name === 'staging' }
-  isTest() { return this.name === 'test' }
-  isDevelopment() { return this.name === 'development' }
-  isLocal() { return this.isTest() || this.isDevelopment() }
-  isNonLocal() { return !this.isLocal() }
+  isProduction = () => this.name === 'production'
+  isStaging = () => this.name === 'staging'
+  isTest = () => this.name === 'test'
+  isDevelopment = () => this.name === 'development'
+  isLocal = () => this.isTest() || this.isDevelopment()
+  isNonLocal = () => !this.isLocal()
 })()
 
 function normalizePort(val) {

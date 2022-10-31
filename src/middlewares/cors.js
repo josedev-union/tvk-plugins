@@ -6,8 +6,12 @@ import {api} from './api'
 import {RichError} from '../utils/RichError'
 
 export const cors = new (class {
-  enforceCors({hosts, methods, headers}) {
+  enforceCors({hosts, methods, headers, skipValidation=false}) {
     return asyncMiddleware('cors.enforceCors', async (req, res, next) => {
+      if (skipValidation) {
+        helpers.setAllowingCors(req, res)
+        return
+      }
       const origin = helpers.normalizedOriginForCors(req)
       if (!origin || !hosts || !hosts.length) {
         throw cors.#newCorsError({
