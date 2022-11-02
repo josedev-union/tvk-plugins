@@ -75,6 +75,7 @@ function newQuickSimulationRoute() {
     const simulation = await timeoutManager.exec(env.quickApiSimulationTimeout, async () => {
       const client = new QuickSimulationClient()
       const expiresAt = Math.round(timeoutManager.nextExpiresAtInSeconds() * 1000.0)
+      quickApi.setSimulationStarted(res)
       return await client.requestSimulation({
         id: dbSimulation.id,
         photo: photo.content,

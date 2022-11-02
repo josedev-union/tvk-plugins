@@ -19,6 +19,14 @@ jest.mock('../../src/config/env' , () => {
   env.quickApiRouteTimeout = 0.5
   env.quickApiMaxUploadSizeMb = 0.3
   env.quickApiMaxUploadSizeBytes = env.quickApiMaxUploadSizeMb * 1024 * 1024
+
+  env.quickApiRateLimit_timeWindowSeconds = 60.0
+  env.quickApiRateLimit_clientSimulationsPerTimeWindow = 2.0
+  env.quickApiRateLimit_clientRequestsPerTimeWindow = 3.0
+
+  env.quickApiRateLimit_ipSimulationsPerTimeWindow = 2.0
+  env.quickApiRateLimit_ipRequestsPerTimeWindow = 3.0
+
   return {
     __esModule: true,
     env,
@@ -234,7 +242,6 @@ describe('PATCH simulations/:id', () => {
     beforeAll(async () => {
       const result = await prepareAndRunSimulation({
         mode: 'update',
-        mockWorker: false,
         simulationCfg: {
           metadata: {
             captureType: "file",
@@ -265,6 +272,147 @@ describe('PATCH simulations/:id', () => {
     test(`respond 200`, async () => {
       expect(response.status).toBe(200)
       expect(response.body.success).toEqual(true)
+    })
+  })
+})
+
+describe('Rate Limiting', () => {
+  let responses = []
+
+  const simpleApiCall = async ({mode, ip, client, isPublicCall}) => {
+    const result = await prepareAndRunSimulation({
+      mode: mode,
+      doClearData: false,
+      forceClient: client,
+      requestCfg: {
+        ip,
+        format: {isPublicCall},
+      },
+    })
+    responses.push(result.response)
+    return result
+  }
+
+  beforeEach(async () => {
+    responses = []
+    await clearData()
+  })
+
+  describe('IP Blocking', () => {
+    const ipOne = '127.0.0.1'
+    const ipTwo = '127.0.0.2'
+    const ipThree = '127.0.0.3'
+
+    test(`block an IP when sending too much requests on any public route`, async () => {
+      await simpleApiCall({mode: 'update'  , ip: ipOne  , isPublicCall: true})
+      await simpleApiCall({mode: 'update'  , ip: ipTwo  , isPublicCall: true})
+      await simpleApiCall({mode: 'ortho'   , ip: ipOne  , isPublicCall: true})
+      await simpleApiCall({mode: 'ortho'   , ip: ipTwo  , isPublicCall: true})
+      await simpleApiCall({mode: 'cosmetic', ip: ipOne  , isPublicCall: true})
+      await simpleApiCall({mode: 'cosmetic', ip: ipTwo  , isPublicCall: true})
+      await simpleApiCall({mode: 'update'  , ip: ipOne  , isPublicCall: true})
+      await simpleApiCall({mode: 'update'  , ip: ipTwo  , isPublicCall: true})
+      await simpleApiCall({mode: 'cosmetic', ip: ipThree, isPublicCall: true})
+
+      expect(responses[0].status).toBeLessThan(299)
+      expect(responses[1].status).toBeLessThan(299)
+      expect(responses[2].status).toBeLessThan(299)
+      expect(responses[3].status).toBeLessThan(299)
+      expect(responses[4].status).toBeLessThan(299)
+      expect(responses[5].status).toBeLessThan(299)
+      expect(responses[6].status).toBe(429)
+      expect(responses[7].status).toBe(429)
+      expect(responses[8].status).toBeLessThan(299)
+    })
+
+    test(`block an IP when sending too much simulations on any public route`, async () => {
+      await simpleApiCall({mode: 'cosmetic', ip: ipOne  , isPublicCall: true})
+      await simpleApiCall({mode: 'cosmetic', ip: ipTwo  , isPublicCall: true})
+      await simpleApiCall({mode: 'ortho'   , ip: ipOne  , isPublicCall: true})
+      await simpleApiCall({mode: 'ortho'   , ip: ipTwo  , isPublicCall: true})
+      await simpleApiCall({mode: 'cosmetic', ip: ipOne  , isPublicCall: true})
+      await simpleApiCall({mode: 'cosmetic', ip: ipTwo  , isPublicCall: true})
+      await simpleApiCall({mode: 'ortho'   , ip: ipThree, isPublicCall: true})
+
+      expect(responses[0].status).toBeLessThan(299)
+      expect(responses[1].status).toBeLessThan(299)
+      expect(responses[2].status).toBeLessThan(299)
+      expect(responses[3].status).toBeLessThan(299)
+      expect(responses[4].status).toBe(429)
+      expect(responses[5].status).toBe(429)
+      expect(responses[6].status).toBeLessThan(299)
+    })
+
+    test(`don't block IPs on backend calls`, async () => {
+      await simpleApiCall({mode: 'ortho', ip: ipOne, isPublicCall: false})
+      await simpleApiCall({mode: 'ortho', ip: ipTwo, isPublicCall: false})
+      await simpleApiCall({mode: 'ortho', ip: ipOne, isPublicCall: false})
+      await simpleApiCall({mode: 'ortho', ip: ipTwo, isPublicCall: false})
+      await simpleApiCall({mode: 'ortho', ip: ipOne, isPublicCall: false})
+      await simpleApiCall({mode: 'ortho', ip: ipTwo, isPublicCall: false})
+      await simpleApiCall({mode: 'ortho', ip: ipOne, isPublicCall: false})
+      await simpleApiCall({mode: 'ortho', ip: ipTwo, isPublicCall: false})
+
+      expect(responses[0].status).toBeLessThan(299)
+      expect(responses[1].status).toBeLessThan(299)
+      expect(responses[2].status).toBeLessThan(299)
+      expect(responses[3].status).toBeLessThan(299)
+      expect(responses[4].status).toBeLessThan(299)
+      expect(responses[5].status).toBeLessThan(299)
+      expect(responses[6].status).toBeLessThan(299)
+      expect(responses[7].status).toBeLessThan(299)
+    })
+  })
+
+  describe('Client Blocking', () => {
+    let one = null
+    let two = null
+    let three = null
+
+    beforeEach(() => {
+      one = Factory.build('api_client', {})
+      two = Factory.build('api_client', {})
+      three = Factory.build('api_client', {})
+    })
+
+    test(`block a Client when sending too much requests on any route`, async () => {
+      await simpleApiCall({mode: 'update'  , client: one  , isPublicCall: false})
+      await simpleApiCall({mode: 'update'  , client: two  , isPublicCall: false})
+      await simpleApiCall({mode: 'ortho'   , client: one  , isPublicCall: true})
+      await simpleApiCall({mode: 'ortho'   , client: two  , isPublicCall: true})
+      await simpleApiCall({mode: 'cosmetic', client: one  , isPublicCall: false})
+      await simpleApiCall({mode: 'cosmetic', client: two  , isPublicCall: false})
+      await simpleApiCall({mode: 'update'  , client: one  , isPublicCall: true})
+      await simpleApiCall({mode: 'update'  , client: two  , isPublicCall: true})
+      await simpleApiCall({mode: 'ortho'   , client: three, isPublicCall: false})
+
+      expect(responses[0].status).toBeLessThan(299)
+      expect(responses[1].status).toBeLessThan(299)
+      expect(responses[2].status).toBeLessThan(299)
+      expect(responses[3].status).toBeLessThan(299)
+      expect(responses[4].status).toBeLessThan(299)
+      expect(responses[5].status).toBeLessThan(299)
+      expect(responses[6].status).toBe(429)
+      expect(responses[7].status).toBe(429)
+      expect(responses[8].status).toBeLessThan(299)
+    })
+
+    test(`block a Client when sending too much simulations on any route`, async () => {
+      await simpleApiCall({mode: 'cosmetic', client: one  , isPublicCall: false})
+      await simpleApiCall({mode: 'cosmetic', client: two  , isPublicCall: false})
+      await simpleApiCall({mode: 'ortho'   , client: one  , isPublicCall: true})
+      await simpleApiCall({mode: 'ortho'   , client: two  , isPublicCall: true})
+      await simpleApiCall({mode: 'cosmetic', client: one  , isPublicCall: false})
+      await simpleApiCall({mode: 'cosmetic', client: two  , isPublicCall: false})
+      await simpleApiCall({mode: 'ortho'   , client: three, isPublicCall: true})
+
+      expect(responses[0].status).toBeLessThan(299)
+      expect(responses[1].status).toBeLessThan(299)
+      expect(responses[2].status).toBeLessThan(299)
+      expect(responses[3].status).toBeLessThan(299)
+      expect(responses[4].status).toBe(429)
+      expect(responses[5].status).toBe(429)
+      expect(responses[6].status).toBeLessThan(299)
     })
   })
 })
@@ -593,13 +741,15 @@ function describeSimulationStorageChanges(getParams) {
   })
 }
 
-async function prepareAndRunSimulation({mode='ortho', apiClientCfg={}, requestCfg={}, simulationCfg={}, mockWorker=true, mockWorkerError, doClearData=true}) {
+async function prepareAndRunSimulation({mode='ortho', apiClientCfg={}, requestCfg={}, simulationCfg={}, forceClient, mockWorker=true, mockWorkerError, doClearData=true}) {
+  const willRunSimulation = mode === 'ortho' || mode === 'cosmetic'
   const {
     recaptchaSecret = 'recaptcha-secret',
     recaptchaMinScore = 0.75,
     allowedHosts = ['http://localhost:8080'],
   } = apiClientCfg
   let {
+    ip = newIp(),
     simulationId,
     clientId,
     clientSecret,
@@ -626,13 +776,13 @@ async function prepareAndRunSimulation({mode='ortho', apiClientCfg={}, requestCf
     await clearData()
   }
 
-  if (mockWorker) {
+  if (mockWorker && willRunSimulation) {
     mockWorkerRequest({error: mockWorkerError})
   } else {
     resetWorkerRequestMock()
   }
 
-  const client = Factory.build('api_client', {})
+  const client = forceClient ? forceClient : Factory.build('api_client', {})
   const recaptchaAttrs = {}
   if (recaptchaSecret) recaptchaAttrs.secret = recaptchaSecret
   if (recaptchaMinScore) recaptchaAttrs.minScore = recaptchaMinScore
@@ -646,7 +796,7 @@ async function prepareAndRunSimulation({mode='ortho', apiClientCfg={}, requestCf
 
   let simulation = null
   if (mode === 'update') {
-    simulationCfg = Object.assign({clientId: client.id}, simulationCfg)
+    if (!simulationCfg.clientId) simulationCfg.clientId = client.id
     simulation = Factory.build('quick_simulation', simulationCfg)
     await simulation.save()
   }
@@ -664,6 +814,7 @@ async function prepareAndRunSimulation({mode='ortho', apiClientCfg={}, requestCf
     params,
     origin,
     format,
+    ip,
     credentials: {
       recaptchaToken,
       clientId: clientId || client.id,
@@ -674,11 +825,14 @@ async function prepareAndRunSimulation({mode='ortho', apiClientCfg={}, requestCf
   return {apiClient: client, response}
 }
 
-async function sendSimulation({method, url: path, query, headers={}, data}) {
+async function sendSimulation({method, url: path, query, headers={}, data, ip}) {
   if (Object.keys(query).length > 0) {
     path += '?' + querystring.encode(query)
   }
   let req = request(app)[method](path)
+  if (ip) {
+    req = req.set('X-Forwarded-For', ip)
+  }
   Object.entries(headers).forEach(([header, value]) => {
     req = req.set(header, value)
   })
@@ -726,4 +880,16 @@ async function mockWorkerRequest({error}) {
 async function clearData() {
   await firebaseHelpers.clearFirestore()
   await clearRedis()
+}
+
+let ipCount = 1
+function newIp() {
+  return intToIp({inx: ++ipCount})
+}
+function intToIp({inx}) {
+  let part1 = inx % 256
+  inx = Math.floor(inx / 256)
+  let part2 = inx % 256
+  inx = Math.floor(inx / 256)
+  return `192.0.${part2}.${part1}`
 }

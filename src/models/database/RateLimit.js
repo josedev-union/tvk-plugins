@@ -14,11 +14,11 @@ export class RateLimit {
         this.expiresIn = expiresIn
     }
 
-    async useSlotFrom(buckets, noCount=false) {
+    async useSlotFrom(buckets, countNow=true) {
         if (env.rateLimitDisabled) return true
         if (typeof(buckets) === 'string') buckets = [buckets]
         const bucketKeys = buckets.map(bucket => this.#buildBucketKey(bucket))
-        return this.#addSlotInBuckets(bucketKeys, noCount)
+        return this.#addSlotInBuckets(bucketKeys, countNow)
     }
 
     async manualCountFor(buckets) {
@@ -32,10 +32,10 @@ export class RateLimit {
         return [NAMESPACE, id].join(':')
     }
 
-    async #addSlotInBuckets(bucketKeys, noCount=false) {
+    async #addSlotInBuckets(bucketKeys, countNow=true) {
         const results = await Promise.all(bucketKeys.map(bucketKey => this.#haveAvailableSlotsIn(bucketKey)))
         const allowed = !results.includes(false)
-        if (allowed && !noCount) {
+        if (allowed && countNow) {
             bucketKeys.forEach(bucketKey => this.#addSlotIn(bucketKey))
         }
         return allowed

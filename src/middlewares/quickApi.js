@@ -26,7 +26,6 @@ import {BufferWritable} from "../utils/BufferWritable"
 
 const readfile = promisify(fs.readFile)
 
-const DEFAULT_RATE_LIMIT_MAX_SUCCESSES_PER_SECOND = 1.0
 const SIGNATURE_HEADER = 'Authorization'
 
 // Claims Constants
@@ -99,108 +98,65 @@ export const quickApi = new (class {
   rateLimit({ip: ipLimiting=true, client: clientLimiting=true}={}) {
     return asyncMiddleware('quickApi.rateLimit', async (req, res, next) => {
       const {dentApiId: apiId, dentClient: client} = res.locals
-      const maxSuccessesPerSec = client.apiMaxSuccessesPerSecond({api: apiId}) || DEFAULT_RATE_LIMIT_MAX_SUCCESSES_PER_SECOND
-      const ipMaxRequestsPerMinute = 30
-      const ipMaxSuccessesPerHour = 20
-      const ipMaxSuccessesPerDay = 50
+      const timeWindowMillis = env.quickApiRateLimit_timeWindowSeconds * 1000.0
 
-      const ipLimitRequestsPerMinute = rateLimit({
-        limit: ipMaxRequestsPerMinute,
-        expiresIn: 1.0 * MINUTES,
-        lookup: (req, _) => `rlimit:ip:${apiId}:${req.ip}:request-min`,
+      const ipLimitRequestsPerSecond = rateLimit({
+        limit: env.quickApiRateLimit_ipRequestsPerTimeWindow,
+        expiresIn: timeWindowMillis,
+        lookup: (req, _) => `rlimit:ip:${req.ip}:requests`,
         onBlocked: function(req, res, next) {
           throw quickApi.#newRateLimitError({
-            message: 'Exceeded IP requests per minute rate limit',
-            tags: {'error:rate-limit': 'ip-requests-per-minute'},
+            message: 'Exceeded IP requests rate',
+            tags: {'error:rate-limit': 'ip-requests'},
           })
         }
       })
       const clientLimitRequestsPerSecond = rateLimit({
-        limit: maxSuccessesPerSec * 60 * 2.5 * 3,
-        expiresIn: 1.0 * SECONDS,
-        lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:request-sec`,
+        limit: env.quickApiRateLimit_clientRequestsPerTimeWindow,
+        expiresIn: timeWindowMillis,
+        lookup: (req, _) => `rlimit:client:${client.id}:requests`,
         onBlocked: function(req, res, next) {
           throw quickApi.#newRateLimitError({
-            message: 'Exceeded client requests per second client rate limit',
-            tags: {'error:rate-limit': 'client-requests-per-second'},
+            message: 'Exceeded client requests rate',
+            tags: {'error:rate-limit': 'client-requests'},
           })
         }
       })
 
-      const clientLimitSuccessesPerSecond = rateLimit({
-        limit: maxSuccessesPerSec * 2.5,
-        expiresIn: 1.0 * SECONDS,
-        lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:success-sec`,
-        countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
+      const ipLimitSimulationsPerSecond = rateLimit({
+        limit: env.quickApiRateLimit_ipSimulationsPerTimeWindow,
+        expiresIn: timeWindowMillis,
+        lookup: (req, _) => `rlimit:ip:${req.ip}:simulations`,
+        countIf: (_, res) => quickApi.hasStartedSimulation(res),
         onBlocked: function(req, res, next) {
           throw quickApi.#newRateLimitError({
-            message: 'Exceeded client successes per second rate limit',
-            tags: {'error:rate-limit': 'client-successes-per-second'},
+            message: 'Exceeded IP simulations rate',
+            tags: {'error:rate-limit': 'ip-simulations'},
           })
         }
       })
-      const clientLimitSuccessesPerMinute = rateLimit({
-        limit: maxSuccessesPerSec * 60,
-        expiresIn: 1.0 * MINUTES,
-        lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:success-min`,
-        countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
+      const clientLimitSimulationsPerSecond = rateLimit({
+        limit: env.quickApiRateLimit_clientSimulationsPerTimeWindow,
+        expiresIn: timeWindowMillis,
+        lookup: (req, _) => `rlimit:client:${client.id}:simulations`,
+        countIf: (_, res) => quickApi.hasStartedSimulation(res),
         onBlocked: function(req, res, next) {
           throw quickApi.#newRateLimitError({
-            message: 'Exceeded client successes per minute rate limit',
-            tags: {'error:rate-limit': 'client-successes-per-minute'},
+            message: 'Exceeded client simulations rate',
+            tags: {'error:rate-limit': 'client-simulations'},
           })
         }
       })
-      const clientLimitSuccessesPerHour = rateLimit({
-        limit: maxSuccessesPerSec * 60 * 60 * 0.5,
-        expiresIn: 1.0 * HOURS,
-        lookup: (req, _) => `rlimit:client:${apiId}:${client.id}:success-hour`,
-        countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
-        onBlocked: function(req, res, next) {
-          throw quickApi.#newRateLimitError({
-            message: 'Exceeded client successes per hour rate limit',
-            tags: {'error:rate-limit': 'client-successes-per-hour'},
-          })
-        }
-      })
-      const ipLimitSuccessesPerHour = rateLimit({
-        limit: ipMaxSuccessesPerHour,
-        expiresIn: 1.0 * HOURS,
-        lookup: (req, _) => `rlimit:ip:${apiId}:${req.ip}:success-hour`,
-        countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
-        onBlocked: function(req, res, next) {
-          throw quickApi.#newRateLimitError({
-            message: 'Exceeded IP requests per hour rate limit',
-            tags: {'error:rate-limit': 'ip-requests-per-hour'},
-          })
-        }
-      })
-      const ipLimitSuccessesPerDay = rateLimit({
-        limit: ipMaxSuccessesPerDay,
-        expiresIn: 1.0 * DAYS,
-        lookup: (req, _) => `rlimit:ip:${apiId}:${req.ip}:success-day`,
-        countIf: (_, res) => res.statusCode >= 200 && res.statusCode <= 299,
-        onBlocked: function(req, res, next) {
-          throw quickApi.#newRateLimitError({
-            message: 'Exceeded IP successes per day rate limit',
-            tags: {'error:rate-limit': 'ip-successes-per-day'},
-          })
-        }
-      })
+
 
       const all = []
       // Limiting any requests
-      if (ipLimiting)     all.push(ipLimitRequestsPerMinute)
+      if (ipLimiting) all.push(ipLimitRequestsPerSecond)
       if (clientLimiting) all.push(clientLimitRequestsPerSecond)
 
-      // Limiting ip successes
-      if (ipLimiting)     all.push(ipLimitSuccessesPerHour)
-      if (ipLimiting)     all.push(ipLimitSuccessesPerDay)
-
-      // Limiting client successes
-      if (clientLimiting) all.push(clientLimitSuccessesPerSecond)
-      if (clientLimiting) all.push(clientLimitSuccessesPerMinute)
-      if (clientLimiting) all.push(clientLimitSuccessesPerHour)
+      // Limiting simulations
+      if (ipLimiting) all.push(ipLimitSimulationsPerSecond)
+      if (clientLimiting) all.push(clientLimitSimulationsPerSecond)
 
       return await invokeMiddlewares(all, req, res)
     })
@@ -549,6 +505,15 @@ export const quickApi = new (class {
         }
       }
     })
+  }
+
+  setSimulationStarted(res) {
+    res.locals.dentSimulationWasStarted = true
+  }
+
+  hasStartedSimulation(res) {
+    const {dentSimulationWasStarted} = res.locals
+    return !!dentSimulationWasStarted
   }
 
   #hasSameValues(a, b) {

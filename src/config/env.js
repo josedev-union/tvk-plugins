@@ -40,6 +40,24 @@ export const env = new (class {
   quickApiResultsUploadTimeout = parseFloat(process.env.DENTRINO_QAPI_RESULTS_UPLOAD_TIMEOUT || 15)
   quickApiMaxUploadSizeMb = process.env.DENTRINO_QAPI_MAX_UPLOAD_SIZE_MB || 15
   quickApiMaxUploadSizeBytes = this.quickApiMaxUploadSizeMb * 1024 * 1024
+
+
+  // Rate limiting timeWindow
+  quickApiRateLimit_timeWindowSeconds = parseFloat(process.env.DENTRINO_QAPI_RLIMIT_TIME_WINDOW_SECONDS || 10)
+  // Client rate limiting
+  quickApiRateLimit_clientSimulationsPerSecond = parseFloat(process.env.DENTRINO_QAPI_RLIMIT_CLIENT_SIMULATIONS_PER_SECOND || 6.0)
+  quickApiRateLimit_clientRequestsPerSecond = parseFloat(process.env.DENTRINO_QAPI_RLIMIT_CLIENT_REQUESTS_PER_SECOND || 25.0)
+
+  // IP rate limiting
+  quickApiRateLimit_ipSimulationsPerSecond = parseFloat(process.env.DENTRINO_QAPI_RLIMIT_IP_SIMULATIONS_PER_SECOND || 1.0/3.0)
+  quickApiRateLimit_ipRequestsPerSecond = parseFloat(process.env.DENTRINO_QAPI_RLIMIT_IP_REQUESTS_PER_SECOND || 1.0)
+
+  // On timeWindow amount
+  quickApiRateLimit_clientSimulationsPerTimeWindow = this.quickApiRateLimit_clientSimulationsPerSecond * this.quickApiRateLimit_timeWindowSeconds
+  quickApiRateLimit_clientRequestsPerTimeWindow = this.quickApiRateLimit_clientRequestsPerSecond * this.quickApiRateLimit_timeWindowSeconds
+  quickApiRateLimit_ipSimulationsPerTimeWindow = this.quickApiRateLimit_ipSimulationsPerSecond * this.quickApiRateLimit_timeWindowSeconds
+  quickApiRateLimit_ipRequestsPerTimeWindow = this.quickApiRateLimit_ipRequestsPerSecond * this.quickApiRateLimit_timeWindowSeconds
+
   instSimIpRateLimitMinutely = {
     amount:     parseFloat(process.env.DENTRINO_INSTSIM_IP_RATE_LIMIT_MINUTELY_AMOUNT || 3),
     timeWindow: parseFloat(1 * 60 * 1000),

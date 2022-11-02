@@ -7,19 +7,35 @@ import {security} from '../../src/models/security'
 import {SmileTask} from '../../src/models/database/SmileTask'
 import {storageFactory} from '../../src/models/storage/storageFactory'
 import {clearRedis} from '../../src/config/redis'
-import {env} from '../../src/config/env'
 import {firebaseHelpers} from '../helpers/firebaseHelpers'
-
-import app from '../../src/app'
-app.enable('trust proxy')
-import supertest from 'supertest'
-const request = supertest(app)
 
 const UPLOAD_MAX_SIZE = envShared.maxUploadSizeMb * 1024 * 1024
 const UPLOAD_SIGNED_URL = 'http://gcloud.presigned.com/upload'
 const RESULT_SIGNED_URL = 'http://gcloud.presigned.com/afterImage'
 const IMAGE_MD5 = "madeup-image-md5"
 const CONTENT_TYPE = "image/jpeg"
+
+import {env} from '../../src/config/env'
+jest.mock('../../src/config/env' , () => {
+  const {env: originalEnv} = jest.requireActual('../../src/config/env')
+  const env = {...originalEnv}
+  env.userRateLimit = {
+    amount: 2,
+    timeWindow: 1 * 60 * 60 * 1000,
+  }
+  env.ipRateLimit = {
+    amount: 2,
+    timeWindow: 1 * 60 * 60 * 1000,
+  }
+  env.clientRateLimit = {
+    amount: 2,
+    timeWindow: 1 * 60 * 60 * 1000,
+  }
+  return {
+    __esModule: true,
+    env,
+  }
+})
 
 jest.mock('../../src/models/storage/storageFactory', () => {
   return {
@@ -45,6 +61,11 @@ jest.mock('../../src/models/storage/storageFactory', () => {
     })
   }
 })
+
+import app from '../../src/app'
+app.enable('trust proxy')
+import supertest from 'supertest'
+const request = supertest(app)
 
 beforeAll(async () => {
   await firebaseHelpers.ensureTestEnv()
@@ -205,6 +226,7 @@ describe(`when rate limit is checked`, () => {
     const resp3 = await simplePostTask({user: users[2], client: apiClient, ip: ips[2]})
     expect(resp1.status).toBe(200)
     expect(resp2.status).toBe(200)
+    console.log(resp3.body)
     expect(resp3.status).toBe(429)
   })
 

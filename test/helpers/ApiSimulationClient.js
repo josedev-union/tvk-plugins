@@ -33,7 +33,7 @@ export class ApiSimulationClient {
     return this.#requestWithInterface(cfg)
   }
 
-  async #requestWithInterface({host, method, route, params={}, origin,
+  async #requestWithInterface({host, method, route, params={}, origin, ip,
     credentials={}, format={}}) {
     const {clientId, clientSecret, recaptchaToken} = credentials
     if(!format.body) format.body = BODY_FORMAT_FORMDATA
@@ -86,6 +86,7 @@ export class ApiSimulationClient {
       headers,
       data: bodyData,
       fields,
+      ip,
     })
   }
 
