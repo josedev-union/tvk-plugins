@@ -1,0 +1,145 @@
+{{#if simulation}}
+<script>
+  if ( window.history.replaceState ) {
+    window.history.replaceState( null, null, window.location.href );
+  }
+</script>
+{{/if}}
+<div id="error-notification" class="notification is-danger hidden">
+  <button class="delete"></button>
+	<span>MESSAGE MESSAGE MESSAGE MESSAGE MESSAGE MESSAGE MESSAGE MESSAGE</span>
+</div>
+<div class="upload-feedback hidden">
+	<div class="is-overlay is-full columns is-centered is-vcentered is-marginless is-mobile">
+			<div class="column is-centered is-vcentered is-full mx-auto is-marginless" style="width: 160px">
+					<div class="fa-10x fas fa-spinner fa-pulse"></div>
+			</div>
+	</div>
+</div>
+<section class="hero">
+    <div class="hero-body">
+        <div class="container">
+            <div class="columns is-centered">
+                {{#if simulation.success}}
+								<div class="column is-two-thirds-widescreen is-two-thirds-fullhd">
+                    <div class="content">
+												<div class="simulation-container">
+													<span class="subtitle is-1 is-2-mobile is-block">Simulation</span>
+                          <div class="loading-simulation-placeholder is-flex">
+                            <div class="is-centered is-inline-block mx-auto p-6 has-text-centered">
+                              <span class="is-block has-text-centered is-size-3 p-2">Loading Preview</span>
+                              <i class="fa-6x fas fa-spinner fa-pulse"></i>
+                            </div>
+                          </div>
+													<div class="twentytwenty-container mx-auto simulation-images">
+														<img class="image before-image" src="{{simulation.beforeUrl}}" />
+														<img class="image after-image" src="{{simulation.resultUrl}}" />
+													</div>
+
+													<div class="columns is-full mt-2">
+														<div class="column">
+															<div class="file is-primary is-boxed is-centered before-image-download">
+																<a class="download-link link-download-original" href="{{simulation.beforeUrl}}" download="before" target="_blank">
+																	<span class="file-cta">
+																		<span class="file-icon"><i class="fa fa-download"></i></span>
+																		<span class="file-label">Original</span>
+																	</span>
+																</a>
+															</div>
+														</div>
+														<div class="column">
+															<div class="file is-primary is-boxed is-centered after-image-download">
+																<a class="download-link link-download-result" href="{{simulation.resultUrl}}" download="after" target="_blank">
+																	<span class="file-cta">
+																		<span class="file-icon"><i class="fa fa-download"></i></span>
+																		<span class="file-label">Result</span>
+																	</span>
+																</a>
+															</div>
+														</div>
+													</div>
+													<div class="columns is-full mt-2">
+                            <div class="column is-centered">
+                              <div class="buttons is-centered">
+                                <a class="button is-link is-large is-fullwidth link-start-over" href="/#upload">
+                                  <div class="is-centered is-block pr-3">
+																	  <i class="fa fa-repeat"></i>
+                                  </div>
+                                  <div class="is-block">Start Over</div>
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+												</div>
+                    </div>
+                </div>
+                {{/if}}
+								<div class="column is-one-third-widescreen is-one-third-fullhd {{#if simulation.success}}is-hidden{{/if}}">
+                    <div class="content">
+												<div class="no-simulation-container">
+													<h1 class="title is-1 is-2-mobile">AI Smile Makeover</h1><span class="subtitle is-3 is-4-mobile">100% Automatic and </span><span class="subtitle is-3 is-4-mobile has-text-weight-bold" style="text-decoration-color: #26C6DA; text-decoration-line: underline; text-decoration-style: solid;">Free</span><img class="image" src="images/hero-simulation-transp.png" />
+												</div>
+                    </div>
+                </div>
+                <div class="column is-half-widescreen is-one-third-fullhd {{#if simulation.success}}is-hidden{{/if}}">
+                    <div class="columns is-mobile is-centered is-vcentered">
+                        <div class="column is-1-mobile is-2 is-4-desktop"><svg class="mt-auto mb-auto" width="100%">
+                                <use xlink:href="/svg/curve-arrow-pointing-right.svg#arrow"></use>
+                            </svg></div>
+                        <div class="column is-11-mobile is-10 is-8-desktop">
+                            <span id="upload"></span>
+                            <div class="card mt-4">
+                                <div class="card-image">
+                                    <figure class="image" style="background-image:url(&quot;images/photo_placeholder.jpg&quot;); background-repeat: repeat; background-size: cover; background-position: center;">
+                                        <div class="columns is-mobile is-centered is-vcentered" style="min-height: 200px;">
+                                            <div class="column is-half-desktop is-full-mobile">
+																								<svg class="mx-auto is-hidden-mobile is-block" width="50%">
+                                                    <use xlink:href="/svg/selfie.svg#selfie"></use>
+                                                </svg>
+																								<form method="POST" enctype="multipart/form-data" class="upload-form">
+																										<input type="hidden" name="secret" value=""></input>
+																										<input type="hidden" name="recaptchaToken" value=""></input>
+																										<input type="hidden" name="synthTransform" value="{{synthTransform}}"></input>
+																										<div class="file is-link is-centered"><label class="file-label">
+																												<input class="file-input" type="file" name="photo" accept="image/*" /><span class="file-cta"><span class="file-icon"><i class="fas fa-upload"></i></span><span class="file-label">Upload Selfie</span></span></label>
+																										</div>
+																								</form>
+                                            </div>
+                                        </div>
+                                    </figure>
+                                </div>
+                                <div class="card-content content">
+																		<p class="error {{#unless simulation.error_message}}hidden{{/unless}}">
+																			<span class="error-label">{{i18n "form:label:error"}}</span>: <span class="error-message" data-error-code="{{simulation.error_code}}" data-is-simulation-error="{{simulation.is_simulation_error}}">{{simulation.error_message}}</span>
+																		</p>
+                                    <p class="has-text-weight-medium is-size-4">Photo Guidelines</p>
+                                    <ul>
+                                        <li>Full-face looking straight ahead</li>
+                                        <li>Well-lit environment</li>
+                                        <li>Big smile!</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="block mt-6">
+                                <p class="has-text-weight-light is-size-7">By uploading an image you agree to our <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{#unless simulation}}
+<div class="section">
+    <h2 class="title is-2 has-text-centered">Examples!</h2>
+    <h4 class="subtitle has-text-centered is-size-7">(these are cropped, but the AI only works with full faces)</h4>
+    <div class="columns is-centered">
+        <div class="column is-full is-three-quarters-tablet is-10-desktop">
+            <div class="twentytwenty-container mx-auto" id="container1"><img class="image" src="images/samples/sample1_before.jpg" /><img class="image" src="images/samples/sample1_after.jpg" /></div>
+        </div>
+    </div>
+</div>
+{{/unless}}
+<script src="https://www.google.com/recaptcha/api.js?render={{recaptchaClientKey}}" async defer></script>

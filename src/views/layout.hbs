@@ -1,12 +1,40 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <!--
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{measurementId}}"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){window.dataLayer.push(arguments);}
+      gtag('js', new Date());
+    </script>
+    -->
     <title>{{title}}</title>
-    <link rel='stylesheet' href='/assets/css/style.css' />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="{{getVersionedPath '/assets/js/analytics.bundle.js'}}"></script>
+    <link rel='stylesheet' href="{{getVersionedPath '/assets/css/style.css'}}">
+    <link rel="stylesheet" href="{{getVersionedPath '/assets/vendor/css/fontAwesome5/all.css'}}">
+    <link rel="stylesheet" href="{{getVersionedPath '/assets/vendor/css/bulma.css'}}">
+    <link rel="stylesheet" href="{{getVersionedPath '/assets/vendor/css/twentytwenty/twentytwenty.css'}}" type="text/css" media="screen">
   </head>
   <body>
+    <nav class="navbar" role="navigation">
+      <div class="navbar-brand"><a class="navbar-item" href="/"><img src="images/brand.png" alt="Free Smile Simulation" width="112" height="28" /></a></div>
+    </nav>
+
     {{{body}}}
-    <script src="/assets/js/bundle.js"></script>
+
+    <div class="content">
+        <div class="my-6" style="min-height: 200px;"></div>
+    </div>
+    <footer class="footer has-background-dark">
+        <div class="content has-text-centered has-text-light">
+            <p><a class="has-text-link-light" href="/terms">Terms of Service</a>&nbsp;&nbsp;&nbsp;&nbsp;<a class="has-text-link-light" href="/privacy">Privacy Policy</a></p>
+            <p>FreeSmileSimulation made with <span class="has-text-danger">♥</span> by Tasty Tech</p>
+            <p class="has-text-weight-light is-size-7">Copyright 2021 Tasty Tech Ltd. - All Rights Reserved.</p>
+        </div>
+    </footer>
+    <script src="{{getVersionedPath '/assets/js/main.bundle.js'}}"></script>
   </body>
 </html>

@@ -4,7 +4,8 @@ const Dotenv = require('dotenv-webpack');
 
 module.exports = {
   entry: {
-    main: './assets/js/index.js'
+    main: './assets/js/index.js',
+    analytics: './assets/js/analytics.js',
   },
   module: {
     rules: [
@@ -38,18 +39,20 @@ module.exports = {
   output: {
     path: __dirname + '/public/assets/',
     publicPath: '/public',
-    filename: 'js/bundle.js'
+    filename: 'js/[name].bundle.js'
   },
   plugins: [
     new Dotenv({
       safe: true,
+      expand: true,
       allowEmptyValues: true,
       systemvars: true,
       silent: true
     }),
     new RemovePlugin({ before: {include: ['public/assets']}}),
     new CopyPlugin([
-      { from: './assets/css/*', to: '.', transformPath(target, abs) { return target.replace("assets", ""); } }
+      { from: './assets/css/*', to: '.', transformPath(target, abs) { return target.replace("assets", ""); } },
+      { from: './assets/vendor/css/**/*', to: '.', transformPath(target, abs) { return target.replace("assets", ""); } }
     ]),
   ],
 };

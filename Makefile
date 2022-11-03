@@ -46,4 +46,5 @@ endef
 
 define update-cloud
   kubectl -n$(APP_ENV) set image deployment/dentrino-simulations-api dentrino-simulations-api=$(COMMIT_IMAGE)
+  kubectl -n$(APP_ENV) set image deployment/dentrino-instant-simulations dentrino-instant-simulations=$(COMMIT_IMAGE)
 endef

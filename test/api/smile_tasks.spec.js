@@ -14,7 +14,7 @@ app.enable('trust proxy')
 import supertest from 'supertest'
 const request = supertest(app)
 
-const UPLOAD_MAX_SIZE = env.maxUploadSizeMb * 1024 * 1024
+const UPLOAD_MAX_SIZE = envShared.maxUploadSizeMb * 1024 * 1024
 const UPLOAD_SIGNED_URL = 'http://gcloud.presigned.com/upload'
 const RESULT_SIGNED_URL = 'http://gcloud.presigned.com/afterImage'
 const IMAGE_MD5 = "madeup-image-md5"

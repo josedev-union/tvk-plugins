@@ -21,10 +21,13 @@
     "@sentry/node": "~6.2.1",
     "@sentry/tracing": "~6.2.1",
     "compression": "~1.7.4",
+    "connect-timeout": "~1.9.0",
     "cookie-parser": "^1.4.5",
     "debug": "~2.6.9",
     "express": "~4.16.1",
+    "firebase": "^9.6.1",
     "firebase-admin": "~8.3.0",
+    "formidable": "~1.2.2",
     "hbs": "^4.0.6",
     "helmet": "^3.20.1",
     "http-errors": "~1.6.3",
@@ -34,10 +37,12 @@
     "redis": "~2.8.0",
     "regenerator-runtime": "^0.13.7",
     "roddeh-i18n": "~1.2.0",
+    "staticify": "~5.0.0",
     "uuid": "~3.3.3",
+    "whatwg-fetch": "~3.6.2",
     "winston": "~3.2.1",
     "ws": "^7.2.5",
-    "formidable": "~1.2.2"
+    "on-finished": "^2.3.0"
   },
   "devDependencies": {
     "@babel/cli": "~7.5.5",
@@ -62,7 +67,8 @@
     "webpack-cli": "^3.3.12",
     "webpack-node-externals": "~1.7.2",
     "firebase-tools": "~9.4.0",
-    "form-data": "~4.0.0"
+    "form-data": "~4.0.0",
+    "axios": "~0.24.0"
   },
   "babel": {
     "presets": [
@@ -82,6 +88,7 @@
     ]
   },
   "nodemonConfig": {
+    "ext": "js css hbs html json",
     "ignore": [
       "test/*",
       "public/*",

@@ -16,19 +16,42 @@ export const env = new (class {
       port: process.env.DENTRINO_REDIS_PORT,
       db: process.env.DENTRINO_REDIS_PUBSUB_DB,
   }
-  maxUploadSizeMb = process.env.DENTRINO_MAX_UPLOAD_SIZE_MB || 15
   userRateLimit = {
     amount:     parseFloat(process.env.DENTRINO_USER_RATE_LIMIT_AMOUNT || 5),
     timeWindow: parseFloat(process.env.DENTRINO_USER_RATE_LIMIT_TIME || 1 * 60 * 1000),
   }
   ipRateLimit = {
-    amount:     parseFloat(process.env.DENTRINO_IP_RATE_LIMIT_AMOUNT || 5),
-    timeWindow: parseFloat(process.env.DENTRINO_IP_RATE_LIMIT_TIME || 1 * 60 * 1000),
+    amount:     parseFloat(process.env.DENTRINO_IP_RATE_LIMIT_AMOUNT || 20),
+    timeWindow: parseFloat(process.env.DENTRINO_IP_RATE_LIMIT_TIME || 1 * 60 * 60 * 1000),
   }
   clientRateLimit = {
     amount:     parseFloat(process.env.DENTRINO_CLIENT_RATE_LIMIT_AMOUNT || 100),
     timeWindow: parseFloat(process.env.DENTRINO_CLIENT_RATE_LIMIT_TIME || 1 * 60 * 1000),
   }
+  instSimIpRateLimitMinutely = {
+    amount:     parseFloat(process.env.DENTRINO_INSTSIM_IP_RATE_LIMIT_MINUTELY_AMOUNT || 3),
+    timeWindow: parseFloat(1 * 60 * 1000),
+  }
+  instSimIpRateLimitHourly = {
+    amount:     parseFloat(process.env.DENTRINO_INSTSIM_IP_RATE_LIMIT_HOURLY_AMOUNT || 5),
+    timeWindow: parseFloat(1 * 60 * 60 * 1000),
+  }
+  instSimIpRateLimitDaily = {
+    amount:     parseFloat(process.env.DENTRINO_INSTSIM_IP_RATE_LIMIT_DAILY_AMOUNT || 20),
+    timeWindow: parseFloat(24 * 60 * 60 * 1000),
+  }
+  instSimUploadTimeout = parseFloat(process.env.DENTRINO_INSTSIM_UPLOAD_TIMEOUT || 15)
+  instSimRouteTimeout = parseFloat(process.env.DENTRINO_INSTSIM_ROUTE_TIMEOUT || 60)
+  instSimEstimatedDuration = parseFloat(process.env.DENTRINO_INSTSIM_ESTIMATED_DURATION || 5)
+  instSimMixFactor = parseFloat(process.env.DENTRINO_INSTSIM_MIX_FACTOR || 0.1)
+  instSimBrightness = parseFloat(process.env.DENTRINO_INSTSIM_BRIGHTNESS || 1.0)
+  instSimWhiten = parseFloat(process.env.DENTRINO_INSTSIM_WHITEN || 0.3)
+  instSimPoisson = !!process.env.DENTRINO_INSTSIM_POISSON
+  instSimGiveUpStartTimeout = this.instSimRouteTimeout - this.instSimEstimatedDuration
+  instSimRouter = !!process.env.DENTRINO_INSTSIM_ROUTER
+  instSimTokenDisabled = !!process.env.DENTRINO_INSTSIM_TOKEN_DISABLED
+  instSimRecaptchaSecretKey = process.env.DENTRINO_INSTSIM_RECAPTCHA_SECRET_KEY
+  disableXForwardedForCheck = process.env.DENTRINO_INSTSIM_DISABLE_X_FORWARDED_FOR_CHECK
 
   isProduction() { return this.name === 'production' }
   isStaging() { return this.name === 'staging' }

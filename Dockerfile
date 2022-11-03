@@ -15,7 +15,8 @@ ADD public ./public
 # Preparing for distribution
 RUN npm install && \
     npm run build-backend && \
-    cp -rf ./dist/* ./
+    cp -rf ./dist/* ./ && \
+    mkdir -p ./public/assets/
 
 # Booting
 CMD ["npm", "start"]
