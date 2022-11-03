@@ -1,14 +1,17 @@
 import {User} from '../../../src/models/database/User'
 import { Factory } from 'rosie'
-import {Database} from '../../../src/models/database/Database'
 import '../../../src/config/config'
+import {firebaseHelpers} from '../../helpers/firebaseHelpers'
+
+beforeAll(async () => {
+  await firebaseHelpers.ensureTestEnv()
+})
+beforeEach(async () => {
+  await firebaseHelpers.clearFirestore()
+})
 
 describe('static', () => {
   describe('user get by id', () => {
-    beforeEach(async () => {
-      await Database.instance().drop()
-    })
-
     test(`return the user if it exist`, async () => {
       const user = Factory.build('user')
       await user.save()

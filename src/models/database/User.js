@@ -27,7 +27,7 @@ export class User {
   }
 
   async save() {
-    if (!env.isLocal()) throw `Save only in development. This application shouldn't change users`
+    if (!env.isLocal()) throw new Error(`Save only in development. This application shouldn't change users`)
     const db = Database.instance()
     return db.save(this, `${User.COLLECTION_NAME}/${this.id}`)
   }

@@ -90,3 +90,9 @@ test(`format only domain`, () => {
     const uri = new Uri('dentrino.test.com:3000')
     expect(uri.toString()).toBe('dentrino.test.com:3000/')
 })
+
+test(`set properties manually`, () => {
+    const uri = new Uri('dentrino.test.com:3000')
+    uri.protocol = 'https'
+    expect(uri.toString()).toBe('https://dentrino.test.com:3000/')
+})

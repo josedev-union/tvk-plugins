@@ -3,6 +3,7 @@ const router = express.Router();
 
 import {SmileTask} from "../../models/database/SmileTask"
 import {smileTaskSecurity as security} from "../../middlewares/smileTaskSecurity"
+import {asyncRoute} from '../../middlewares/expressAsync'
 import {getModel} from "../../middlewares/getModel"
 import {rateLimit} from "../../middlewares/rateLimit"
 import {SmileResourcesGuide} from "../../models/storage/SmileResourcesGuide"
@@ -36,7 +37,7 @@ security.verifySignature,
 userRateLimit,
 ipRateLimit,
 clientRateLimit,
-helpers.asyncCatchError(async (req, res) => {
+asyncRoute(async (req, res) => {
   const manualReview = req.body.manualReview
 
   const smileTask = SmileTask.build(SmileTask.RequesterType.inhouseClient(), {

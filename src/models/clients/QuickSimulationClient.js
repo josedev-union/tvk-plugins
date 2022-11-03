@@ -3,6 +3,7 @@ import {env} from '../../config/env'
 import {logger} from '../../instrumentation/logger'
 import {idGenerator} from '../../models/tools/idGenerator'
 import {redisPubsub, buffersRedis, redisSubscribe} from "../../config/redis"
+import {RichError} from "../../utils/RichError"
 import {promisify} from "util"
 
 const readfile = promisify(fs.readFile)
@@ -15,58 +16,119 @@ export class QuickSimulationClient {
   static pubsubRequestKey() { return `${PUBSUB_PREFIX}:request` }
   static pubsubResponseKey(id) { return `${PUBSUB_PREFIX}:${id}:response` }
 
-  async requestSimulation({photoPath, mixFactor=null, brightness=1.0, whiten=0.0, poisson=true, expiresAt=0}) {
-    const id = idGenerator.newOrderedId()
-    logger.info(`[${id}] Requesting Simulation (mixFactor:${mixFactor} brightness:${brightness} whiten:${whiten} poisson:${poisson})`) // (UploadTime: ${new Date().getTime() - startTime} ms)`)
+  async requestSimulation({id, photo, photoPath, expiresAt=0, options={}, safe=false}) {
+    if (!id) id = idGenerator.newOrderedId()
+    logger.verbose(`[${id}] Requesting Simulation (${JSON.stringify(options)})`)
     const photoRedisKey = `pipeline:listener:${id}:photo`
-    const photo = await readfile(photoPath)
+    if (!photo) photo = await readfile(photoPath)
     const photoBuffer = Buffer.from(photo, 'binary')
-    await this.#publishRequest(id, photoBuffer, photoRedisKey, mixFactor, brightness, whiten, poisson, expiresAt)
-    const data = await this.#waitResponse(QuickSimulationClient.pubsubResponseKey(id))
+    await this.#publishRequest(id, photoBuffer, photoRedisKey, expiresAt, options)
+    const pubsubChannel = QuickSimulationClient.pubsubResponseKey(id)
+    const {result, before, error} = await this.#waitResponse({pubsubChannel, safe})
     return {
+      id,
+      before,
+      result,
+      error,
       original: photo,
-      before: data['before'],
-      result: data['result'],
+      success: !error,
     }
   }
 
-  async #publishRequest(id, photoBuffer, photoRedisKey, mixFactor, brightness, whiten, poisson, expiresAt) {
+  async #publishRequest(id, photoBuffer, photoRedisKey, expiresAt, options) {
     await redisSetex(photoRedisKey, 25, photoBuffer)
     var params = {
       photo_redis_key: photoRedisKey,
-      expires_at: expiresAt
+      expires_at: expiresAt,
+      ...options
     }
 
-    if (mixFactor !== null) {
-      params['mix_factor'] = parseFloat(mixFactor)
-    }
-    params['brightness'] = brightness
-    params['whiten'] = whiten
-    params['poisson'] = poisson
     const publishedMessage = JSON.stringify({
       id: id,
       params: params
     })
     redisPubsub.publish(QuickSimulationClient.pubsubRequestKey(), publishedMessage)
-    logger.info(`[${id}]: Params Published: ${publishedMessage}`)
+    logger.verbose(`[${id}]: Params Published: ${publishedMessage}`)
   }
 
-  async #waitResponse(pubsubChannel) {
+  async #waitResponse({pubsubChannel, safe}) {
     const messageStr = await redisSubscribe(pubsubChannel)
-    logger.info(`Result Received ${pubsubChannel} - ${messageStr}`)
+    logger.verbose(`Result Received ${pubsubChannel} - ${messageStr}`)
     const message = JSON.parse(messageStr)
+
     if (message['error']) {
-      throw new Error(message['error'])
+      return this.#throwError({message: message['error'], safe})
     }
+
     const resultRedisKey = message['data']['result_redis_key']
     const beforeRedisKey = message['data']['before_redis_key']
-    const resultPhoto = await redisGet(resultRedisKey)
-    const beforePhoto = await redisGet(beforeRedisKey)
+    const [resultPhoto, beforePhoto] = await Promise.all([
+      redisGet(resultRedisKey),
+      redisGet(beforeRedisKey),
+    ])
     redisDel(resultRedisKey)
     redisDel(beforeRedisKey)
-    return {
+
+    const response = {
       'result': resultPhoto,
       'before': beforePhoto
     }
+    if (!resultPhoto || !beforePhoto) {
+      const errorObj = this.#throwError({
+        message: "Couldn't find simulation result recorded",
+        safe,
+      })
+      Object.assign(response, errorObj)
+    }
+
+    return response
+  }
+
+  #throwError({message, safe}) {
+    if (!message) return
+    if (message.match(/timeout/i)) {
+      return this.#throwTimeoutError({message, safe})
+    }
+    let publicMessage = 'Error when executing simulation'
+    let errorTag = 'generic'
+
+    if (message.match(/detect/i)) {
+      publicMessage = message
+      errorTag = 'no-face'
+    } else if (message.match(/find.*result/)) {
+      errorTag = 'no-result-recorded'
+    }
+    const error = new RichError({
+      publicId: 'simulation-error',
+      httpCode: 422,
+      publicMessage,
+      debugMessage: message,
+      logLevel: 'error',
+      tags: {
+        'simulation:success': false,
+        'simulation:error': errorTag,
+      },
+    })
+
+    if (safe) return {error}
+    else throw error
+  }
+
+  #throwTimeoutError({message, safe}) {
+    const error = new RichError({
+      publicId: 'timeout',
+      httpCode: 504,
+      publicMessage: 'Operation took too long',
+      debugMessage: message,
+      logLevel: 'error',
+      tags: {
+        'simulation:success': false,
+        'error:timeout': 'simulation-queue-wait',
+        'simulation:error': 'queue-wait',
+      },
+    })
+
+    if (safe) return {error}
+    else throw error
   }
 }

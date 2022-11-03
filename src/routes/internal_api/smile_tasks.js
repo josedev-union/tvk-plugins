@@ -4,9 +4,10 @@ const router = express.Router();
 import {SmileTask} from "../../models/database/SmileTask"
 import {smileTaskStorage} from "../../models/storage/smileTaskStorage"
 import {helpers} from '../helpers'
+import {asyncRoute} from '../../middlewares/expressAsync'
 import {env} from "../../config/env"
 
-router.put('/promote-uploaded', helpers.asyncCatchError(async (req, res) => {
+router.put('/promote-uploaded', asyncRoute(async (req, res) => {
   const smileTask = res.locals.dentSmileTask
 
   const {exist} = await smileTaskStorage.renameReviewedImage(smileTask)
@@ -17,7 +18,7 @@ router.put('/promote-uploaded', helpers.asyncCatchError(async (req, res) => {
   return res.status(200).json({"promoted": true})
 }))
 
-router.put('/rerun', helpers.asyncCatchError(async (req, res) => {
+router.put('/rerun', asyncRoute(async (req, res) => {
   const smileTask = res.locals.dentSmileTask
 
   const {exist} = await smileTaskStorage.renameUploadedImageToForceRerun(smileTask)
@@ -28,7 +29,7 @@ router.put('/rerun', helpers.asyncCatchError(async (req, res) => {
   return res.status(200).json({"success": true})
 }))
 
-router.get('/result-candidates', helpers.asyncCatchError(async (req, res) => {
+router.get('/result-candidates', asyncRoute(async (req, res) => {
   const smileTask = res.locals.dentSmileTask
   if (!smileTask.hasFinished()) {
       return helpers.respondError(res, 423, "The simulation haven't finished yet.")
@@ -39,7 +40,7 @@ router.get('/result-candidates', helpers.asyncCatchError(async (req, res) => {
   return res.status(200).json({"candidates": candidates})
 }))
 
-router.put('/result-candidates/:resultId/promote', helpers.asyncCatchError(async (req, res) => {
+router.put('/result-candidates/:resultId/promote', asyncRoute(async (req, res) => {
   const smileTask = res.locals.dentSmileTask
   if (!smileTask.hasFinished()) {
       return helpers.respondError(res, 423, "The simulation haven't finished yet.")

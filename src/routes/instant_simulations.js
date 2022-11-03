@@ -6,11 +6,12 @@ import axios from 'axios'
 import formidable from 'formidable'
 import {promisify} from "util"
 import timeout from 'connect-timeout'
-import express from 'express';
-const router = express.Router();
+import express from 'express'
+const router = express.Router()
 
 import {i18n} from '../shared/i18n'
 import {helpers} from './helpers'
+import {asyncRoute} from '../middlewares/expressAsync'
 import {rateLimit} from "../middlewares/rateLimit"
 import {QuickSimulationClient} from "../models/clients/QuickSimulationClient"
 import {GcloudPresignedCredentialsProvider} from '../models/storage/GcloudPresignedCredentialsProvider'
@@ -21,6 +22,7 @@ import {logger} from '../instrumentation/logger'
 import {env} from "../config/env"
 import {envShared} from "../shared/envShared"
 import {otp} from "../shared/otp"
+import {getNowInMillis} from '../utils/time'
 
 const readfile = promisify(fs.readFile)
 const ROBOTS_PRODUCTION = `# https://www.robotstxt.org/robotstxt.html
@@ -39,7 +41,7 @@ const minutelyIpRateLimit = rateLimit({
   expiresIn: env.instSimIpRateLimitMinutely.timeWindow,
   lookup: (req, _) => `instant-simulation:minutely:${req.ip}`,
   onBlocked: function(req, res, next) {
-    throw 'Exceeded minutely IP rate limit'
+    throw new Error('Exceeded minutely IP rate limit')
   }
 })
 
@@ -51,7 +53,7 @@ const hourlySuccessIpRateLimit = rateLimit({
     return (res.statusCode >= 200 && res.statusCode <= 299) && !res.locals.dentInstSimIsErrorPage;
   },
   onBlocked: function(req, res, next) {
-    throw 'Exceeded hourly IP rate limit'
+    throw new Error('Exceeded hourly IP rate limit')
   }
 })
 
@@ -60,43 +62,43 @@ const dailyIpRateLimit = rateLimit({
   expiresIn: env.instSimIpRateLimitDaily.timeWindow,
   lookup: (req, _) => `instant-simulation:daily:${req.ip}`,
   onBlocked: function(req, res, next) {
-    throw 'Exceeded daily IP rate limit'
+    throw new Error('Exceeded daily IP rate limit')
   }
 })
 
-router.get('/', async (req, res) => {
+router.get('/', asyncRoute(async (req, res) => {
   setupCacheGet(res)
   const synthTransform = !!req.query.transform || !!req.query.t
   res.render('instant_simulations/index', buildParams({synthTransform: synthTransform}))
-})
+}))
 
-router.get('/terms', async (req, res) => {
+router.get('/terms', asyncRoute(async (req, res) => {
   setupCacheGet(res)
   res.render('instant_simulations/terms', buildLayoutParams({subtitle: 'Terms of Service'}))
-})
+}))
 
-router.get('/privacy', async (req, res) => {
+router.get('/privacy', asyncRoute(async (req, res) => {
   setupCacheGet(res)
   res.render('instant_simulations/privacy', buildLayoutParams({subtitle: 'Privacy Policy'}))
-})
+}))
 
-router.get('/epoch', async (req, res) => {
+router.get('/epoch', asyncRoute(async (req, res) => {
   res.json({epoch: getOtpEpoch()})
-})
+}))
 
-router.get('/robots.txt', async (req, res) => {
+router.get('/robots.txt', asyncRoute(async (req, res) => {
   const content = env.isProduction() ? ROBOTS_PRODUCTION : ROBOTS_DEV
   setupCacheGet(res)
   res.setHeader('Content-Type', 'text/plain');
   res.status(200).send(content)
-})
+}))
 
 router.post('/',
 timeout(`${env.instSimRouteTimeout + env.instSimUploadTimeout}s`),
 hourlySuccessIpRateLimit,
 minutelyIpRateLimit,
 dailyIpRateLimit,
-helpers.asyncCatchError(async (req, res, next) => {
+asyncRoute(async (req, res, next) => {
   const form = formidable({
     multiples: true,
     maxFileSize: envShared.maxUploadSizeBytes,
@@ -105,43 +107,48 @@ helpers.asyncCatchError(async (req, res, next) => {
   })
   const timeoutManager = new TimeoutManager({externalTimedout: () => req.timedout, onTimeout: () => form.pause()})
   const {files, fields} = await timeoutManager.exec(async () => {
-    const result = await helpers.parseFormPromise(form, req)
+    const result = await helpers.parseForm(form, req)
     return result
   }, env.instSimUploadTimeout)
   if (timeoutManager.hasTimedout()) return
 
   await timeoutManager.exec(async () => {
-    const nowSecs = new Date().getTime()
+    const nowMillis = getNowInMillis()
     if (!files.photo || files.photo.size === 0) {
-      throw "No photo was received"
+      throw new Error("No photo was received")
     }
 
     if (!tokenIsValid(fields.secret)) {
-      throw 'Non authorized token'
+      throw new Error('Non authorized token')
     }
 
     const recaptchaIsValid = await validateRecaptcha(fields.recaptchaToken)
     if (!recaptchaIsValid) {
-      throw 'Invalid Recaptcha'
+      throw new Error('Invalid Recaptcha')
     }
 
     const extension = path.extname(files.photo.name).toLowerCase()
     res.locals.photoPath = files.photo.path
     res.locals.photoExt = extension
     res.locals.info = {ip: req.ip, timestamp: timenowStr()}
-    if (!extension.match(/.*(jpe?g|png)$/i)) {
-      throw `Invalid extension ${extension}`
+    if (!extension.match(env.supportedImagesFilepathRegex)) {
+      throw new Error(`Invalid extension ${extension}`)
     }
     const client = new QuickSimulationClient()
-    const expiresAt = Math.round(nowSecs + env.instSimGiveUpStartTimeout * 1000.0)
-    const mixFactor = fields.synthTransform == 'true' ? null : env.instSimMixFactor
-    const simulation = await client.requestSimulation({
-      photoPath: files.photo.path,
-      expiresAt: expiresAt,
-      mixFactor: mixFactor,
+    const expiresAt = Math.round(nowMillis + env.instSimGiveUpStartTimeout * 1000.0)
+    const simOpts = {
       brightness: env.instSimBrightness,
       whiten: env.instSimWhiten,
       poisson: env.instSimPoisson,
+      ortho: false,
+    }
+    if (fields.synthTransform !== 'true') {
+      simOpts['mix_factor'] = env.instSimMixFactor
+    }
+    const simulation = await client.requestSimulation({
+      photoPath: files.photo.path,
+      expiresAt: expiresAt,
+      options: simOpts
     })
     if (timeoutManager.hasTimedout()) return
     const { getBeforeUrl, getResultUrl } = await uploadToFirestoreData({

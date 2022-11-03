@@ -1,12 +1,12 @@
 import formidable from 'formidable'
 
+import {Uri} from '../models/tools/Uri'
 import {envShared} from '../shared/envShared'
 import {simpleCrypto} from '../shared/simpleCrypto'
-import {Uri} from '../models/tools/Uri'
 
 export const helpers = new (class {
-  getReferer(req) {
-    return this.normalizeParamValue(req.get('Referer') || req.get('Origin') || req.get('Host'))
+  getOrigin(req) {
+    return this.normalizeParamValue(req.get('Origin') || req.get('Referer'))
   }
 
   getSignature(req) {
@@ -22,16 +22,43 @@ export const helpers = new (class {
     return decoded;
   }
 
-  respondError(res, status, message) {
-    return res.status(status).json({error: message})
+  respondError(res, status, data) {
+    return res.status(status).json({error: data})
   }
 
-  setCors(req, res) {
-    const referer = req.get('Referer') || req.get('Origin') || req.get('Host')
+  setAllowingCors(req, res) {
+    const normalizedHost = helpers.normalizedOriginForCors(req)
+    if (!normalizedHost) return
+    const allowedHeaders = ['authorization'].filter((h) => req.headers[h])
+    allowedHeaders.push('*')
+    return helpers.setCors(res, {
+      hosts: normalizedHost,
+      methods: req.method,
+      headers: allowedHeaders,
+    })
+  }
+
+  normalizedOriginForCors(req) {
+    const host = helpers.getOrigin(req)
+    if (!host) return undefined
+    return helpers.normalizeOrigin(host, req.protocol)
+  }
+
+  normalizeOrigin(host, defaultProtocol) {
+    if (!host) return
+    const uri = new Uri(host)
+    if (!uri.protocol) uri.protocol = defaultProtocol
+    return uri.toString({path: false})
+  }
+
+  setCors(res, {hosts, methods, headers}) {
+    if (Array.isArray(hosts)) hosts = hosts.join(', ')
+    if (Array.isArray(methods)) methods = methods.join(', ')
+    if (Array.isArray(headers)) headers = headers.join(', ')
     res.set({
-      "Access-Control-Allow-Origin": new Uri(referer).toString({path: false}),
-      "Access-Control-Allow-Methods": "POST",
-      "Access-Control-Allow-Headers": envShared.signatureHeaderName,
+      "Access-Control-Allow-Origin": hosts,
+      "Access-Control-Allow-Methods": methods,
+      "Access-Control-Allow-Headers": headers,
     })
   }
 
@@ -43,25 +70,7 @@ export const helpers = new (class {
     return typeof(value) === 'string' && value !== '' && typeof(value) !== 'undefined'
   }
 
-  asyncCatchError(func) {
-    return (req, res, next) => {
-      return func(req, res, next).catch(next)
-    }
-  }
-
-  redirectCatch(catchCallback, behaviour) {
-    behaviour().catch(catchCallback)
-  }
-
-  async parseForm(req, extraOptions={}) {
-    return new Promise((resolve, reject) => {
-      let opts = { multiples: true }
-      const form = formidable(Object.assign(opts, extraOptions))
-      return parseFormPromise(form)
-    })
-  }
-
-  parseFormPromise(form, req) {
+  async parseForm(form, req) {
     return new Promise((resolve, reject) => {
       form.parse(req, (err, fields, files) => {
         if (err) reject(err)
@@ -73,5 +82,4 @@ export const helpers = new (class {
   toDataUrl(binary, mime) {
     return `data:${mime};base64,${simpleCrypto.base64(binary)}`
   }
-
 })()

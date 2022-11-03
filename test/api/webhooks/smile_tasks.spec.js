@@ -2,17 +2,22 @@ import { Factory } from 'rosie'
 import {Database} from '../../../src/models/database/Database'
 import {SmileTask} from '../../../src/models/database/SmileTask'
 import {helpers} from '../../helpers'
+import {firebaseHelpers} from '../../helpers/firebaseHelpers'
 
 import app from '../../../src/app'
 app.enable('trust proxy')
 import supertest from 'supertest'
 const request = supertest(app)
 
+beforeAll(async () => {
+  await firebaseHelpers.ensureTestEnv()
+})
+
 describe(`Webhooks Smile Tasks`, () => {
   let smileTask
 
   beforeEach(async () => {
-    await Database.instance().drop()
+    await firebaseHelpers.clearFirestore()
     const user = Factory.build('user')
     smileTask = Factory.build('smile_task', {userId: user.id})
     await Promise.all([smileTask.save(), user.save()])

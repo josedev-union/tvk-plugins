@@ -1,27 +1,33 @@
 import {helpers} from '../routes/helpers'
+import {asyncMiddleware} from './expressAsync'
 import {RateLimit} from '../models/database/RateLimit'
+import {RichError} from '../utils/RichError'
 import onFinished from 'on-finished'
 
 export function rateLimit({limit, expiresIn, lookup = (req, res) => req.ip, onBlocked=null, countIf=null}) {
-  return async (req, res, next) => {
-    return await helpers.redirectCatch(next, async () => {
-      const limitObj = new RateLimit({limit: limit, expiresIn: expiresIn})
-      const ids = lookup.apply(limitObj, [req, res])
-      const allowed = await limitObj.useSlotFrom(ids, true)
-      if (allowed) {
-        onFinished(res, function(err, res) {
-          if (countIf === null || countIf.apply(limitObj, [req, res])) {
-            limitObj.manualCountFor(ids)
-          }
-        })
-        return next()
-      } else {
-        if (onBlocked) {
-          onBlocked(req, res, next)
-        } else {
-          return helpers.respondError(res, 429, "Too Many Requests")
+  return asyncMiddleware('rateLimit.rateLimit', async (req, res, next) => {
+    const limitObj = new RateLimit({limit, expiresIn})
+    const countAtBeginning = !countIf
+    const ids = lookup.apply(limitObj, [req, res])
+    const allowed = await limitObj.useSlotFrom(ids, countAtBeginning)
+    if (allowed) {
+      onFinished(res, function(err, res) {
+        if (!countAtBeginning && countIf.apply(limitObj, [req, res])) {
+          limitObj.manualCountFor(ids)
         }
+      })
+    } else {
+      if (onBlocked) {
+        return onBlocked(req, res, next)
+      } else {
+        throw new RichError({
+          publicId: 'rate-limit',
+          httpCode: 429,
+          publicMessage: 'Too Many Requests',
+          logLevel: 'debug',
+          tags: {'error:rate-limit': 'generic'},
+        })
       }
-    })
-  }
+    }
+  })
 }

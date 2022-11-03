@@ -23,6 +23,15 @@ module.exports = {
               "@babel/plugin-proposal-class-properties",
               "@babel/plugin-proposal-private-methods",
               "@babel/plugin-proposal-private-property-in-object"
+            ],
+            presets: [
+              [
+                '@babel/preset-env',
+                {
+                  corejs: '3.25.5',
+                  useBuiltIns: "usage"
+                }
+              ]
             ]
           }
         },

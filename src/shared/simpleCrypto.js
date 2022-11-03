@@ -1,5 +1,8 @@
 import _sha1 from 'js-sha1'
-import sha256 from 'js-sha256'
+import _sha256 from 'js-sha256'
+import {v4 as uuid} from 'uuid'
+import {promisify} from 'util'
+import crypto from 'crypto'
 
 export const simpleCrypto = new (class {
     base64(str, params = {padding: true}) {
@@ -33,10 +36,26 @@ export const simpleCrypto = new (class {
         return s1.hex()
     }
 
+    sha256(str) {
+        const s256 = _sha256.create()
+        s256.update(str)
+        return s256.hex()
+    }
+
     hmac(str, pass) {
-        const hmac = sha256.hmac.create(pass)
+        const hmac = _sha256.hmac.create(pass)
         hmac.update(str)
         return hmac.hex()
+    }
+
+    md5(str) {
+        const m5 = crypto.createHash('md5')
+        m5.update(str)
+        return m5.digest('hex')
+    }
+
+    verifySignatureHmac(signature, str, pass) {
+        return this.hmac(str, pass) == signature
     }
 
     genericUUID(size = 10) {
@@ -46,5 +65,15 @@ export const simpleCrypto = new (class {
             uuid += uuidChars[Math.floor(Math.random()*uuidChars.length)]
         }
         return uuid
+    }
+
+    uuid() {
+      return uuid()
+    }
+
+    newSecret() {
+      const crypto256Token = crypto.randomBytes(32).toString('hex')
+      const uuidToken = uuid()
+      return this.hmac(crypto256Token, uuidToken)
     }
 })()
