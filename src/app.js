@@ -11,6 +11,7 @@ const app = express()
 
 import indexRouter from './routes/index'
 import apiSmileTasks from './routes/api/smile_tasks'
+import apiQuickSimulations from './routes/api/quick_simulations'
 import internalApiSmileTasks from './routes/internal_api/smile_tasks'
 import webhooksSmileTasks from './routes/webhooks/smile_tasks'
 import {helpers} from './routes/helpers'
@@ -54,6 +55,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 app.use('/', indexRouter);
 app.use('/api/users/:userId/smile-tasks/', getModel.user, apiSmileTasks);
+app.use('/api/quick-simulations/', apiQuickSimulations);
 app.use('/api/67a4abe/smile-tasks/:smileTaskId/', getModel.smileTask, internalApiSmileTasks);
 app.use('/webhooks/828ffbc/smile-tasks/', webhooksSmileTasks);
 
