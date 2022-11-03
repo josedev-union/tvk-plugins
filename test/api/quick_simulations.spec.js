@@ -17,7 +17,7 @@ jest.mock('../../src/config/env' , () => {
   const {env: originalEnv} = jest.requireActual('../../src/config/env')
   const env = {...originalEnv}
   env.quickApiRouteTimeout = 0.5
-  env.quickApiMaxUploadSizeMb = 0.3
+  env.quickApiMaxUploadSizeMb = 0.6
   env.quickApiMaxUploadSizeBytes = env.quickApiMaxUploadSizeMb * 1024 * 1024
 
   env.quickApiRateLimit_timeWindowSeconds = 60.0
@@ -129,6 +129,8 @@ const VALID_FORMAT_COMBINATIONS = [
 describe('POST simulations/ortho', () => {
   describeCommonErrors({mode: 'ortho'})
   describeSimulationErrors({mode: 'ortho'})
+  describeSimulationSupportedFormats({mode: 'ortho'})
+
   describe.each(VALID_FORMAT_COMBINATIONS)(`on a successful request (format = %o)`, (formatCfg) => {
     let response
     let bucketname = 'dentrino-test.appspot.com'
@@ -173,6 +175,7 @@ describe('POST simulations/ortho', () => {
 describe('POST simulations/cosmetic', () => {
   describeCommonErrors({mode: 'cosmetic'})
   describeSimulationErrors({mode: 'cosmetic'})
+  describeSimulationSupportedFormats({mode: 'cosmetic'})
 
   describe.each(VALID_FORMAT_COMBINATIONS)(`on a successful request (format = %o)`, (formatCfg) => {
     let response
@@ -470,6 +473,45 @@ function describeSimulationErrors({mode}) {
 
       expect(response.status).toBe(422)
       expect(response.body.error.id).toBe('bad-params')
+    })
+
+    test(`respond 422 when image format is not supported`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mode,
+        requestCfg: {
+          params: {
+            imgPhoto: {
+              content: readfile('./test/fixtures/formats/face.gif'),
+              filename: 'face.jpg',
+              contentType: 'image/jpeg',
+            }
+          }
+        }
+      })
+
+      expect(response.status).toBe(422)
+      expect(response.body.error.id).toBe('bad-params')
+    })
+  })
+}
+
+function describeSimulationSupportedFormats({mode}) {
+  describe('input supported formats', () => {
+    test.each(['jpg', 'png', 'heic', 'heif', 'heic', 'avif'])(`respond 200 on image format %s`, async (extension) => {
+      const {response} = await prepareAndRunSimulation({
+        mode,
+        requestCfg: {
+          params: {
+            imgPhoto: {
+              content: readfile(`./test/fixtures/formats/face.${extension}`),
+              filename: 'face.gif', // should be ignored
+              contentType: 'image/gif', // should be ignored
+            }
+          }
+        }
+      })
+
+      expect(response.status).toBe(201)
     })
   })
 }

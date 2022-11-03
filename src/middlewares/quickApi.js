@@ -269,7 +269,7 @@ export const quickApi = new (class {
 
       const {ext: extension} = (await FileType.fromBuffer(photo.content)) || {}
 
-      if (!extension || !extension.match(/.*(jpe?g|png)$/i)) {
+      if (!extension || !extension.match(env.supportedImagesFilepathRegex)) {
         throw quickApi.#newBadParamsError({
           message: `Invalid photo type of ${field}`,
           details: {

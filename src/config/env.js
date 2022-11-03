@@ -58,6 +58,9 @@ export const env = new (class {
   quickApiRateLimit_ipSimulationsPerTimeWindow = this.quickApiRateLimit_ipSimulationsPerSecond * this.quickApiRateLimit_timeWindowSeconds
   quickApiRateLimit_ipRequestsPerTimeWindow = this.quickApiRateLimit_ipRequestsPerSecond * this.quickApiRateLimit_timeWindowSeconds
 
+  supportedImagesStr = process.env.DENTRINO_SUPPORTED_IMAGES || 'jpg,jpeg,png,heic,heif,avif'
+  supportedImagesFilepathRegex = toFilepathRegex(this.supportedImagesStr)
+
   instSimIpRateLimitMinutely = {
     amount:     parseFloat(process.env.DENTRINO_INSTSIM_IP_RATE_LIMIT_MINUTELY_AMOUNT || 3),
     timeWindow: parseFloat(1 * 60 * 1000),
@@ -112,4 +115,10 @@ function parseBool(val) {
   val = String(val).trim().toLowerCase()
   if (!val || FALSE_STRINGS.includes(val)) return false
   return true
+}
+
+function toFilepathRegex(str) {
+  if (typeof(str) !== 'string') return str
+  str = str.replaceAll(/,/g, '|').replaceAll(/\s/g, '')
+  return new RegExp(`^(.*\\.)?(?<ext>${str})$`, 'i')
 }

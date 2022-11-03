@@ -131,7 +131,7 @@ asyncRoute(async (req, res, next) => {
     res.locals.photoPath = files.photo.path
     res.locals.photoExt = extension
     res.locals.info = {ip: req.ip, timestamp: timenowStr()}
-    if (!extension.match(/.*(jpe?g|png)$/i)) {
+    if (!extension.match(env.supportedImagesFilepathRegex)) {
       throw new Error(`Invalid extension ${extension}`)
     }
     const client = new QuickSimulationClient()

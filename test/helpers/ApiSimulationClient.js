@@ -1,3 +1,4 @@
+import FileType from 'file-type'
 import {simpleCrypto} from "../../src/shared/simpleCrypto"
 import FormData from 'form-data'
 
@@ -43,7 +44,7 @@ export class ApiSimulationClient {
       params = {data: params['data']}
     }
 
-    const fields = this.#paramsToFields(params)
+    const fields = await this.#paramsToFields(params)
 
     const routeNamespace = format.isPublicCall ? ROUTE_PUBLIC_NAMESPACE : ROUTE_BACKEND_NAMESPACE
 
@@ -61,7 +62,7 @@ export class ApiSimulationClient {
       bodyData = form.getBuffer()
       headers['Content-Type'] = 'multipart/form-data;boundary=' + form.getBoundary()
     } else if (format.body === BODY_FORMAT_JSON) {
-      bodyData = fields['data']['value']
+      bodyData = fields['data']['content']
       headers['Content-Type'] = 'application/json'
     } else {
       throw new Error(`Couldn't recognize format.body ${format.body}`)
@@ -92,7 +93,7 @@ export class ApiSimulationClient {
 
   async #generateSignature({fields, credentials}) {
     const paramsHashedEntries = await Promise.all(
-      Object.entries(fields).map(([key, {value: val}]) => {
+      Object.entries(fields).map(([key, {content: val}]) => {
         return Promise.resolve(val).then((val) => {
           var hashed = simpleCrypto.md5(val)
           return [key, hashed]
@@ -114,32 +115,46 @@ export class ApiSimulationClient {
     return `${claimsBase64}:${claimsSigned}`
   }
 
-  #paramsToFields(params) {
+  async #paramsToFields(params) {
     const fields = {}
-    Object.entries(params).forEach(([fieldName, fieldval]) => {
+    for (let [fieldName, fieldval] of Object.entries(params)) {
+      fieldval = await Promise.resolve(fieldval)
       const fieldInfo = {fieldName, originalValue: fieldval}
       if (fieldName.startsWith('img')) {
-        const filename = `${fieldName}.jpg`
-        const contentType = 'image/jpeg'
-        Object.assign(fieldInfo, {filename, contentType})
+        let imgProps = {}
+        if (typeof(fieldval) === 'string' || Buffer.isBuffer(fieldval)) {
+          imgProps['content'] = fieldval
+        } else if (fieldval && typeof(fieldval) === 'object') {
+          Object.assign(imgProps, fieldval)
+          imgProps['content'] = await Promise.resolve(imgProps['content'])
+        } else {
+          throw `ApiSimulationClient: Image content for ${fieldName} is not valid parameter`
+        }
+        if (!imgProps['filename'] || !imgProps['contentType']) {
+          const fileTypeResult = await FileType.fromBuffer(imgProps['content'])
+          const {ext, mime} = fileTypeResult || {ext: 'jpg', mime: 'image/jpeg'}
+          const autoProps = {filename: `${fieldName}.${ext}`, contentType: mime}
+          imgProps = Object.assign(autoProps, imgProps)
+        }
+        Object.assign(fieldInfo, imgProps)
       } else {
         if (fieldval.constructor === Object) {
-          fieldval = JSON.stringify(fieldval)
+          fieldInfo['content'] = JSON.stringify(fieldval)
         }
       }
-      fields[fieldName] = {value: fieldval, ...fieldInfo}
-    })
+      fields[fieldName] = fieldInfo
+    }
     return fields
   }
 
   #fieldsToFormData(fields) {
     const form = new FormData()
     Object.entries(fields).forEach(([fieldName, fieldInfo]) => {
-      const {filename, contentType, value} = fieldInfo
+      const {content, filename, contentType} = fieldInfo
       if (filename) {
-        form.append(fieldName, value, {filename, contentType})
+        form.append(fieldName, content, {filename, contentType})
       } else {
-        form.append(fieldName, value)
+        form.append(fieldName, content)
       }
     })
     return form
