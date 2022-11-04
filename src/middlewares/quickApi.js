@@ -207,7 +207,7 @@ export const quickApi = new (class {
         file.content = '[HIDDEN]'
         throw quickApi.#newBadParamsError({
           subtype: 'size-limit-exceeded',
-          message: `The param ${file.fieldname} is too big`,
+          message: `${file.fieldname} is too big`,
           details: {
             receivedFile: file,
           }
@@ -263,7 +263,7 @@ export const quickApi = new (class {
       if (!photo || !photo.content || photo.size === 0) {
         throw quickApi.#newBadParamsError({
           subtype: 'no-photo',
-          message: `A photo param ${field} is mandatory`,
+          message: `${field} is mandatory`,
           details: {
             imgParamsReceived: Object.keys(images)
           }
@@ -275,7 +275,7 @@ export const quickApi = new (class {
       if (!extension || !extension.match(env.supportedImagesFilepathRegex)) {
         throw quickApi.#newBadParamsError({
           subtype: 'unknown-format',
-          message: `Invalid photo format of ${field}`,
+          message: `${field} format is unknown`,
           details: {
             receivedPhotoType: extension
           }
@@ -561,9 +561,8 @@ export const quickApi = new (class {
       subtype,
       subtypeIsPublic: true,
       httpCode: 422,
-      debugMessage: message,
       debugDetails: details,
-      publicMessage: 'Unprocessable Entity',
+      publicMessage: message,
       logLevel: 'debug',
     })
   }

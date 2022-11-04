@@ -228,6 +228,33 @@ describe('POST simulations/cosmetic', () => {
       })
     })
   })
+
+
+  describe('respond 422 when parameters are invalid', () => {
+    const callCosmetic = async (data) => {
+      const {response} = await prepareAndRunSimulation({
+        mode: 'cosmetic',
+        requestCfg: {
+          params: {data},
+        }
+      })
+      return response
+    }
+
+    const INVALID_PARAMETER_CASES = [
+      {whiten: 1.5},
+      {brightness: 1.5},
+      {styleMode: 'mix_manual', mixFactor: 1.5},
+      {whiten: -0.5},
+      {styleMode: 'invalid-mode'},
+    ]
+    test.each(INVALID_PARAMETER_CASES)(`data = %o`, async (data) => {
+      const response = await callCosmetic(data)
+      expect(response.status).toBe(422)
+      expect(response.body.error.id).toBe('bad-params')
+      expect(response.body.error.subtype).toBe('body-validation-error')
+    })
+  })
 })
 
 describe('PATCH simulations/:id', () => {
@@ -494,6 +521,40 @@ function describeSimulationErrors({mode}) {
       expect(response.status).toBe(422)
       expect(response.body.error.id).toBe('bad-params')
       expect(response.body.error.subtype).toBe('unknown-format')
+    })
+
+    test(`respond 422 when captureType is invalid`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mode,
+        requestCfg: {
+          params: {
+            data: {
+              captureType: "invalid-capture-type",
+            },
+          }
+        }
+      })
+
+      expect(response.status).toBe(422)
+      expect(response.body.error.id).toBe('bad-params')
+      expect(response.body.error.subtype).toBe('body-validation-error')
+    })
+
+    test(`respond 422 when feedbackScore is invalid`, async () => {
+      const {response} = await prepareAndRunSimulation({
+        mode,
+        requestCfg: {
+          params: {
+            data: {
+              feedbackScore: 9.5,
+            },
+          }
+        }
+      })
+
+      expect(response.status).toBe(422)
+      expect(response.body.error.id).toBe('bad-params')
+      expect(response.body.error.subtype).toBe('body-validation-error')
     })
   })
 }
