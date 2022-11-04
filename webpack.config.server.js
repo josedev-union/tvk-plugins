@@ -7,6 +7,9 @@ module.exports = {
   node: {
       __dirname: false,
   },
+  optimization: {
+    nodeEnv: false,
+  },
   devtool: "source-map",
   entry: {
     app: './src/boot.js'
