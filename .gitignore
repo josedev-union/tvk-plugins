@@ -58,6 +58,8 @@ typings/
 .env
 .env.prod
 
+.pyc
+
 # next.js build output
 .next
 public/assets
