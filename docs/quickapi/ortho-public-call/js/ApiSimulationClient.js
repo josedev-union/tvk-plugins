@@ -22,7 +22,7 @@ Dentrino.SimulationApiClient = (function() {
         clientExposedSecret: me.clientExposedSecret
       },
       params: {
-        img_photo: photo
+        imgPhoto: photo
       }
     });
   };
@@ -80,9 +80,9 @@ Dentrino.SimulationApiClient = (function() {
     return paramsHashed.then(function(paramsHashedEntries) {
       var paramsHashed = Object.fromEntries(paramsHashedEntries)
       var claims = {
-        'client_id': credentials.clientId,
-        'recaptcha_token': credentials.recaptchaToken,
-        'params_hashed': paramsHashed
+        'clientId': credentials.clientId,
+        'recaptchaToken': credentials.recaptchaToken,
+        'paramsHashed': paramsHashed
       };
       var claimsJson = JSON.stringify(claims);
       var claimsSigned = CryptoJS.HmacSHA256(claimsJson, credentials.clientExposedSecret).toString();
