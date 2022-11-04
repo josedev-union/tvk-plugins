@@ -24,6 +24,8 @@ import 'whatwg-fetch'
     const $errorNotification = $('#error-notification')
     const $simulationLoadingPlaceholder = $('.loading-simulation-placeholder')
 
+    let hideTimeout = null
+
     function setupErrorNotification() {
       const errorMessage = $errorMessage.text().trim()
       const errorCode = $errorMessage.data('error-code').trim()
@@ -122,7 +124,7 @@ import 'whatwg-fetch'
       if (!file) {
         errorCode = 'errors:upload:no-file'
         errorMessage = i18n(errorCode)
-      } else if (!file.name.match(/\.(jpe?g|png)$/i)) {
+      } else if (!file.name.match(/\.(jpe?g|png|heic|heif|avif)$/i)) {
         errorCode = 'errors:upload:wrong-image-format'
         errorMessage = i18n(errorCode)
       } else if (file.size > envShared.maxUploadSizeBytes) {
@@ -148,7 +150,6 @@ import 'whatwg-fetch'
       }, 350)
     }
 
-    let hideTimeout
     function errorAppear({errorMessage, errorCode, backend=false, isSimulationError=false}) {
       if (backend) {
         console.log('BackendReport', errorCode)

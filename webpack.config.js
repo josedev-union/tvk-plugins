@@ -10,6 +10,20 @@ module.exports = {
   module: {
     rules: [
       {
+        test: require.resolve("./assets/vendor/js/jquery-3.6.0.min.js"),
+        loader: "exports-loader",
+        options: {
+          exports: "default jQuery",
+        },
+      },
+      {
+        test: require.resolve("./assets/vendor/js/imagesloaded.v4.1.4.js"),
+        loader: "exports-loader",
+        options: {
+          exports: "default imagesLoaded",
+        },
+      },
+      {
         test: /\.(js)$/,
         include: /(assets|src\/shared)/,
         use: {

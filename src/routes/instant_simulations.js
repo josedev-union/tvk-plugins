@@ -112,9 +112,11 @@ asyncRoute(async (req, res, next) => {
   }, env.instSimUploadTimeout)
   if (timeoutManager.hasTimedout()) return
 
+  const photo = files.photo
+
   await timeoutManager.exec(async () => {
     const nowMillis = getNowInMillis()
-    if (!files.photo || files.photo.size === 0) {
+    if (!photo || photo.size === 0) {
       throw new Error("No photo was received")
     }
 
@@ -127,12 +129,12 @@ asyncRoute(async (req, res, next) => {
       throw new Error('Invalid Recaptcha')
     }
 
-    const extension = path.extname(files.photo.name).toLowerCase()
-    res.locals.photoPath = files.photo.path
-    res.locals.photoExt = extension
-    res.locals.info = {ip: req.ip, timestamp: timenowStr()}
-    if (!extension.match(env.supportedImagesFilepathRegex)) {
-      throw new Error(`Invalid extension ${extension}`)
+    const photoExt = path.extname(photo.originalFilename).toLowerCase()
+    const photoPath = photo.filepath
+    const info = {ip: req.ip, timestamp: timenowStr()}
+    Object.assign(res.locals, {photoPath, photoExt, info})
+    if (!photoExt.match(env.supportedImagesFilepathRegex)) {
+      throw new Error(`Invalid extension ${photoExt}`)
     }
     const client = new QuickSimulationClient()
     const expiresAt = Math.round(nowMillis + env.instSimGiveUpStartTimeout * 1000.0)
@@ -146,13 +148,13 @@ asyncRoute(async (req, res, next) => {
       simOpts['mix_factor'] = env.instSimMixFactor
     }
     const simulation = await client.requestSimulation({
-      photoPath: files.photo.path,
+      photoPath,
       expiresAt: expiresAt,
       options: simOpts
     })
     if (timeoutManager.hasTimedout()) return
     const { getBeforeUrl, getResultUrl } = await uploadToFirestoreData({
-      originalExt: extension,
+      originalExt: photoExt,
       original: simulation.original,
       before: simulation.before,
       result: simulation.result,
@@ -167,7 +169,7 @@ asyncRoute(async (req, res, next) => {
       resultUrl: getResultUrl,
       //beforeDataUrl: beforeDataUrl,
       //resultDataUrl: resultDataUrl,
-      originalExt: extension
+      originalExt: photoExt
     }
     return res.render('instant_simulations/index', buildParams({subtitle: 'Result', simulation: simulationParams}))
   }, env.instSimRouteTimeout)

@@ -77,7 +77,10 @@ app.use(express.json({
   },
 }));
 app.use(compression());
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
 app.use(cookieParser());
 
 if (env.instSimRouter) {
