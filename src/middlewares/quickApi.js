@@ -76,7 +76,7 @@ export const quickApi = new (class {
       const {dentApiId: apiId, dentClient: client} = res.locals
       if (!client.apiIsEnabled({api: apiId})) {
         throw quickApi.#newAuthorizationError({
-          debugId: 'no-access-to-route',
+          subtype: 'no-access-to-route',
           message: "The client aren't authorized to access this route",
         })
       }
@@ -88,7 +88,7 @@ export const quickApi = new (class {
       const {dentClient: client} = res.locals
       if (client.isRevoked()) {
         throw quickApi.#newAuthorizationError({
-          debugId: 'token-revoked',
+          subtype: 'token-revoked',
           message: "This client access was revoked",
         })
       }
@@ -206,6 +206,7 @@ export const quickApi = new (class {
       if (file.size >= env.quickApiMaxUploadSizeBytes) {
         file.content = '[HIDDEN]'
         throw quickApi.#newBadParamsError({
+          subtype: 'size-limit-exceeded',
           message: `The param ${file.fieldname} is too big`,
           details: {
             receivedFile: file,
@@ -246,6 +247,7 @@ export const quickApi = new (class {
       if (errors.length > 0) {
         const {message} = errors[0]
         throw quickApi.#newBadParamsError({
+          subtype: 'body-validation-error',
           message,
         })
       }
@@ -260,6 +262,7 @@ export const quickApi = new (class {
 
       if (!photo || !photo.content || photo.size === 0) {
         throw quickApi.#newBadParamsError({
+          subtype: 'no-photo',
           message: `A photo param ${field} is mandatory`,
           details: {
             imgParamsReceived: Object.keys(images)
@@ -271,7 +274,8 @@ export const quickApi = new (class {
 
       if (!extension || !extension.match(env.supportedImagesFilepathRegex)) {
         throw quickApi.#newBadParamsError({
-          message: `Invalid photo type of ${field}`,
+          subtype: 'unknown-format',
+          message: `Invalid photo format of ${field}`,
           details: {
             receivedPhotoType: extension
           }
@@ -287,7 +291,7 @@ export const quickApi = new (class {
       delete req.query.clientId
       if (!token && !queryClientId) {
         throw quickApi.#newAuthorizationError({
-          debugId: 'no-token',
+          subtype: 'no-token',
           message: "Didn't received token",
         })
       }
@@ -352,7 +356,7 @@ export const quickApi = new (class {
     MANDATORY_CLAIMS.forEach((claimKey) => {
       if (!claims[claimKey]) {
         throw quickApi.#newAuthorizationError({
-          debugId: 'missing-claim',
+          subtype: 'missing-claim',
           message: `Missing '${claimKey}' on claims - "${token}`,
           details: {
             receivedToken: token,
@@ -418,7 +422,7 @@ export const quickApi = new (class {
       } else {
         quickApi.#addRecaptchaTag(res, 'refused')
         throw quickApi.#newAuthorizationError({
-          debugId: 'failed-recaptcha',
+          subtype: 'failed-recaptcha',
           message: `Failed on recaptcha validation`,
           details: {
             googleResponse: data,
@@ -540,8 +544,10 @@ export const quickApi = new (class {
 
   #newRateLimitError({message, tags}) {
     return new RichError({
-      publicId: 'rate-limit',
       httpCode: 429,
+      id: 'too-many-requests',
+      subtype: 'rate-limit',
+      subtypeIsPublic: true,
       publicMessage: 'Too Many Requests',
       debugMessage: message,
       logLevel: 'debug',
@@ -549,9 +555,11 @@ export const quickApi = new (class {
     })
   }
 
-  #newBadParamsError({message, details={}}) {
+  #newBadParamsError({subtype, message, details={}}) {
     return new RichError({
-      publicId: 'bad-params',
+      id: 'bad-params',
+      subtype,
+      subtypeIsPublic: true,
       httpCode: 422,
       debugMessage: message,
       debugDetails: details,
@@ -560,10 +568,10 @@ export const quickApi = new (class {
     })
   }
 
-  #newAuthorizationError({message, debugId='bad-token', details={}}) {
+  #newAuthorizationError({subtype='bad-token', message, details={}}) {
     return new RichError({
-      publicId: 'not-authorized',
-      debugId: debugId,
+      id: 'not-authorized',
+      subtype,
       httpCode: 403,
       debugMessage: message,
       debugDetails: details,

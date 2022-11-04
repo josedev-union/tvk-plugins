@@ -26,7 +26,7 @@ export const api = new (class {
   newNotFoundError() {
     return new RichError({
       httpCode: 404,
-      publicId: 'not-found',
+      id: 'not-found',
       publicMessage: 'Not Found',
       logLevel: undefined,
     })

@@ -56,9 +56,9 @@ app.use(function(req, res, next) {
   if (ipsCountOnHeader !== 2) {
     const err = new RichError({
       httpCode: 400,
-      publicId: 'bad-request',
+      id: 'bad-request',
+      subtype: 'bad-x-forwarded-for',
       publicMessage: 'Bad Request',
-      debugId: 'bad-x-forwarded-for',
       debugMessage: `X-Forwarded-For has suspecious value.`,
       logLevel: 'debug',
     })
@@ -119,7 +119,7 @@ app.use(function(err, req, res, next) {
       logger[errLogLevel](err.logText())
     }
     statusCode = err.httpCode
-    data = err.data({isDebug: !env.isProduction()});
+    data = err.data({isDebug: !env.isProduction(), allData: env.isLocal() || env.apiResponsesWithAllDebugData});
   } else {
     const message = err.message || err.error || `Unexpected Error: ${JSON.stringify(err)}`
     statusCode = err.status || 500

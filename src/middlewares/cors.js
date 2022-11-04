@@ -42,9 +42,9 @@ export const cors = new (class {
 
   #newCorsError({message, details={}}) {
     return new RichError({
-      publicId: 'not-authorized',
-      debugId: 'cors-block',
       httpCode: 403,
+      id: 'not-authorized',
+      subtype: 'cors-block',
       debugMessage: message,
       debugDetails: details,
       publicMessage: 'Not Authorized',

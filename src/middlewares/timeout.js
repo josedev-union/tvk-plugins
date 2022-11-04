@@ -14,8 +14,8 @@ export const timeout = new (class {
         onBlow: ({id, extraData: {overrideHttpCode}}) => {
           const httpCode = overrideHttpCode || 504
           throw new RichError({
-            publicId: 'timeout',
-            httpCode: httpCode,
+            id: 'timeout',
+            httpCode,
             publicMessage: 'Operation took too long',
             debugMessage: `Operation id:${id} took too long.`,
             logLevel: 'debug',

@@ -13,9 +13,9 @@ export const getModel = new (class {
       const client = await ApiClient.get(clientId)
       if (!client) {
         throw new RichError({
-          publicId: 'not-authorized',
-          debugId: 'bad-token',
           httpCode: 403,
+          id: 'not-authorized',
+          subtype: 'bad-token',
           debugMessage: `Unauthorized: Could not find client "${clientId}"`,
           debugDetails: {clientId},
           publicMessage: 'Not Authorized',
@@ -33,7 +33,9 @@ export const getModel = new (class {
       if (!user) {
         throw new RichError({
           httpCode: 404,
-          publicId: 'user-not-found',
+          id: 'not-found',
+          subtype: 'user-not-found',
+          subtypeIsPublic: true,
           publicMessage: 'User not found',
           debugDetails: {userId},
           logLevel: 'debug',
@@ -50,7 +52,9 @@ export const getModel = new (class {
       if (!smileTask) {
         throw new RichError({
           httpCode: 404,
-          publicId: 'smiletask-not-found',
+          id: 'not-found',
+          subtype: 'smiletask-not-found',
+          subtypeIsPublic: true,
           publicMessage: 'SmileTask not found',
           debugDetails: {smileTaskId},
           logLevel: 'debug',

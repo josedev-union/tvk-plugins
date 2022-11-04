@@ -450,6 +450,7 @@ function describeSimulationErrors({mode}) {
 
       expect(response.status).toBe(422)
       expect(response.body.error.id).toBe('simulation-error')
+      expect(response.body.error.subtype).toBe('no-face')
       expect(response.body.error.message).toBe(`Couldn't detect face`)
     })
 
@@ -473,6 +474,7 @@ function describeSimulationErrors({mode}) {
 
       expect(response.status).toBe(422)
       expect(response.body.error.id).toBe('bad-params')
+      expect(response.body.error.subtype).toBe('size-limit-exceeded')
     })
 
     test(`respond 422 when image format is not supported`, async () => {
@@ -491,6 +493,7 @@ function describeSimulationErrors({mode}) {
 
       expect(response.status).toBe(422)
       expect(response.body.error.id).toBe('bad-params')
+      expect(response.body.error.subtype).toBe('unknown-format')
     })
   })
 }

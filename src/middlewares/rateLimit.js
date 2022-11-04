@@ -21,8 +21,10 @@ export function rateLimit({limit, expiresIn, lookup = (req, res) => req.ip, onBl
         return onBlocked(req, res, next)
       } else {
         throw new RichError({
-          publicId: 'rate-limit',
           httpCode: 429,
+          id: 'too-many-requests',
+          subtype: 'rate-limit',
+          subtypeIsPublic: true,
           publicMessage: 'Too Many Requests',
           logLevel: 'debug',
           tags: {'error:rate-limit': 'generic'},

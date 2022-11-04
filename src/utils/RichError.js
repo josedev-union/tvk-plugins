@@ -3,7 +3,7 @@ import {TagSet} from './TagSet'
 import {Blob, Buffer} from 'buffer'
 
 export class RichError extends Error {
-  constructor({debugId, httpCode, debugMessage, publicId, publicMessage, cause, debugDetails={}, tags={}, logLevel='error'}) {
+  constructor({id='internal-error', subtype, httpCode, debugMessage, publicMessage, subtypeIsPublic=false, cause, debugDetails={}, tags={}, logLevel='error'}) {
     debugMessage = debugMessage || publicMessage
     if (cause) {
       super(debugMessage)
@@ -14,8 +14,10 @@ export class RichError extends Error {
       super(debugMessage)
     }
     this.debugMessage = debugMessage
-    this.publicId = publicId || 'internal-error'
-    this.debugId = debugId || this.publicId
+    this.id = id
+    this.subtype = subtype
+    this.subtypeIsPublic = subtypeIsPublic
+    this.debugId = this.id + (this.subtype ? `:${this.subtype}` : '')
     this.httpCode = httpCode || 500
     this.debugDetails = {}
     this.addDebugDetails(debugDetails)
@@ -23,7 +25,10 @@ export class RichError extends Error {
     this.logLevel = logLevel
 
     this.tags = new TagSet()
-    this.tags.add('error:id', this.debugId)
+    this.tags.add('error:id', this.id)
+    if (this.subtype) {
+      this.tags.add('error:subtype', this.subtype)
+    }
     this.tags.add('error:is-rich', true)
     this.tags.add(tags)
   }
@@ -40,7 +45,8 @@ export class RichError extends Error {
     if (typeof(error) === 'string') error = new Error(error)
     if (!error instanceof Error) return null
     const richError = new RichError({
-      debugId: `nodejs-error:${error.code}`,
+      id: 'nodejs-error',
+      subtype: error.code,
       debugMessage: error.message,
       cause: error,
       httpCode: error.status || error.httpCode,
@@ -198,20 +204,26 @@ export class RichError extends Error {
     else return `${err.message}\n${err.stack}`
   }
 
-  data({isDebug=false}) {
+  data({isDebug=false, allInfo=false}) {
     const dt = {
-      id: this.publicId || 'internal-error',
+      id: this.id || 'internal-error',
+      subtype: this.subtype,
       message: this.publicMessage || 'Unexpected Internal Error',
     }
-    if (isDebug) {
+    if (isDebug || allInfo) {
       dt.debug = {
         "__ALERT__": "THIS DEBUG OBJECT WILL NOT EXIST IN PRODUCTION",
         debugId: this.debugId,
         message: this.debugMessage,
+      }
+    }
+
+    if (allInfo) {
+      Object.assign(dt.debug, {
         details: this.debugDetails,
         tags: this.tags,
         errorLog: this.logText({details: false}),
-      }
+      })
     }
     return dt
   }
