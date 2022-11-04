@@ -3,15 +3,12 @@ import {TagSet} from './TagSet'
 import {Blob, Buffer} from 'buffer'
 
 export class RichError extends Error {
-  constructor({debugId, httpCode, debugMessage, publicId, publicMessage, cause, namespace, debugDetails={}, tags={}, logLevel='error'}) {
+  constructor({debugId, httpCode, debugMessage, publicId, publicMessage, cause, debugDetails={}, tags={}, logLevel='error'}) {
     debugMessage = debugMessage || publicMessage
     if (cause) {
-      //super(debugMessage, {cause})
       super(debugMessage)
-      //this.cause = cause
       this.originalCause = cause
       Object.assign(this, cause)
-      //Error.captureStackTrace(this)
       this.stack = cause.stack
     } else {
       super(debugMessage)
@@ -19,7 +16,6 @@ export class RichError extends Error {
     this.debugMessage = debugMessage
     this.publicId = publicId || 'internal-error'
     this.debugId = debugId || this.publicId
-    this.namespace = namespace || 'internal'
     this.httpCode = httpCode || 500
     this.debugDetails = {}
     this.addDebugDetails(debugDetails)
@@ -27,8 +23,7 @@ export class RichError extends Error {
     this.logLevel = logLevel
 
     this.tags = new TagSet()
-    this.tags.add('error:id', `${this.namespace}:${this.debugId}`)
-    this.tags.add('error:namespace', this.namespace)
+    this.tags.add('error:id', this.debugId)
     this.tags.add('error:is-rich', true)
     this.tags.add(tags)
   }
