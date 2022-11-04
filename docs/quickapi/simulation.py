@@ -4,22 +4,22 @@ import sys
 import json
 import shutil
 import argparse
-import hashlib
-import base64
-import hmac
-import requests
-import mimetypes
 import errno
-from requests_toolbelt import MultipartEncoder
+
+sys.path.append(os.path.abspath(os.getcwd()))
+
+from scripts_src.utils import *
+from scripts_src.request_api import *
 
 # CONSTANTS
-PUBLIC_API_NAMESPACE = 'public-api/'
-API_NAMESPACE = 'api/'
 COSMETIC_PATH = 'simulations/cosmetic'
 ORTHO_PATH = 'simulations/ortho'
 
 ORTHO_OPT_MODE = 'ortho'
 COSMETIC_OPT_MODE = 'cosmetic'
+
+FILE_CAPTURE_TYPE = 'file'
+CAMERA_CAPTURE_TYPE = 'camera'
 
 DEFAULT_CLIENT_ID = 'ODMzNjkxMTQ4NTY2OXo+bzk2MUdm_default_test'
 DEFAULT_CLIENT_SECRET = '8cf23bceb0f34a868da2fcd2e59eede16ac6d5953d3b77f6bc9827aa4cac8209'
@@ -44,6 +44,10 @@ parser.add_argument('--origin', type=str, default='http://localhost:8080', help=
 parser.add_argument('-i_w', '--whiten', default=0.15, type=float, help='[0.0 ~ 1.0] Whitening filter for resulting style. (cosmetic simulations only)')
 parser.add_argument('-i_b', '--brightness', default=0.15, type=float, help='[0.0 ~ 1.0] Brightness filter for resulting style. (cosmetic simulations only)')
 parser.add_argument('-i_mf', '--mix_factor', default=None, type=float, help='[0.0 ~ 1.0] Mix manually between start and end styles (cosmetic simulations only)')
+
+parser.add_argument('--feedback_score', default=None, type=float, help='[0.0 ~ 5.0] User score for simulation')
+parser.add_argument('--capture_type', default=None, type=str, choices=[FILE_CAPTURE_TYPE, CAMERA_CAPTURE_TYPE], help='How photo was captured (camera / file)')
+parser.add_argument('--external_customer_id', default=None, type=str, help='Optional external customer id')
 args = parser.parse_args()
 
 is_cosmetic = args.mode == COSMETIC_OPT_MODE
@@ -52,93 +56,31 @@ is_ortho = args.mode == ORTHO_OPT_MODE
 if args.client_secret is None:
     args.client_secret = DEFAULT_CLIENT_EXPOSED_SECRET if args.public else DEFAULT_CLIENT_SECRET
 
-def tobytes(value):
-    if type(value) == str:
-        return bytes(value, 'utf-8')
-    return value
-
-def md5(value):
-    value = tobytes(value)
-    return hashlib.md5(value).hexdigest()
-
-def b64(value):
-    value = tobytes(value)
-    b64bytes = base64.b64encode(value)
-    return b64bytes.decode('ascii')
-
-def sha256_hmac(key, value):
-    key = tobytes(key)
-    value = tobytes(value)
-    return hmac.new(
-        key=key,
-        msg=value,
-        digestmod=hashlib.sha256
-    ).hexdigest()
-
 # Get Full URL
-namespace = PUBLIC_API_NAMESPACE if args.public else API_NAMESPACE
 route_path = COSMETIC_PATH if is_cosmetic else ORTHO_PATH
-full_url = os.path.join(args.host, namespace, route_path)
 
 # Generate Cosmetic Data JSON
-data = None
+data = {}
 if is_cosmetic:
-    data = {
-        'whiten': args.whiten,
-        'brightness': args.brightness,
-    }
+    data['whiten'] = args.whiten
+    data['brightness'] = args.brightness
     if args.mix_factor is not None:
-        data['style_mode'] = 'mix_manual'
-        data['mix_factor'] = args.mix_factor
+        data['styleMode'] = 'mix_manual'
+        data['mixFactor'] = args.mix_factor
     else:
-        data['style_mode'] = 'auto'
+        data['styleMode'] = 'auto'
 
+if args.feedback_score is not None:
+    data['feedbackScore'] = args.feedback_score
+
+if args.capture_type is not None:
+    data['captureType'] = args.capture_type
+
+if args.external_customer_id is not None:
+    data['externalCustomerId'] = args.external_customer_id
 
 # Request Params
-def readfile(filepath):
-    with open(filepath, 'rb') as f:
-        return f.read()
-
-img_photo_path = args.img_path
-params = {
-    'img_photo': {'type': 'img', 'path': img_photo_path, 'value': readfile(img_photo_path)},
-}
-if data is not None:
-    params['data'] = {'type': 'json', 'value': json.dumps(data)}
-
-# Multipart Files Param
-def tomultipart(param):
-    if param['type'] == 'img':
-        filename = os.path.basename(param['path'])
-        mime, _ = mimetypes.guess_type(param['path'])
-        return (filename, param['value'], mime or 'image/jpeg')
-    else:
-        return param['value']
-
-multipart_data = {k: tomultipart(v) for k,v in params.items()}
-
-# Params Hashed
-params_hashed = {k: md5(v['value']) for k,v in params.items()}
-
-# Claims
-claims = {
-    'client_id': args.client_id,
-    'params_hashed': params_hashed
-}
-if args.public and args.recaptcha:
-    claims['recaptcha_token'] = args.recaptcha
-
-# Generate Signature
-claims_json = json.dumps(claims)
-claims_b64 = b64(claims_json)
-claims_hash = sha256_hmac(args.client_secret, claims_json)
-signature = ':'.join([claims_b64, claims_hash])
-
-# Headers
-headers = {
-    'Authorization': 'Bearer ' + signature
-}
-
+headers = {}
 if args.public:
     headers['Origin'] = args.origin
 
@@ -148,51 +90,65 @@ for he in args.header:
     value = m[2]
     headers[header] = value
 
-def printjson(value):
-    pretty = None
-    if value is not None:
-        if type(value) == str:
-            try:
-                value = json.loads(value)
-            except json.JSONDecodeError:
-                print("! COULDN'T DECODE JSON.")
-                print(value)
-                return value
-        pretty = json.dumps(dict(value), indent=4)
-    print(pretty)
-    return pretty
+# ID: ODMzMzczMTE5Nzc3M2RfeDBYQTlN Secret: 9f4e637d109d99a3bc5d061eb05373e3badb96d506c412bd188e7a649fc7533e Exposed Secret: 7529c5a789ce7fc4bfaa02fe4d9a0887a745b052300c6dc83b10c09b827071cf
 
-print("#############")
-print("## REQUEST ##")
-print("#############")
-print("\n## CREDENTIALS BEING USED")
-print("Client Id: {0}".format(args.client_id))
-print("Client Secret: {0}".format(args.client_secret))
-print("\n## URL")
-print(full_url)
-print("\n## DATA")
-printjson(data)
-print("\n## CLAIMS")
-printjson(claims)
-print("\n## HEADERS")
-printjson(headers)
+# POST
+#response = request_api(
+#    method = 'POST',
+#    host = args.host,
+#    route_path = route_path,
+#    public_call = args.public,
+#    data = data,
+#    images = {'imgPhoto': args.img_path},
+#    headers = headers,
+#    client_id = args.client_id,
+#    client_secret = args.client_secret,
+#    recaptcha = args.recaptcha,
+#    send_json_only = False
+#)
 
-response = requests.post(
-    full_url,
-    files=multipart_data,
-    headers=headers
+# GET
+#response = request_api(
+#    method = 'GET',
+#    host = args.host,
+#    route_path = "simulations/ODMzMzczMDA4MTI4MDUtJCZNQSQt",
+#    public_call = args.public,
+#    headers = headers,
+#    client_id = args.client_id,
+#    client_secret = args.client_secret,
+#    recaptcha = args.recaptcha,
+#    send_json_only = True
+#)
+
+# List
+response = request_api(
+    method = 'GET',
+    host = args.host,
+    route_path = "simulations?metadata.captureType=camera",
+    public_call = args.public,
+    headers = headers,
+    client_id = args.client_id,
+    client_secret = args.client_secret,
+    recaptcha = args.recaptcha,
+    send_json_only = True
 )
 
-print("\n\n\n")
-print("##############")
-print("## RESPONSE ##")
-print("##############")
-print("\n## CODE")
-print(response.status_code)
-print("\n## HEADERS")
-printjson(response.headers)
-print("\n## BODY")
-printjson(response.text)
+
+# PATCH
+#response = request_api(
+#    method = 'PATCH',
+#    host = args.host,
+#    route_path = "simulations/ODMzMzczMDA4MTI4MDUtJCZNQSQt",
+#    data = {
+#        'external_customer_id': 'newcustomerid_2',
+#    },
+#    public_call = args.public,
+#    headers = headers,
+#    client_id = args.client_id,
+#    client_secret = args.client_secret,
+#    recaptcha = args.recaptcha,
+#    send_json_only = True
+#)
 
 res = None
 try:
