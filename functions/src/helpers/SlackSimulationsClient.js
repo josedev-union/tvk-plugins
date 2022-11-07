@@ -20,9 +20,13 @@ class SlackSimulationsClient {
     let imgObjects = apiResults.getImageFilesObject({onlyNames: mainImageNames})
     imgObjects = await apiResults.addImageUrls({imgObjects})
     const attachments = mainImageNames.map(name => {
-      const {signedUrl: url, filename} = imgObjects[name]
-      return {title: filename, image_url: url}
-    })
+      if (imgObjects[name]) {
+        const {signedUrl: url, filename} = imgObjects[name]
+        return {title: filename, image_url: url}
+      } else {
+        return null
+      }
+    }).filter(obj => !!obj)
 
     const infoMessage = SLACK_MESSAGE_INFO_TEMPLATE({
       infoJSON: JSON.stringify(info, null, 4),
