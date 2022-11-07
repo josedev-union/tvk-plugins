@@ -94,6 +94,7 @@ function newQuickSimulationRoute() {
           original: {extension: photo.extension},
           before: {getUrl: true},
           result: {getUrl: true},
+          morphed: {getUrl: false},
         },
         info: {
           ip: req.ip,

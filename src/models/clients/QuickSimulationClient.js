@@ -10,6 +10,9 @@ const readfile = promisify(fs.readFile)
 const redisGet = promisify(buffersRedis.get).bind(buffersRedis)
 const redisSetex = promisify(buffersRedis.setex).bind(buffersRedis)
 const redisDel = promisify(buffersRedis.del).bind(buffersRedis)
+
+const redisGetSafe = (key) => !key ? undefined : redisGet(key)
+const redisDelSafe = (key) => !key ? undefined : redisDel(key)
 const PUBSUB_PREFIX = 'listener:pipeline-in-memory'
 
 export class QuickSimulationClient {
@@ -24,11 +27,12 @@ export class QuickSimulationClient {
     const photoBuffer = Buffer.from(photo, 'binary')
     await this.#publishRequest(id, photoBuffer, photoRedisKey, expiresAt, options)
     const pubsubChannel = QuickSimulationClient.pubsubResponseKey(id)
-    const {result, before, error} = await this.#waitResponse({pubsubChannel, safe})
+    const {result, before, morphed, error} = await this.#waitResponse({pubsubChannel, safe})
     return {
       id,
       before,
       result,
+      morphed,
       error,
       original: photo,
       success: !error,
@@ -62,16 +66,20 @@ export class QuickSimulationClient {
 
     const resultRedisKey = message['data']['result_redis_key']
     const beforeRedisKey = message['data']['before_redis_key']
-    const [resultPhoto, beforePhoto] = await Promise.all([
-      redisGet(resultRedisKey),
-      redisGet(beforeRedisKey),
+    const morphedRedisKey = message['data']['morphed_redis_key']
+    const [resultPhoto, beforePhoto, morphedMouth] = await Promise.all([
+      redisGetSafe(resultRedisKey),
+      redisGetSafe(beforeRedisKey),
+      redisGetSafe(morphedRedisKey),
     ])
-    redisDel(resultRedisKey)
-    redisDel(beforeRedisKey)
+    redisDelSafe(resultRedisKey)
+    redisDelSafe(beforeRedisKey)
+    redisDelSafe(morphedRedisKey)
 
     const response = {
       'result': resultPhoto,
-      'before': beforePhoto
+      'before': beforePhoto,
+      'morphed': morphedMouth,
     }
     if (!resultPhoto || !beforePhoto) {
       const errorObj = this.#throwError({
