@@ -13,7 +13,12 @@ Dentrino.SimulationApiClient = (function() {
   M.prototype.simulate = function(params) {
     var me = this;
     var photo = params.photo;
+    var data = params.data;
     var recaptchaToken = params.recaptchaToken;
+    var params = {data: data}
+    if (photo && photo !== "") {
+      params.imgPhoto = photo
+    }
     return sendSimulationRequest({
       host: me.host,
       credentials: {
@@ -21,9 +26,7 @@ Dentrino.SimulationApiClient = (function() {
         clientId: me.clientId,
         clientExposedSecret: me.clientExposedSecret
       },
-      params: {
-        imgPhoto: photo
-      }
+      params: params
     });
   };
 

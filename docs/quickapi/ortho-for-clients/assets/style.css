@@ -11,6 +11,10 @@ body {
   display: block;
 }
 
+form h2 {
+  font-size: 1.2em;
+}
+
 .error.show {
   display: block;
 }

@@ -214,7 +214,7 @@ export class QuickSimulation {
     })
 
     validator.validateChoices({
-      fieldName: MDATA_KEY_SCORE,
+      fieldName: MDATA_KEY_CAPTURE,
       value: this.metadata[MDATA_KEY_CAPTURE],
       choices: MDATA_CAPTURE_VALUES,
       optional: true,

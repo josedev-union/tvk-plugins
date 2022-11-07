@@ -91,16 +91,20 @@ export class QuickSimulationClient {
     }
     let publicMessage = 'Error when executing simulation'
     let errorTag = 'generic'
+    let subtype = undefined
 
     if (message.match(/detect/i)) {
       publicMessage = message
       errorTag = 'no-face'
+      subtype = 'no-face'
     } else if (message.match(/find.*result/)) {
       errorTag = 'no-result-recorded'
     }
     const error = new RichError({
-      publicId: 'simulation-error',
       httpCode: 422,
+      id: 'simulation-error',
+      subtype,
+      subtypeIsPublic: true,
       publicMessage,
       debugMessage: message,
       logLevel: 'error',
@@ -116,8 +120,9 @@ export class QuickSimulationClient {
 
   #throwTimeoutError({message, safe}) {
     const error = new RichError({
-      publicId: 'timeout',
       httpCode: 504,
+      id: 'timeout',
+      subtype: 'simulation-timeout',
       publicMessage: 'Operation took too long',
       debugMessage: message,
       logLevel: 'error',
