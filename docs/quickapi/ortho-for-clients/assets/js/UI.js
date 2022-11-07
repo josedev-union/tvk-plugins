@@ -16,7 +16,12 @@ Dentrino.UI = (function() {
     this.debugResponseJSON = document.getElementById('response-json')
     this.allLoadings = document.querySelectorAll('.loading')
     this.recaptchaLoading = document.querySelector('.recaptcha-token .loading')
-    this.photoField = this.form['img_photo']
+    this.photoField = this.form['imgPhoto']
+    this.dataFields = {
+      captureType: this.form['captureType'],
+      feedbackScore: this.form['feedbackScore'],
+      externalCustomerId: this.form['externalCustomerId'],
+    }
     this.allDebug = [
       this.debugRecaptchaToken,
       this.debugResponseStatus,
@@ -41,10 +46,24 @@ Dentrino.UI = (function() {
   };
 
   M.prototype.onPhotoSubmit = function(callback) {
-    var photoField = this.photoField;
-    photoField.addEventListener('change', function() {
-      if (!photoField.value) return;
-      callback(photoField.files[0]);
+    var me = this;
+    this.form.addEventListener('submit', function(event) {
+      event.preventDefault()
+      var photoField = me.photoField;
+      var data = {}
+      Object.entries(me.dataFields).forEach(function(entry) {
+        var fieldname = entry[0]
+        var field = entry[1]
+        var value = field.value
+        if (value && value !== '') {
+          if (fieldname.toLowerCase().includes('score')) {
+            value = parseFloat(value)
+          }
+          data[fieldname] = value
+        }
+      })
+      callback({imgPhoto: photoField.files[0], data: data});
+      return false
     });
   };
 
@@ -75,8 +94,11 @@ Dentrino.UI = (function() {
     this.resErrorMsg.classList.add('show');
   };
 
-  M.prototype.resetPhotoField = function() {
+  M.prototype.resetFields = function() {
     this.photoField.value = '';
+    Object.values(this.dataFields).forEach(function (field) {
+      field.value = '';
+    })
   };
 
   M.prototype.hideLoading = function() {

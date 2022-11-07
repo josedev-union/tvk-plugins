@@ -31,7 +31,7 @@
     ui.onPhotoSubmit(doSimulation);
   }
 
-  function doSimulation(photoFile) {
+  function doSimulation(params) {
     ui.setAllLoading();
 
     recaptcha.execute()
@@ -39,24 +39,26 @@
       ui.showRecaptchaToken(recaptchaToken);
 
       return client.simulate({
-        photo: photoFile,
+        photo: params.imgPhoto,
+        data: params.data,
         recaptchaToken: recaptchaToken
       });
     })
     .then(onSuccessResponse)
     .catch(onSimulationError)
     .finally(function() {
-      ui.resetPhotoField();
       ui.hideLoading();
     });
   }
 
   function onSuccessResponse(response) {
     console.log("SUCCESS", response);
-    if (response.status === 200) {
+    ui.resetFields();
+    if (response.status >= 200 && response.status <= 299) {
+      var storage = response.data.simulation.storage
       ui.showResultImages({
-        beforeUrl: response.data.beforeUrl,
-        resultUrl: response.data.resultUrl
+        beforeUrl: storage.beforeUrl,
+        resultUrl: storage.resultUrl
       });
     }
 
