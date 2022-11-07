@@ -119,7 +119,7 @@ app.use(function(err, req, res, next) {
       logger[errLogLevel](err.logText())
     }
     statusCode = err.httpCode
-    data = err.data({isDebug: !env.isProduction(), allData: env.isLocal() || env.apiResponsesWithAllDebugData});
+    data = err.data({isDebug: !env.isProduction(), allInfo: env.isLocal() || env.apiResponsesWithAllDebugData});
   } else {
     const message = err.message || err.error || `Unexpected Error: ${JSON.stringify(err)}`
     statusCode = err.status || 500
