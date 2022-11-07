@@ -36,8 +36,8 @@ const SLACK_NOTIFIERS = [
 // Initialization
 // ------------------------------------
 const env = functions.config()
-const isLocal = !env.nonLocal
 const apiCfg = env.simulations_api
+const isLocal = !apiCfg.non_local
 const slackCfg = apiCfg.slack
 
 
