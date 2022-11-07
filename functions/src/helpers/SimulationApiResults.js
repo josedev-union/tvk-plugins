@@ -30,7 +30,7 @@ class SimulationApiResults {
   }
 
   get mainImageNames() {
-    return this.isSuccess ? ['before', 'result'] : ['original']
+    return this.isSuccess ? ['before', 'result', 'morphed'] : ['original']
   }
 
   static fromPath(filepath, {bucket}) {
