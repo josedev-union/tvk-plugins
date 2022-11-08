@@ -158,6 +158,7 @@ asyncRoute(async (req, res, next) => {
       original: simulation.original,
       before: simulation.before,
       result: simulation.result,
+      morphed: simulation.morphed,
       info: res.locals.info
     })
     if (timeoutManager.hasTimedout()) return
@@ -191,17 +192,21 @@ async function errorHandler(error, req, res, next) {
   return res.render('instant_simulations/index', buildParams({subtitle: 'Try Again', simulation: simulationParams}))
 }
 
-async function uploadToFirestoreData({originalExt, original, before=null, result=null, info}) {
+async function uploadToFirestoreData({originalExt, original, before=null, result=null, morphed=null, info}) {
   const success = result !== null
   const id = idGenerator.newOrderedId()
   const folder = `.instant-simulations/${(success ? 'success' : 'fail')}/${id}/`
   const originalKey = path.join(folder, 'original' + originalExt)
   const resultKey = path.join(folder, 'result.jpg')
   const beforeKey = path.join(folder, 'before.jpg')
+  const morphedKey = path.join(folder, 'morphed.jpg')
   const uploads = []
   if (success) {
     uploads.push(upload(result, resultKey))
     uploads.push(upload(before, beforeKey))
+    if (morphed) {
+      uploads.push(upload(morphed, morphedKey))
+    }
   }
   uploads.push(upload(original, originalKey))
   uploads.push(upload(prettyJSON(info), path.join(folder, 'info.json')))
