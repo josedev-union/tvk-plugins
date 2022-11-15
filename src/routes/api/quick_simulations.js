@@ -91,7 +91,7 @@ function newQuickSimulationRoute() {
         clientId,
         simulation,
         uploadsConfig: {
-          original: {extension: photo.extension},
+          original: {extensionPlaceholder: photo.filenameExtension},
           before: {getUrl: true},
           result: {getUrl: true},
           morphed: {getUrl: false},

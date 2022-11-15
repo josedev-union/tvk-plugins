@@ -1,4 +1,5 @@
 import fs from 'fs'
+import path from 'path'
 import {promisify} from "util"
 import multer from 'multer'
 import FileType from 'file-type'
@@ -201,6 +202,7 @@ export const quickApi = new (class {
       file.originalFilename = file.originalname
       file.content = file.buffer
       delete file.buffer
+      file.filenameExtension = path.extname(file.originalFilename)
       files[file.fieldname] = file
 
       if (file.size >= env.quickApiMaxUploadSizeBytes) {

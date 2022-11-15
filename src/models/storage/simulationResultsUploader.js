@@ -7,6 +7,7 @@ import {idGenerator} from "../tools/idGenerator"
 import {logger} from '../../instrumentation/logger'
 import {env} from "../../config/env"
 import {timeInSeconds, nowReadable} from '../../utils/time'
+import FileType from 'file-type'
 const {SECONDS, MINUTES, HOURS, DAYS} = timeInSeconds
 
 const me = new (class {
@@ -23,16 +24,20 @@ const me = new (class {
         ...info,
       }),
     }]
-    Object.keys(uploadsConfig).forEach((cfgKey) => {
-      if (!simulation[cfgKey]) return
+    for (let cfgKey of Object.keys(uploadsConfig)) {
+      const content = simulation[cfgKey]
+      if (!content) continue
       const cfg = uploadsConfig[cfgKey]
+      let {ext: extension} = (await FileType.fromBuffer(content)) || {}
+      extension = extension || cfg.extensionPlaceholder || 'unknown'
+      const filename = cfgKey + `.${extension}`
       cfg.rawCfg = {
-        filename: cfgKey + (cfg.extension || '.jpg'),
-        content: simulation[cfgKey],
+        filename,
+        content,
         getUrl: cfg.getUrl,
       }
       rawUploadsConfig.push(cfg.rawCfg)
-    })
+    }
     await me.rawUpload({
       bucket,
       uploads: rawUploadsConfig,
