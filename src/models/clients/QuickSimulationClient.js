@@ -41,7 +41,8 @@ export class QuickSimulationClient {
   }
 
   async #publishRequest(id, photoBuffer, photoRedisKey, expiresAt, options) {
-    await redisSetex(photoRedisKey, 25, photoBuffer)
+    const photoEncrypted = this.#encrypt(photoBuffer)
+    await redisSetex(photoRedisKey, 10, photoEncrypted)
     var params = {
       photo_redis_key: photoRedisKey,
       expires_at: expiresAt,
@@ -98,6 +99,11 @@ export class QuickSimulationClient {
   #decrypt(content) {
     if (!content) return content
     return simpleCrypto.decrypt(content, env.workerContentEncryptionSecret) || content
+  }
+
+  #encrypt(content) {
+    if (!content) return content
+    return simpleCrypto.encrypt(content, env.workerContentEncryptionSecret) || content
   }
 
   #throwError({message, safe}) {
