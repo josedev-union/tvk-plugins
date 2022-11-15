@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+  </head>
+  <body>
+    <!-- <script src="https://www.google.com/recaptcha/api.js"></script> -->
+    <script src="https://www.google.com/recaptcha/api.js?render=6LchqJohAAAAAFDSqgRsIeICsXduWJtRkF4bw7Hk"></script>
+    <form id="form-id">
+      <button>Submit</button>
+      <!--
+      <button class="g-recaptcha"
+        data-sitekey="6LchqJohAAAAAFDSqgRsIeICsXduWJtRkF4bw7Hk"
+        data-callback='onSubmit'
+        data-action='submit'>Submit</button>
+      -->
+    </form>
+    <p style="font-weight: bold;">RECAPTCHAv3 ID Token</p>
+    <p id="id-token" style="font-family:monospace; width:800px; overflow-wrap:anywhere;">Loading...</p>
+    <script>
+      grecaptcha.ready(function() {
+        grecaptcha.execute('6LchqJohAAAAAFDSqgRsIeICsXduWJtRkF4bw7Hk', {action: 'submit'}).then(function(token) {
+          console.log("ID TOKEN", token);
+          document.querySelector('#id-token').textContent = token
+        });
+      });
+    </script>
+  </body>
+</html>
