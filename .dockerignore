@@ -63,3 +63,6 @@ public/assets
 dist
 .secret
 docs/
+ignore/
+keys/
+functions/

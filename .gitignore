@@ -66,3 +66,5 @@ public/assets
 dist
 .secret
 tmp/
+ignore/
+keys/
