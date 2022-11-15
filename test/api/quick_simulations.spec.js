@@ -110,6 +110,7 @@ const storage = storageFactory()
 let photoAfterSimulation
 let photoBefore
 let photoInput
+let mouthMorphed
 let bigPhotoInput
 
 beforeAll(async () => {
@@ -117,6 +118,7 @@ beforeAll(async () => {
   photoAfterSimulation = await readfile('./test/fixtures/photo_after_simulation.jpg')
   photoBefore = await readfile('./test/fixtures/photo.jpg')
   photoInput = await readfile('./test/fixtures/photo.jpg')
+  mouthMorphed = await readfile('./test/fixtures/morphed.png')
   bigPhotoInput = await readfile('./test/fixtures/face-1.1mb.jpg')
 })
 
@@ -154,7 +156,6 @@ describe('POST simulations/ortho', () => {
     })
 
     test(`respond 201`, async () => {
-      const err = response.body.error || {}
       expect(response.status).toBe(201)
       expect(response.body.success).toEqual(true)
     })
@@ -392,7 +393,7 @@ describe('Rate Limiting', () => {
       expect(responses[5].status).toBeLessThan(299)
       expect(responses[6].status).toBeLessThan(299)
       expect(responses[7].status).toBeLessThan(299)
-    })
+    }, 10000)
   })
 
   describe('Client Blocking', () => {
@@ -845,6 +846,11 @@ function describeSimulationStorageChanges(getParams) {
       const uploaded = storage.uploads[bucketname]['before.jpg']
       expect(uploaded).toEqual(photoBefore)
     })
+
+    test(`uploads morphed image`, async () => {
+      const uploaded = storage.uploads[bucketname]['morphed.png']
+      expect(uploaded).toEqual(mouthMorphed)
+    })
   })
 }
 
@@ -966,11 +972,13 @@ async function mockWorkerRequest({error}) {
   simulationRequest.photoReaded = decrypt(await redisGet(simulationRequest.params.photo_redis_key))
   const resultRedisKey = `test-simulation:response:${simulationRequest.id}`
   const beforeRedisKey = `test-simulation:before:${simulationRequest.id}`
+  const morphedRedisKey = `test-simulation:morphed:${simulationRequest.id}`
   if (error === 'no-result-on-redis') {
     error = null
   } else {
     await redisSetex(resultRedisKey, 5, encrypt(Buffer.from(photoAfterSimulation, 'binary')))
     await redisSetex(beforeRedisKey, 5, encrypt(Buffer.from(photoBefore, 'binary')))
+    await redisSetex(morphedRedisKey, 5, encrypt(Buffer.from(mouthMorphed, 'binary')))
   }
   const responseChannel = QuickSimulationClient.pubsubResponseKey(simulationRequest.id)
   const responseMessage = error ? {error} : {
@@ -978,6 +986,7 @@ async function mockWorkerRequest({error}) {
     data: {
       result_redis_key: resultRedisKey,
       before_redis_key: beforeRedisKey,
+      morphed_redis_key: morphedRedisKey,
     }
   }
   redisPubsub.publish(responseChannel, JSON.stringify(responseMessage))
