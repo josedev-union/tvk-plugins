@@ -10,6 +10,7 @@ import {QuickSimulationClient} from "../../src/models/clients/QuickSimulationCli
 import {QuickSimulation} from "../../src/models/database/QuickSimulation"
 import {ApiSimulationClient} from "../helpers/ApiSimulationClient"
 import {firebaseHelpers} from '../helpers/firebaseHelpers'
+import {simpleCrypto} from "../../src/shared/simpleCrypto"
 import querystring from 'querystring'
 
 import {env} from '../../src/config/env'
@@ -962,25 +963,33 @@ async function mockWorkerRequest({error}) {
   const channel = QuickSimulationClient.pubsubRequestKey()
   const simulationRequestJson = await redisSubscribe(channel)
   const simulationRequest = JSON.parse(simulationRequestJson)
-  simulationRequest.photoReaded = await redisGet(simulationRequest.params.photo_redis_key)
+  simulationRequest.photoReaded = decrypt(await redisGet(simulationRequest.params.photo_redis_key))
   const resultRedisKey = `test-simulation:response:${simulationRequest.id}`
   const beforeRedisKey = `test-simulation:before:${simulationRequest.id}`
   if (error === 'no-result-on-redis') {
     error = null
   } else {
-    await redisSetex(resultRedisKey, 5, Buffer.from(photoAfterSimulation, 'binary'))
-    await redisSetex(beforeRedisKey, 5, Buffer.from(photoBefore, 'binary'))
+    await redisSetex(resultRedisKey, 5, encrypt(Buffer.from(photoAfterSimulation, 'binary')))
+    await redisSetex(beforeRedisKey, 5, encrypt(Buffer.from(photoBefore, 'binary')))
   }
   const responseChannel = QuickSimulationClient.pubsubResponseKey(simulationRequest.id)
   const responseMessage = error ? {error} : {
     status: 'success',
     data: {
       result_redis_key: resultRedisKey,
-      before_redis_key: beforeRedisKey
+      before_redis_key: beforeRedisKey,
     }
   }
   redisPubsub.publish(responseChannel, JSON.stringify(responseMessage))
   return simulationRequest
+}
+
+function encrypt(content) {
+  return simpleCrypto.encrypt(content, env.workerContentEncryptionSecret)
+}
+
+function decrypt(encrypted) {
+  return simpleCrypto.decrypt(encrypted, env.workerContentEncryptionSecret)
 }
 
 async function clearData() {
