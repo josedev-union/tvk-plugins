@@ -4,6 +4,7 @@ import {logger} from '../../instrumentation/logger'
 import {idGenerator} from '../../models/tools/idGenerator'
 import {redisPubsub, buffersRedis, redisSubscribe} from "../../config/redis"
 import {RichError} from "../../utils/RichError"
+import {simpleCrypto} from "../../shared/simpleCrypto"
 import {promisify} from "util"
 
 const readfile = promisify(fs.readFile)
@@ -67,11 +68,13 @@ export class QuickSimulationClient {
     const resultRedisKey = message['data']['result_redis_key']
     const beforeRedisKey = message['data']['before_redis_key']
     const morphedRedisKey = message['data']['morphed_redis_key']
-    const [resultPhoto, beforePhoto, morphedMouth] = await Promise.all([
+    const [resultPhoto, beforePhoto, morphedMouth] = (await Promise.all([
       redisGetSafe(resultRedisKey),
       redisGetSafe(beforeRedisKey),
       redisGetSafe(morphedRedisKey),
-    ])
+    ]))
+    .map(content => this.#decrypt(content))
+
     redisDelSafe(resultRedisKey)
     redisDelSafe(beforeRedisKey)
     redisDelSafe(morphedRedisKey)
@@ -90,6 +93,11 @@ export class QuickSimulationClient {
     }
 
     return response
+  }
+
+  #decrypt(content) {
+    if (!content) return content
+    return simpleCrypto.decrypt(content, env.workerContentEncryptionSecret) || content
   }
 
   #throwError({message, safe}) {
