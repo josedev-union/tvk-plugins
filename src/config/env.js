@@ -33,6 +33,7 @@ export const env = new (class {
     amount:     parseFloat(process.env.DENTRINO_CLIENT_RATE_LIMIT_AMOUNT || 100),
     timeWindow: parseFloat(process.env.DENTRINO_CLIENT_RATE_LIMIT_TIME || 1 * 60 * 1000),
   }
+  workerContentEncryptionSecret = process.env.DENTRINO_SIMULATION_WORKER_CONTENT_ENCRYPTION_SECRET || 'dev-worker-secret'
   apiResponsesWithAllDebugData = parseBool(process.env.DENTRINO_API_RESPONSES_WITH_ALL_DEBUG_DATA)
   quickApiRouteTimeout = parseFloat(process.env.DENTRINO_QAPI_ROUTE_TIMEOUT || 60)
   quickApiInputUploadTimeout = parseFloat(process.env.DENTRINO_QAPI_INPUT_UPLOAD_TIMEOUT || 15)
