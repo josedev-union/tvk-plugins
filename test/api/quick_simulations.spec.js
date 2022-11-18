@@ -38,43 +38,43 @@ import {storageFactory} from '../../src/models/storage/storageFactory'
 jest.mock('../../src/models/storage/storageFactory', () => {
   const path = require('path')
   const { BufferWritable } = require('../../src/utils/BufferWritable')
-  const fac = {
+  const storage = {
     bucket: jest.fn().mockImplementation((bucketname) => {
-      fac.bucketname = bucketname
-      return fac
+      storage.bucketname = bucketname
+      return storage
     }),
 
     file: jest.fn().mockImplementation((filepath) => {
-      fac.filepath = filepath
-      fac.filename = filepath.match(/[^\/]+\..*$/)
-      return fac
+      storage.filepath = filepath
+      storage.filename = filepath.match(/[^\/]+\..*$/)
+      return storage
     }),
 
     createWriteStream: jest.fn().mockImplementation(() => {
-      if (!fac.uploads) fac.uploads = {}
-      if (!fac.uploads[fac.bucketname]) fac.uploads[fac.bucketname] = {}
-      const filepath = fac.filepath
-      const filename = fac.filename
+      if (!storage.uploads) storage.uploads = {}
+      if (!storage.uploads[storage.bucketname]) storage.uploads[storage.bucketname] = {}
+      const filepath = storage.filepath
+      const filename = storage.filename
 
       const writable = new BufferWritable()
       writable.on('finish', () => {
-        fac.uploads[fac.bucketname][filepath] = writable.content
-        fac.uploads[fac.bucketname][filename] = writable.content
+        storage.uploads[storage.bucketname][filepath] = writable.content
+        storage.uploads[storage.bucketname][filename] = writable.content
       })
       return writable
     }),
 
     getSignedUrl: jest.fn().mockImplementation((opts) => {
-      if (!fac.signedUrls) fac.signedUrls = {}
-      const filepath = fac.filepath
-      const filename = fac.filename
-      const signedUrl = `http://gcloud.presigned.com/${fac.bucketname}/${fac.filepath}`
-      fac.signedUrls[filename] = signedUrl
+      if (!storage.signedUrls) storage.signedUrls = {}
+      const filepath = storage.filepath
+      const filename = storage.filename
+      const signedUrl = `http://gcloud.presigned.com/${storage.bucketname}/${storage.filepath}`
+      storage.signedUrls[filename] = signedUrl
       return Promise.resolve([signedUrl])
     })
   }
   return {
-    storageFactory: () => fac
+    storageFactory: () => storage
   }
 })
 
@@ -127,6 +127,7 @@ const VALID_FORMAT_COMBINATIONS = [
   {isPublicCall: false, auth: 'signed-claims'        , body: 'formdata'},
   {isPublicCall: false, auth: 'simple-claims'        , body: 'formdata'},
   {isPublicCall: false, auth: 'querystring-client-id', body: 'formdata'},
+  {clientCustomBucket: 'custom-client-test.appspot.com'},
 ]
 
 describe('POST simulations/ortho', () => {
@@ -136,11 +137,15 @@ describe('POST simulations/ortho', () => {
 
   describe.each(VALID_FORMAT_COMBINATIONS)(`on a successful request (format = %o)`, (formatCfg) => {
     let response
-    let bucketname = 'dentrino-test.appspot.com'
+    let bucketname
 
     beforeAll(async () => {
+      bucketname = formatCfg.clientCustomBucket || 'dentrino-test.appspot.com'
       const result = await prepareAndRunSimulation({
         mode: 'ortho',
+        apiClientCfg: {
+          customBucket: formatCfg.clientCustomBucket,
+        },
         requestCfg: {
           format: formatCfg,
         }
@@ -826,6 +831,14 @@ function describeSimulationStorageChanges(getParams) {
       expect(simulation.storage.beforePath).toBeDefined()
     })
 
+    test(`manipulates only the client's bucket`, async () => {
+      const bucketCalls = storage.bucket.mock.calls.flat()
+      expect(bucketCalls.length).toBeGreaterThan(0)
+
+      const expectedClientBucketsCalls = [...bucketCalls].fill(bucketname)
+      expect(bucketCalls).toEqual(expectedClientBucketsCalls)
+    })
+
     test(`respond get signed urls`, async () => {
       const simResponded = response.body.simulation
       expect(simResponded.storage.resultUrl).toEqual(storage.signedUrls['result.jpg'])
@@ -854,13 +867,8 @@ function describeSimulationStorageChanges(getParams) {
   })
 }
 
-async function prepareAndRunSimulation({mode='ortho', apiClientCfg={}, requestCfg={}, simulationCfg={}, forceClient, mockWorker=true, mockWorkerError, doClearData=true}) {
+async function prepareAndRunSimulation({mode='ortho', apiClientCfg={}, requestCfg={}, simulationCfg={}, forceClient, mockWorker=true, mockWorkerError, doClearData=true, doClearMocks=true}) {
   const willRunSimulation = mode === 'ortho' || mode === 'cosmetic'
-  const {
-    recaptchaSecret = 'recaptcha-secret',
-    recaptchaMinScore = 0.75,
-    allowedHosts = ['http://localhost:8080'],
-  } = apiClientCfg
   let {
     ip = newIp(),
     simulationId,
@@ -889,21 +897,32 @@ async function prepareAndRunSimulation({mode='ortho', apiClientCfg={}, requestCf
     await clearData()
   }
 
+  if (doClearMocks) {
+    jest.clearAllMocks()
+  }
+
   if (mockWorker && willRunSimulation) {
     mockWorkerRequest({error: mockWorkerError})
   } else {
     resetWorkerRequestMock()
   }
 
-  const client = forceClient ? forceClient : Factory.build('api_client', {})
+  const {
+    recaptchaSecret = 'recaptcha-secret',
+    recaptchaMinScore = 0.75,
+    allowedHosts = ['http://localhost:8080'],
+    customBucket: apiCustomBucket,
+  } = apiClientCfg
   const recaptchaAttrs = {}
   if (recaptchaSecret) recaptchaAttrs.secret = recaptchaSecret
   if (recaptchaMinScore) recaptchaAttrs.minScore = recaptchaMinScore
-  if (Object.keys(recaptchaAttrs).length > 0) {
-    client.setApiRecaptcha({api:'default'}, recaptchaAttrs)
-  }
-  allowedHosts.forEach((origin) => {
-    client.addApiAllowedHost({api:'default', host: origin})
+
+  const client = forceClient ? forceClient : Factory.build('api_client', {}, {
+    defaultConfig: {
+      recaptcha: recaptchaAttrs,
+      customBucket: apiCustomBucket,
+      allowedHosts,
+    }
   })
   await client.save()
 

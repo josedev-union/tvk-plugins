@@ -63,7 +63,7 @@ const me = new (class {
     const uploadTasks = uploads.map((up) => me.#upload(bucket, up))
     await Promise.all(uploadTasks)
 
-    const gcloudSigner = GcloudPresignedCredentialsProvider.build()
+    const gcloudSigner = GcloudPresignedCredentialsProvider.build({bucket})
     const urlPromises = uploads.map((up) => {
       if (!up.getUrl) return
 

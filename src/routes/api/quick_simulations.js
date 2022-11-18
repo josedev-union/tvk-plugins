@@ -69,8 +69,8 @@ function newQuickSimulationRoute() {
     const timeoutManager = timeout.getManager(res)
     const dbSimulation = res.locals.dentQuickSimulation
     const photo = res.locals.dentParsedBody.images['imgPhoto']
-    const clientId = res.locals.dentClientId
-    const bucket = env.gcloudBucket
+    const {dentClient: apiClient, dentApiId: apiId} = res.locals
+    const bucket = apiClient.customBucket({api: apiId}) || env.gcloudBucket
 
     const simulation = await timeoutManager.exec(env.quickApiSimulationTimeout, async () => {
       const client = new QuickSimulationClient()
@@ -88,7 +88,7 @@ function newQuickSimulationRoute() {
     const uploadResults = await timeoutManager.exec(env.quickApiResultsUploadTimeout, async () => {
       return await simulationResultsUploader.upload({
         bucket,
-        clientId,
+        clientId: apiClient.id,
         simulation,
         uploadsConfig: {
           original: {extensionPlaceholder: photo.filenameExtension},

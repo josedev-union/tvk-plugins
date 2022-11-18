@@ -9,12 +9,14 @@ const API_CONFIG_ENABLED = 'enabled'
 const API_CONFIG_ALLOWED_HOSTS = 'allowedHosts'
 const API_CONFIG_RATE_LIMIT = 'rateLimit'
 const API_CONFIG_RECAPTCHA = 'recaptcha'
+const API_CONFIG_CUSTOM_BUCKET = 'customBucket'
 const NEW_API_CONFIG_DEFAULT = () => {
   return {
-    [API_CONFIG_ENABLED]: {},
+    [API_CONFIG_ENABLED]: true,
     [API_CONFIG_ALLOWED_HOSTS]: null,
     [API_CONFIG_RATE_LIMIT]: null,
     [API_CONFIG_RECAPTCHA]: {},
+    [API_CONFIG_CUSTOM_BUCKET]: null,
   }
 }
 
@@ -63,6 +65,13 @@ export class ApiClient {
     }
     disableApi({api='default', value}) {
       return this.#setApiConfig({api, config: API_CONFIG_ENABLED, value: false})
+    }
+
+    customBucket({api='default'}) {
+      return this.#getApiConfig({api, config: API_CONFIG_CUSTOM_BUCKET})
+    }
+    setCustomBucket({api='default', bucket}) {
+      return this.#setApiConfig({api, config: API_CONFIG_CUSTOM_BUCKET, value: bucket})
     }
 
     isRevoked() {

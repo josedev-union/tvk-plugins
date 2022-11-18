@@ -72,7 +72,7 @@ beforeAll(async () => {
 })
 
 beforeEach(async () => {
-  storageFactory.mockClear()
+  jest.clearAllMocks()
   await firebaseHelpers.clearFirestore()
   await clearRedis()
 })
