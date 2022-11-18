@@ -13,6 +13,9 @@ import {firebaseHelpers} from '../helpers/firebaseHelpers'
 import {simpleCrypto} from "../../src/shared/simpleCrypto"
 import querystring from 'querystring'
 
+import {initSupertestApp} from '../helpers/supertest'
+const supertestApp = initSupertestApp()
+
 import {env} from '../../src/config/env'
 jest.mock('../../src/config/env' , () => {
   const {env: originalEnv} = jest.requireActual('../../src/config/env')
@@ -97,10 +100,6 @@ jest.mock('axios', () => {
     })
   }
 })
-
-import app from '../../src/app'
-app.enable('trust proxy')
-import request from 'supertest'
 
 const readfile = promisify(fs.readFile)
 const redisSetex = promisify(buffersRedis.setex).bind(buffersRedis)
@@ -961,7 +960,7 @@ async function sendSimulation({method, url: path, query, headers={}, data, ip}) 
   if (Object.keys(query).length > 0) {
     path += '?' + querystring.encode(query)
   }
-  let req = request(app)[method](path)
+  let req = supertestApp.request[method](path)
   if (ip) {
     req = req.set('X-Forwarded-For', ip)
   }

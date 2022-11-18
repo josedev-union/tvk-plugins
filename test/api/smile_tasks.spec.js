@@ -62,10 +62,8 @@ jest.mock('../../src/models/storage/storageFactory', () => {
   }
 })
 
-import app from '../../src/app'
-app.enable('trust proxy')
-import supertest from 'supertest'
-const request = supertest(app)
+import {initSupertestApp} from '../helpers/supertest'
+const supertestApp = initSupertestApp()
 
 beforeAll(async () => {
   await firebaseHelpers.ensureTestEnv()
@@ -310,7 +308,7 @@ describe(`when authorization token is invalid`, () => {
 })
 
 function postSolicitation(json={imageMD5, contentType}, userId, token, ip='127.0.0.0') {
-  return request
+  return supertestApp.request
     .post(`/api/users/${userId}/smile-tasks/solicitation?manual_review={manualReview}`)
     .set('Content-Type', 'application/json')
     .set('Authorization', `Bearer ${token}`)
