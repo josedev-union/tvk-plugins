@@ -3,15 +3,13 @@ import admin from 'firebase-admin'
 import {env} from '../../config/env'
 
 export class Database {
-    constructor({connection, namespace = ""}) {
+    constructor({connection}) {
         this.connection = connection
-        this.namespace = namespace
     }
 
-    static build(db = admin.firestore(), namespace = 'dentrino-web') {
+    static build(db = admin.firestore()) {
         return new Database({
             connection: db,
-            namespace: namespace
         })
     }
 
