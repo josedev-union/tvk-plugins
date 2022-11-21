@@ -4,18 +4,28 @@ import NodeCache from 'node-cache'
 import {timeInSeconds} from '../utils/time'
 const {SECONDS, MINUTES, HOURS, DAYS} = timeInSeconds
 
+const allInstances = []
 export class InMemory {
   constructor({cache, cacheTTL, staleTTL}) {
     this.cache = cache
     this.cacheTTL = cacheTTL
     this.staleTTL = staleTTL
+    allInstances.push(this)
+  }
+
+  static clear() {
+    for (let instance of allInstances) {
+      if (typeof(instance.clear) === 'function') {
+        instance.clear()
+      }
+    }
   }
 
   static build(params) {
     const {cacheTTL} = params
     const nodeCache = new NodeCache({
       stdTTL: cacheTTL,
-      useClones: true,
+      useClones: false,
       checkperiod: 10.0 * MINUTES,
       deleteOnExpire: true,
       maxKeys: 5000
@@ -26,26 +36,30 @@ export class InMemory {
     })
   }
 
+  delete(key, {keepCache=false, keepStale=false}={}) {
+    const cacheKey = this.#cacheKey(key)
+    const staleKey = this.#staleKey(key)
+    if (!keepCache) this.cache.del(cacheKey)
+    if (!keepStale) this.cache.del(staleKey)
+  }
+
+  clear() {
+    this.cache.flushAll()
+  }
+
   async wrap({key, op, skipCache=false}) {
     if (skipCache) {
       logger.verbose(`Cache SKIP: ${key}`)
-      return this.#exec(op)
-    }
-    const cKey = this.#cacheKey(key)
-    const cached = this.cache.get(cKey)
-    if (typeof(cached) !== 'undefined') {
-      logger.verbose(`cache.InMemory: Return Cached ${key}`)
-      return cached
+    } else {
+      const cKey = this.#cacheKey(key)
+      const cached = this.cache.get(cKey)
+      if (typeof(cached) !== 'undefined') {
+        logger.verbose(`cache.InMemory: Return Cached ${key}`)
+        return cached
+      }
     }
 
-    return this.#exec(op)
-      .then((result) => {
-        this.#store(key, result)
-        return Promise.resolve(result)
-      })
-      .catch((error) => {
-        return this.#handleError(key, error)
-      })
+    return this.#execAndStore({op, key})
   }
 
   async #store(key, result) {
@@ -92,6 +106,17 @@ export class InMemory {
     } else {
       return Promise.resolve(obj)
     }
+  }
+
+  async #execAndStore({op, key}) {
+    return this.#exec(op)
+      .then((result) => {
+        this.#store(key, result)
+        return Promise.resolve(result)
+      })
+      .catch((error) => {
+        return this.#handleError(key, error)
+      })
   }
 
   #validToStore(result) {

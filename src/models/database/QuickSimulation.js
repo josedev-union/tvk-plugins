@@ -102,7 +102,8 @@ export class QuickSimulation {
     return simulation
   }
 
-  async save({attrs, skipNormalization, skipValidation}={}) {
+  async save({attrs, skipNormalization, skipValidation}={}, {source}={}) {
+    const db = Database.instance({name: source || Database.sourceOf(this)})
     if (!skipNormalization) {
       this.normalizeData()
     }
@@ -112,7 +113,7 @@ export class QuickSimulation {
         return {errors}
       }
     }
-    const result = await Database.instance().save(this, `${QuickSimulation.COLLECTION_NAME}/${this.id}`, false, attrs)
+    const result = await db.save(this, `${QuickSimulation.COLLECTION_NAME}/${this.id}`, false, attrs)
     return {result}
   }
 
@@ -237,14 +238,13 @@ export class QuickSimulation {
     return options
   }
 
-  static async get(id) {
-    const data = await Database.instance().get(`${QuickSimulation.COLLECTION_NAME}/${id}`)
-    if (!data) return null
-    return new QuickSimulation(data)
+  static async get(id, {source}={}) {
+    const db = Database.instance({name: source})
+    return await db.get(QuickSimulation, id)
   }
 
-  static async list({orderBy='id', orderAsc=false, filters={}}) {
-    const db = Database.instance()
+  static async list({orderBy='id', orderAsc=false, filters={}}, {source}={}) {
+    const db = Database.instance({name: source})
     let query = db.startQuery(QuickSimulation.COLLECTION_NAME)
 
     Object.entries(filters).forEach(([field, value]) => {

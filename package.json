@@ -70,6 +70,7 @@
     "copy-webpack-plugin": "^5.0.5",
     "dotenv": "^16.0.3",
     "dotenv-webpack": "^8.0.1",
+    "exports-loader": "^1.1.1",
     "firebase-tools": "^11.15.0",
     "form-data": "^4.0.0",
     "google-gax": "^3.5.1",
@@ -79,7 +80,6 @@
     "rosie": "^2.0.1",
     "supertest": "^6.3.0",
     "webpack": "^4.39.3",
-		"exports-loader": "^1.1.1",
     "webpack-cli": "^4.10.0",
     "webpack-node-externals": "^3.0.0"
   },

@@ -1,5 +1,4 @@
 import { Factory } from 'rosie'
-import {Database} from '../../../src/models/database/Database'
 import {SmileTask} from '../../../src/models/database/SmileTask'
 import {helpers} from '../../helpers'
 import {firebaseHelpers} from '../../helpers/firebaseHelpers'

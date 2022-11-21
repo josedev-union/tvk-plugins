@@ -13,10 +13,7 @@ export class User {
 
   static async get(id) {
     const db = Database.instance()
-    const userData = await db.get(`${User.COLLECTION_NAME}/${id}`)
-    if (!userData) return null
-    userData.id = id
-    return new User(userData)
+    return await db.get(User, id)
   }
 
   static async getByEmail(email) {
