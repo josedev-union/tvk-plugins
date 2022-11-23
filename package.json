@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@godaddy/terminus": "^4.1.2",
-    "@google-cloud/storage": "^6.5.4",
+    "@google-cloud/storage": "^6.7.0",
     "@sentry/node": "^7.16.0",
     "@sentry/tracing": "^7.16.0",
     "compression": "^1.7.4",
