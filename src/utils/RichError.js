@@ -46,7 +46,7 @@ export class RichError extends Error {
     if (!error instanceof Error) return null
     const richError = new RichError({
       id: 'nodejs-error',
-      subtype: error.code,
+      subtype: String(error.code),
       debugMessage: error.message,
       cause: error,
       httpCode: error.status || error.httpCode,
