@@ -53,6 +53,13 @@ jest.mock('../../src/models/storage/storageFactory', () => {
       return storage
     }),
 
+    publicUrl: jest.fn().mockImplementation(() => {
+      if (!storage.publicUrls) storage.publicUrls = {}
+      const url = `http://gcloud.presigned.com/public/${storage.bucketname}/${storage.filepath}`
+      storage.publicUrls[storage.filename] = url
+      return url
+    }),
+
     createWriteStream: jest.fn().mockImplementation(() => {
       if (!storage.uploads) storage.uploads = {}
       if (!storage.uploads[storage.bucketname]) storage.uploads[storage.bucketname] = {}
@@ -840,8 +847,8 @@ function describeSimulationStorageChanges(getParams) {
 
     test(`respond get signed urls`, async () => {
       const simResponded = response.body.simulation
-      expect(simResponded.storage.resultUrl).toEqual(storage.signedUrls['result.jpg'])
-      expect(simResponded.storage.beforeUrl).toEqual(storage.signedUrls['before.jpg'])
+      expect(simResponded.storage.resultUrl).toEqual(storage.publicUrls['result.jpg'])
+      expect(simResponded.storage.beforeUrl).toEqual(storage.publicUrls['before.jpg'])
     })
 
     test(`uploads original image`, async () => {
