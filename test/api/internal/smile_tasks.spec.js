@@ -9,10 +9,8 @@ import {clearRedis} from '../../../src/config/redis'
 import {env} from '../../../src/config/env'
 import {firebaseHelpers} from '../../helpers/firebaseHelpers'
 
-import app from '../../../src/app'
-app.enable('trust proxy')
-import supertest from 'supertest'
-const request = supertest(app)
+import {initSupertestApp} from '../../helpers/supertest'
+const supertestApp = initSupertestApp()
 
 jest.mock('../../../src/models/storage/storageFactory', () => {
   const path = require('path')
@@ -79,7 +77,7 @@ beforeAll(async () => {
 })
 
 beforeEach(async () => {
-  // storageFactory.mockClear()
+  jest.clearAllMocks()
   await firebaseHelpers.clearFirestore()
   await clearRedis()
 })
@@ -586,25 +584,25 @@ describe(`PUT /api/67a4abe/smile-tasks/:smileTaskId/result-candidates/:resultId/
 })
 
 function putPromoteUploaded(smileTaskId) {
-  return request
+  return supertestApp.request
     .put(`/api/67a4abe/smile-tasks/${smileTaskId}/promote-uploaded`)
     .send()
 }
 
 function putRerun(smileTaskId) {
-  return request
+  return supertestApp.request
     .put(`/api/67a4abe/smile-tasks/${smileTaskId}/rerun`)
     .send()
 }
 
 function getResultCandidates(smileTaskId) {
-  return request
+  return supertestApp.request
     .get(`/api/67a4abe/smile-tasks/${smileTaskId}/result-candidates`)
     .send()
 }
 
 function putPromoteResult(smileTaskId, resultId) {
-  return request
+  return supertestApp.request
     .put(`/api/67a4abe/smile-tasks/${smileTaskId}/result-candidates/${resultId}/promote`)
     .send()
 }

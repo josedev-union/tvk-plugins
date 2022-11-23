@@ -35,6 +35,7 @@ const me = new (class {
         filename,
         content,
         getUrl: cfg.getUrl,
+        isPublic: cfg.isPublic,
       }
       rawUploadsConfig.push(cfg.rawCfg)
     }
@@ -63,30 +64,36 @@ const me = new (class {
     const uploadTasks = uploads.map((up) => me.#upload(bucket, up))
     await Promise.all(uploadTasks)
 
-    const gcloudSigner = GcloudPresignedCredentialsProvider.build()
-    const urlPromises = uploads.map((up) => {
+    const gcloudSigner = GcloudPresignedCredentialsProvider.build({bucket})
+    const urlPromises = uploads.map(async (up) => {
       if (!up.getUrl) return
 
-      return gcloudSigner
-        .urlToGet(up.filepath, {expiresInSeconds: 15 * MINUTES})
-        .then(({url}) => up.getUrlSigned = url)
-    }).filter((promise) => !!promise)
+      let url = null
+      if (up.isPublic) {
+        url = this.#getPublicUrl({bucket, ...up})
+      } else {
+        url = await gcloudSigner
+          .urlToGet(up.filepath, {expiresInSeconds: 15 * MINUTES})
+          .then(({url}) => url)
+      }
+      up.getUrlSigned = url
+    })
 
     await Promise.all(urlPromises)
 
     return uploads
   }
 
-  async #upload(bucket, {content, filepath}) {
+  async #upload(bucket, {content, filepath, isPublic=false}) {
     await new Promise((resolve, reject) => {
-      const file = storageFactory()
-      .bucket(bucket)
-      .file(filepath)
+      const file = this.#getFile({bucket, filepath})
       const passthroughStream = new stream.PassThrough()
       passthroughStream.write(content)
       passthroughStream.end()
       passthroughStream
-      .pipe(file.createWriteStream())
+      .pipe(file.createWriteStream({
+        predefinedAcl: isPublic ? 'publicRead' : 'authenticatedRead',
+      }))
       .on('finish', function() {
         logger.verbose(`[SUCCESS] Upload: (${bucket}) ${filepath}`)
         resolve()
@@ -96,6 +103,16 @@ const me = new (class {
         reject(err)
       })
     })
+  }
+
+  #getFile({bucket, filepath}) {
+    return storageFactory()
+      .bucket(bucket)
+      .file(filepath)
+  }
+
+  #getPublicUrl({bucket, filepath}) {
+    return this.#getFile({bucket, filepath}).publicUrl()
   }
 
   #prettyJSON(info) {

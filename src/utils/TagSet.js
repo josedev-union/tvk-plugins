@@ -41,20 +41,12 @@ export class TagSet {
     str = str.replace(/^([A-Z][A-Z]+)/g, (m,g1) => `${g1.toLowerCase()}`)
     str = str.replace(/(?!^)-*([A-Z]+)/g, (m,g1) => `-${g1.toLowerCase()}`)
     return str.toLowerCase()
-
-    // console.log(normalizeLabel('Hugo Roque de Figueiredo 99'))
-    // console.log(normalizeLabel('HUGO ROQUE DE FIGUEIREDO'))
-    // console.log(normalizeLabel('hugo_roque_100_de_figueiredo'))
-    // console.log(normalizeLabel('HugoRoqueDeFigueiredo'))
-    // console.log(normalizeLabel('Hugo-Roque-De-Figueiredo'))
-    // console.log(normalizeLabel('HUGO-ROQUE-DE-FIGUEIREDO'))
-    // console.log(normalizeLabel('hugo:roque.de*+-&figueiredo'))
   }
 
   #normalizeValue(value) {
     const valType = typeof(value)
     if (['boolean', 'undefined'].includes(valType) || value === null) return String(value)
-    if (valType !== 'string') throw new Error('Tag value ${value} should be string, boolean, undefined or null')
+    if (valType !== 'string') throw new Error(`Tag value ${value} should be string, boolean, undefined or null`)
     return value
   }
 }

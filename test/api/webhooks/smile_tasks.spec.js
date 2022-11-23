@@ -4,10 +4,8 @@ import {SmileTask} from '../../../src/models/database/SmileTask'
 import {helpers} from '../../helpers'
 import {firebaseHelpers} from '../../helpers/firebaseHelpers'
 
-import app from '../../../src/app'
-app.enable('trust proxy')
-import supertest from 'supertest'
-const request = supertest(app)
+import {initSupertestApp} from '../../helpers/supertest'
+const supertestApp = initSupertestApp()
 
 beforeAll(async () => {
   await firebaseHelpers.ensureTestEnv()
@@ -76,7 +74,7 @@ describe(`Webhooks Smile Tasks`, () => {
 })
 
 function postWebhook(json={}) {
-  return request
+  return supertestApp.request
     .post(`/webhooks/828ffbc/smile-tasks/status-update`)
     .set('Content-Type', 'application/json')
     .send(json)

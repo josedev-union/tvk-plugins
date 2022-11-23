@@ -7,8 +7,8 @@ export class GcloudPresignedCredentialsProvider {
         this.bucket = bucket
     }
 
-    static build() {
-        return new GcloudPresignedCredentialsProvider(storageFactory().bucket(env.gcloudBucket))
+    static build({bucket=env.gcloudBucket}={}) {
+        return new GcloudPresignedCredentialsProvider(storageFactory().bucket(bucket))
     }
 
     async jsonToUpload({keyName, expiresInSeconds, contentType, contentMD5, maxSizeInMegabytes}) {

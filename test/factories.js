@@ -18,6 +18,30 @@ Factory.define('api_client', ApiClient)
   .sequence('id', (i) => simpleCrypto.sha1(uuid()))
   .sequence('secret', (i) => simpleCrypto.sha1(uuid() + "abcdef"))
   .sequence('exposedSecret', (i) => simpleCrypto.sha1(uuid() + "ghijkl"))
+  .attr('revoked', false)
+  .option('apiConfigs', null)
+  .option('defaultConfig', null)
+  .after((client, {apiConfigs, defaultConfig}) => {
+    if (defaultConfig) {
+      apiConfigs = apiConfigs || {}
+      apiConfigs['default'] = defaultConfig
+    }
+    if (!apiConfigs) return
+    for (let apiId of Object.keys(apiConfigs)) {
+      const {customBucket, enabled, allowedHosts, recaptcha} = apiConfigs[apiId]
+      if (customBucket) client.setCustomBucket({api: apiId, bucket: customBucket})
+      if (typeof(enabled) === true) client.enableApi({api: apiId})
+      if (typeof(enabled) === false) client.disableApi({api: apiId})
+      if (allowedHosts) {
+        allowedHosts.forEach((origin) => {
+          client.addApiAllowedHost({api: apiId, host: origin})
+        })
+      }
+      if (recaptcha && Object.keys(recaptcha).length > 0) {
+        client.setApiRecaptcha({api: apiId}, recaptcha)
+      }
+    }
+  })
 
 Factory.define('smile_task', SmileTask)
   .sequence('id', (i) => simpleCrypto.sha1(uuid()))
