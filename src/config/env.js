@@ -1,4 +1,4 @@
-const FALSE_STRINGS = ['', 'false', 'undefined', 'null', '0', 'no', '-1']
+import {normalizePort, parseBool, parseFirebaseProjects, parseList, toFilepathRegex} from './envHelpers'
 
 export const env = new (class {
   name = process.env.NODE_ENV || 'development'
@@ -6,6 +6,7 @@ export const env = new (class {
   port = normalizePort(process.env.PORT || '3000')
   host = process.env.HOST || '0.0.0.0'
   masterHost = process.env.MASTER_HOST
+  firebaseProjects = parseFirebaseProjects(process.env.DENTRINO_FIREBASE_PROJECTS || "default|dentrino-local-us|http://localhost:8080")
   rateLimitDisabled = parseBool(process.env.DENTRINO_RATE_LIMIT_DISABLED)
   rateLimitIgnore = parseBool(process.env.DENTRINO_RATE_LIMIT_IGNORE)
   recaptchaIgnore = parseBool(process.env.DENTRINO_RECAPTCHA_IGNORE)
@@ -95,32 +96,3 @@ export const env = new (class {
   isLocal = () => this.isTest() || this.isDevelopment()
   isNonLocal = () => !this.isLocal()
 })()
-
-function normalizePort(val) {
-  var port = parseInt(val, 10);
-
-  if (isNaN(port)) {
-    // named pipe
-    return val;
-  }
-
-  if (port >= 0) {
-    // port number
-    return port;
-  }
-
-  return false;
-}
-
-function parseBool(val) {
-  if (!val) return false
-  val = String(val).trim().toLowerCase()
-  if (!val || FALSE_STRINGS.includes(val)) return false
-  return true
-}
-
-function toFilepathRegex(str) {
-  if (typeof(str) !== 'string') return str
-  str = str.replaceAll(/,/g, '|').replaceAll(/\s/g, '')
-  return new RegExp(`^(.*\\.)?(?<ext>${str})$`, 'i')
-}

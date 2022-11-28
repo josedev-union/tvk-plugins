@@ -90,9 +90,8 @@ export class SmileTask {
   }
 
   static async get(id) {
-    const data = await Database.instance().get(`${SmileTask.COLLECTION_NAME}/${id}`)
-    if (!data) return null
-    return new SmileTask(data)
+    const db = Database.instance()
+    return await db.get(SmileTask, id)
   }
 
   static async all() {

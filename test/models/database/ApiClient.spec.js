@@ -2,12 +2,17 @@ import {ApiClient} from '../../../src/models/database/ApiClient'
 import { Factory } from 'rosie'
 import '../../../src/config/config'
 import {firebaseHelpers} from '../../helpers/firebaseHelpers'
+import {InMemory as Cache} from '../../../src/cache/InMemory'
 
 beforeAll(async () => {
   await firebaseHelpers.ensureTestEnv()
 })
 beforeEach(async () => {
   await firebaseHelpers.clearFirestore()
+  Cache.clear()
+})
+afterEach(async () => {
+  Cache.clear()
 })
 
 describe('static', () => {
@@ -24,6 +29,45 @@ describe('static', () => {
     test(`return null if client doesn't exist`, async () => {
       const clientnotfound = await ApiClient.get('nonexistentid')
       expect(clientnotfound).toEqual(null)
+    })
+  })
+
+  describe('all', () => {
+    test(`return all clients`, async () => {
+      const client1 = Factory.build('api_client', {})
+      await client1.save()
+      const client2 = Factory.build('api_client', {})
+      await client2.save()
+
+
+      const clients = await ApiClient.all()
+      const client1Found = clients.find(c => c.id === client1.id)
+      const client2Found = clients.find(c => c.id === client2.id)
+      expect(client1Found).toEqual(client1)
+      expect(client2Found).toEqual(client2)
+      expect(clients.length).toEqual(2)
+    })
+
+    test(`cache the response`, async () => {
+      const client1 = Factory.build('api_client', {})
+      await client1.save()
+      await ApiClient.all()
+
+      const client2 = Factory.build('api_client', {})
+      await client2.save()
+
+      const clients = await ApiClient.all()
+      const client1Found = clients.find(c => c.id === client1.id)
+      const client2Found = clients.find(c => c.id === client2.id)
+      expect(client1Found).toEqual(client1)
+      expect(client1Found.constructor).toBe(ApiClient)
+      expect(client2Found).toBeUndefined()
+      expect(clients.length).toEqual(1)
+    })
+
+    test(`return empty array if there're no clients`, async () => {
+      const clients = await ApiClient.all()
+      expect(clients).toEqual([])
     })
   })
 })
@@ -85,8 +129,6 @@ describe('instance', () => {
 
       expect(client.apiAllowedHosts({api: 'simulations'})).toEqual(['https://simulations.com'])
       client.clearApiAllowedHosts({api: 'simulations'})
-      console.log('--- --- API CLIENT --- ---')
-      console.log(client)
 
       expect(client.apiAllowedHosts({api: 'simulations'})).toEqual(['https://default.com'])
       expect(client.apiAllowedHosts({api: 'default'})).toEqual(['https://default.com'])

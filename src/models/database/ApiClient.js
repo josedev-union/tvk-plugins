@@ -27,6 +27,7 @@ const cache = Cache.build({
 
 export class ApiClient {
     static get COLLECTION_NAME() {return 'api_clients'}
+    static get CACHE() {return cache}
 
     constructor({id, secret, exposedSecret, createdAt = null, updatedAt = null, revoked=false, apisConfig = null}) {
         this.id = id
@@ -78,9 +79,10 @@ export class ApiClient {
       return this.revoked === true
     }
 
-    static async all() {
+    static async all({skipCache=false}={}) {
       return cache.wrap({
         key: 'ApiClient.all',
+        skipCache,
         op: async () => {
           const db = Database.instance()
           const query = db.startQuery(ApiClient.COLLECTION_NAME)
@@ -93,7 +95,7 @@ export class ApiClient {
       return cache.wrap({
         key: `ApiClient.getAllAllowedHosts:${apiId}`,
         op: async () => {
-          const clients = await ApiClient.all()
+          const clients = await ApiClient.all({skipCache: true})
           return clients.flatMap((c) => c.apiAllowedHosts({api: apiId}))
         }
       })
@@ -122,11 +124,10 @@ export class ApiClient {
     }
 
     save() {
+        const db = Database.instance()
         this.updatedAt = Database.toTimestamp(new Date())
         this.createdAt = this.createdAt || this.updatedAt
-        const data = Object.assign({}, this)
-        delete data.id
-        return Database.instance().save(data, `${ApiClient.COLLECTION_NAME}/${this.id}`)
+        return db.save(this, `${ApiClient.COLLECTION_NAME}/${this.id}`)
     }
 
     #setApiConfig({api, config, value}) {
@@ -154,16 +155,14 @@ export class ApiClient {
     }
 
     static async get(id, skipCache=false) {
-      const data = await cache.wrap({
+      return await cache.wrap({
         key: `ApiClient:${id}`,
-        skip: skipCache,
+        skipCache,
         op: async () => {
-          return Database.instance().get(`${ApiClient.COLLECTION_NAME}/${id}`)
+          const db = Database.instance()
+          return db.get(ApiClient, id)
         }
       })
-      if (!data) return null
-      data.id = id
-      return new ApiClient(data)
     }
 
     static destroy(id) {

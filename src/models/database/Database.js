@@ -2,27 +2,33 @@ import path from 'path'
 import admin from 'firebase-admin'
 import {env} from '../../config/env'
 
+const SOURCE_NAME_KEY = '__source'
 export class Database {
-    constructor({connection, namespace = ""}) {
+    constructor({connection, name}) {
         this.connection = connection
-        this.namespace = namespace
+        this.name = name
     }
 
-    static build(db = admin.firestore(), namespace = 'dentrino-web') {
+    static build({app, name = 'default'}) {
+        if (env.isTest() && !app.options.databaseURL.includes('localhost')) {
+            throw `Invalid firestore options ${app.options}. Test environment can connect on localhost only.`
+        }
         return new Database({
-            connection: db,
-            namespace: namespace
+            connection: app.firestore(),
+            name,
         })
     }
 
-    static setInstance(database, key='default') {
+    static setInstance({database}) {
         if (!this.instances) this.instances = {}
-        this.instances[key] = database
+        this.instances[database.name] = database
     }
 
-    static instance(key='default') {
-      let instance = this.instances[key]
-      if (!instance) throw new Error(`Couldn't find database named ${key}`)
+    static instance({name}={}) {
+      if (!this.instances) return null
+      name = name || 'default'
+      let instance = this.instances[name]
+      if (!instance) throw new Error(`Couldn't find database named ${name}`)
       return instance
     }
 
@@ -30,7 +36,12 @@ export class Database {
         return admin.firestore.Timestamp.fromDate(date)
     }
 
+    static sourceOf(obj) {
+      return obj[SOURCE_NAME_KEY] || 'default'
+    }
+
     save(obj, objPath, overwrite=false, attrs=undefined) {
+        obj[SOURCE_NAME_KEY] = this.name
         return this.#getRef(objPath).set(adaptObj(obj, {attrs}), {merge: !overwrite})
     }
 
@@ -41,14 +52,29 @@ export class Database {
     async getResults(constructor, query) {
         const rawResults = await query.get()
         let results = []
-        rawResults.forEach(raw => results.push(new constructor({id: raw.id, ...raw.data()})))
+        rawResults.forEach(raw => {
+            const obj = this.#firebaseObjToModelObj(constructor, raw)
+            results.push(obj)
+        })
         return results
     }
 
-    async get(objsPath) {
-        const ref = this.#getRef(normalizePath(objsPath))
+    async get(constructor, objsPath) {
+        const fullPath = path.join(constructor.COLLECTION_NAME, String(objsPath))
+        const ref = this.#getRef(normalizePath(fullPath))
         const got = await ref.get()
-        return got.exists ? got.data() : null
+        if (!got.exists) return null
+        return this.#firebaseObjToModelObj(constructor, got)
+    }
+
+    #firebaseObjToModelObj(constructor, firebaseObj) {
+        const attrs = {
+            id: firebaseObj.id,
+            ...firebaseObj.data(),
+        }
+        const obj = new constructor(attrs)
+        obj[SOURCE_NAME_KEY] = this.name
+        return obj
     }
 
     set(objPath, value) {
@@ -80,6 +106,8 @@ function adaptObj(value, {attrs}={}) {
             obj[key] = obj[key].toDate()
         }
     })
+    delete obj.id
+    delete obj[SOURCE_NAME_KEY]
     return obj
 }
 
