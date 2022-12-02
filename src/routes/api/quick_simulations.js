@@ -71,6 +71,7 @@ function newQuickSimulationRoute() {
     const photo = res.locals.dentParsedBody.images['imgPhoto']
     const {dentClient: apiClient, dentApiId: apiId} = res.locals
     const bucket = apiClient.customBucket({api: apiId}) || env.gcloudBucket
+    const googleProjectKey = apiClient.customGoogleProject({api: apiId}) || 'default'
 
     const simulation = await timeoutManager.exec(env.quickApiSimulationTimeout, async () => {
       const client = new QuickSimulationClient()
@@ -87,6 +88,7 @@ function newQuickSimulationRoute() {
 
     const uploadResults = await timeoutManager.exec(env.quickApiResultsUploadTimeout, async () => {
       return await simulationResultsUploader.upload({
+        googleProjectKey,
         bucket,
         clientId: apiClient.id,
         simulation,
@@ -114,7 +116,7 @@ function newQuickSimulationRoute() {
       directoryPath: uploadResults.folderpath,
     })
 
-    await dbSimulation.save()
+    await dbSimulation.save({source: googleProjectKey})
 
     if (simulation.error) {
       throw simulation.error
@@ -141,8 +143,9 @@ function newQuickSimulationRoute() {
 function getSimulationRoute() {
   return asyncRoute(async (req, res) => {
     const simulationId = req.params.id
-    const clientId = res.locals.dentClientId
-    const dbSimulation = await QuickSimulation.get(simulationId)
+    const {dentClient: apiClient, dentApiId: apiId, dentClientId: clientId} = res.locals
+    const googleProjectKey = apiClient.customGoogleProject({api: apiId}) || 'default'
+    const dbSimulation = await QuickSimulation.get(simulationId, {source: googleProjectKey})
     if (!dbSimulation || dbSimulation.clientId !== clientId) {
       throw api.newNotFoundError()
     }
@@ -157,8 +160,9 @@ function getSimulationRoute() {
 function patchSimulationRoute() {
   return asyncRoute(async (req, res) => {
     const simulationId = req.params.id
-    const clientId = res.locals.dentClientId
-    const dbSimulation = await QuickSimulation.get(simulationId)
+    const {dentClient: apiClient, dentApiId: apiId, dentClientId: clientId} = res.locals
+    const googleProjectKey = apiClient.customGoogleProject({api: apiId}) || 'default'
+    const dbSimulation = await QuickSimulation.get(simulationId, {source: googleProjectKey})
     if (!dbSimulation || dbSimulation.clientId !== clientId) {
       throw api.newNotFoundError()
     }
@@ -176,15 +180,16 @@ function patchSimulationRoute() {
 
 function listSimulationsRoute() {
   return asyncRoute(async (req, res) => {
-    const clientId = res.locals.dentClientId
+    const {dentClient: apiClient, dentApiId: apiId, dentClientId: clientId} = res.locals
+    const googleProjectKey = apiClient.customGoogleProject({api: apiId}) || 'default'
     const params = Object.assign({}, req.query)
     params.clientId = clientId
     const listParams = {filters: params}
-    const dbSimulations = await QuickSimulation.list(listParams)
+    const dbSimulations = await QuickSimulation.list(listParams, {source: googleProjectKey})
 
     res.status(200).json({
       success: true,
-      simulations: dbSimulations.map(s => simulationAsJson(s))
+      simulations: dbSimulations.map(s => simulationAsJson(s)) // TODO: Paginate
     })
   })
 }

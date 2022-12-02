@@ -10,8 +10,8 @@ export class Database {
     }
 
     static build({app, name = 'default'}) {
-        if (env.isTest() && !app.options.databaseURL.includes('localhost')) {
-            throw `Invalid firestore options ${app.options}. Test environment can connect on localhost only.`
+        if (env.isTest() && (!app.options.databaseURL || !app.options.databaseURL.includes('localhost'))) {
+            throw `Invalid firestore options. Test environment can connect on localhost only. Options: ${JSON.stringify(app.options)}`
         }
         return new Database({
             connection: app.firestore(),

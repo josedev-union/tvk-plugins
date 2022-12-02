@@ -7,10 +7,11 @@ export const firebaseHelpers = new (class {
 
   async ensureTestEnv() {
     if (!firebaseHelpers.#testEnvs) {
-      const testEnvsPromises = env.firebaseProjects.map(async ({name, config}) => {
+      const testEnvsPromises = Object.values(env.googleProjects).map(async ({projectId}) => {
+        const [host, port] = env.firestoreEmulatorHost.split(':')
         return await testing.initializeTestEnvironment({
-          projectId: config.projectId,
-          firestore: {host: 'localhost', port: 8080},
+          projectId: projectId || 'dentrino-test',
+          firestore: {host, port},
         })
       })
       firebaseHelpers.#testEnvs = await Promise.all(testEnvsPromises)

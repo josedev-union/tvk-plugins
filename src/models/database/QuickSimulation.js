@@ -102,7 +102,7 @@ export class QuickSimulation {
     return simulation
   }
 
-  async save({attrs, skipNormalization, skipValidation}={}, {source}={}) {
+  async save({attrs, skipNormalization, skipValidation, source}={}) {
     const db = Database.instance({name: source || Database.sourceOf(this)})
     if (!skipNormalization) {
       this.normalizeData()
@@ -243,7 +243,7 @@ export class QuickSimulation {
     return await db.get(QuickSimulation, id)
   }
 
-  static async list({orderBy='id', orderAsc=false, filters={}}, {source}={}) {
+  static async list({orderBy='id', orderAsc=false, filters={}, source}) {
     const db = Database.instance({name: source})
     let query = db.startQuery(QuickSimulation.COLLECTION_NAME)
 

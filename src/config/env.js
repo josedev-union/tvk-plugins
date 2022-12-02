@@ -1,12 +1,21 @@
-import {normalizePort, parseBool, parseFirebaseProjects, parseList, toFilepathRegex} from './envHelpers'
+import {normalizePort, parseBool, parseGoogleProjects, parseList, toFilepathRegex} from './envHelpers'
 
 export const env = new (class {
   name = process.env.NODE_ENV || 'development'
+  isProduction = () => this.name === 'production'
+  isStaging = () => this.name === 'staging'
+  isTest = () => this.name === 'test'
+  isDevelopment = () => this.name === 'development'
+  isLocal = () => this.isTest() || this.isDevelopment()
+  isNonLocal = () => !this.isLocal()
+
   gcloudBucket = process.env.DENTRINO_GCLOUD_BUCKET || 'dentrino-test.appspot.com'
   port = normalizePort(process.env.PORT || '3000')
   host = process.env.HOST || '0.0.0.0'
   masterHost = process.env.MASTER_HOST
-  firebaseProjects = parseFirebaseProjects(process.env.DENTRINO_FIREBASE_PROJECTS || "default|dentrino-local-us|http://localhost:8080")
+  googleProjects = parseGoogleProjects(process.env.DENTRINO_GOOGLE_PROJECTS || "default;dentrino-local")
+  firestoreEmulatorHost = process.env.FIRESTORE_EMULATOR_HOST || (this.isTest() ? 'localhost:8080' : undefined)
+  firestoreEmulatorDatabaseUrl = this.firestoreEmulatorHost ? `http://${this.firestoreEmulatorHost}` : undefined
   rateLimitDisabled = parseBool(process.env.DENTRINO_RATE_LIMIT_DISABLED)
   rateLimitIgnore = parseBool(process.env.DENTRINO_RATE_LIMIT_IGNORE)
   recaptchaIgnore = parseBool(process.env.DENTRINO_RECAPTCHA_IGNORE)
@@ -88,11 +97,4 @@ export const env = new (class {
   instSimTokenDisabled = parseBool(process.env.DENTRINO_INSTSIM_TOKEN_DISABLED)
   instSimRecaptchaSecretKey = process.env.DENTRINO_INSTSIM_RECAPTCHA_SECRET_KEY
   disableXForwardedForCheck = parseBool(process.env.DENTRINO_INSTSIM_DISABLE_X_FORWARDED_FOR_CHECK)
-
-  isProduction = () => this.name === 'production'
-  isStaging = () => this.name === 'staging'
-  isTest = () => this.name === 'test'
-  isDevelopment = () => this.name === 'development'
-  isLocal = () => this.isTest() || this.isDevelopment()
-  isNonLocal = () => !this.isLocal()
 })()
