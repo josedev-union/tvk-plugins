@@ -2,7 +2,7 @@ APP_ENV?=staging
 COMMIT_HASH?=$(shell git rev-parse HEAD)
 IMAGE_NAME=gcr.io/dentrino-production/dentrino-simulations-api
 COMMIT_IMAGE?=$(IMAGE_NAME):$(COMMIT_HASH)
-LATEST_IMAGE=$(IMAGE_NAME):latest
+LATEST_IMAGE=$(IMAGE_NAME):latest-$(APP_ENV)
 APP_PATH?=.
 BASE_IMAGE_NAME=$(IMAGE_NAME)-base
 
