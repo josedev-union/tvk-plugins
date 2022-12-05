@@ -6,10 +6,18 @@ import admin from 'firebase-admin'
 
 Handlebars.registerHelper('i18n', key => i18n(key))
 
-for (const {name, config} of env.firebaseProjects) {
+let databaseURL = env.firestoreEmulatorDatabaseUrl
+if (env.isTest() && !databaseURL) databaseURL = 'http://localhost:8080'
+
+for (const {projectKey, projectId, credentialCfg} of Object.values(env.googleProjects)) {
+  const config = {
+    projectId: projectId || 'dentrino-local',
+  }
+  if (databaseURL) Object.assign(config, {databaseURL})
+  if (credentialCfg) Object.assign(config, {credential: admin.credential.cert(credentialCfg)})
   setupProject({
-    app: admin.initializeApp(config, name),
-    name,
+    app: admin.initializeApp(config, projectKey),
+    name: projectKey,
   })
 }
 

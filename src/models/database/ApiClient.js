@@ -10,6 +10,7 @@ const API_CONFIG_ALLOWED_HOSTS = 'allowedHosts'
 const API_CONFIG_RATE_LIMIT = 'rateLimit'
 const API_CONFIG_RECAPTCHA = 'recaptcha'
 const API_CONFIG_CUSTOM_BUCKET = 'customBucket'
+const API_CONFIG_CUSTOM_GOOGLE_PROJECT = 'customGoogleProject'
 const NEW_API_CONFIG_DEFAULT = () => {
   return {
     [API_CONFIG_ENABLED]: true,
@@ -17,6 +18,7 @@ const NEW_API_CONFIG_DEFAULT = () => {
     [API_CONFIG_RATE_LIMIT]: null,
     [API_CONFIG_RECAPTCHA]: {},
     [API_CONFIG_CUSTOM_BUCKET]: null,
+    [API_CONFIG_CUSTOM_GOOGLE_PROJECT]: null,
   }
 }
 
@@ -73,6 +75,13 @@ export class ApiClient {
     }
     setCustomBucket({api='default', bucket}) {
       return this.#setApiConfig({api, config: API_CONFIG_CUSTOM_BUCKET, value: bucket})
+    }
+
+    customGoogleProject({api='default'}) {
+      return this.#getApiConfig({api, config: API_CONFIG_CUSTOM_GOOGLE_PROJECT})
+    }
+    setCustomGoogleProject({api='default', projectKey}) {
+      return this.#setApiConfig({api, config: API_CONFIG_CUSTOM_GOOGLE_PROJECT, value: projectKey})
     }
 
     isRevoked() {

@@ -44,6 +44,7 @@ jest.mock('../../src/models/storage/storageFactory', () => {
   const storage = {
     bucket: jest.fn().mockImplementation((bucketname) => {
       storage.bucketname = bucketname
+      storage.storageId = `${storage.projectKey}/${bucketname}`
       return storage
     }),
 
@@ -55,36 +56,39 @@ jest.mock('../../src/models/storage/storageFactory', () => {
 
     publicUrl: jest.fn().mockImplementation(() => {
       if (!storage.publicUrls) storage.publicUrls = {}
-      const url = `http://gcloud.presigned.com/public/${storage.bucketname}/${storage.filepath}`
+      const url = `http://gcloud.presigned.com/public/${storage.projectKey}/${storage.bucketname}/${storage.filepath}`
       storage.publicUrls[storage.filename] = url
       return url
     }),
 
     createWriteStream: jest.fn().mockImplementation(() => {
       if (!storage.uploads) storage.uploads = {}
-      if (!storage.uploads[storage.bucketname]) storage.uploads[storage.bucketname] = {}
-      const filepath = storage.filepath
-      const filename = storage.filename
+
+      const {storageId, uploads, filepath, filename} = storage
+      if (!uploads[storageId]) uploads[storageId] = {}
 
       const writable = new BufferWritable()
       writable.on('finish', () => {
-        storage.uploads[storage.bucketname][filepath] = writable.content
-        storage.uploads[storage.bucketname][filename] = writable.content
+        uploads[storageId][filepath] = writable.content
+        uploads[storageId][filename] = writable.content
       })
       return writable
     }),
 
     getSignedUrl: jest.fn().mockImplementation((opts) => {
       if (!storage.signedUrls) storage.signedUrls = {}
-      const filepath = storage.filepath
-      const filename = storage.filename
-      const signedUrl = `http://gcloud.presigned.com/${storage.bucketname}/${storage.filepath}`
-      storage.signedUrls[filename] = signedUrl
+
+      const {filepath, filename, signedUrls, bucketname, projectKey} = storage
+      const signedUrl = `http://gcloud.presigned.com/${projectKey}/${bucketname}/${filepath}`
+      signedUrls[filename] = signedUrl
       return Promise.resolve([signedUrl])
     })
   }
   return {
-    storageFactory: () => storage
+    storageFactory: ({projectKey}={}) => {
+      storage.projectKey = projectKey || 'default'
+      return storage
+    }
   }
 })
 
@@ -133,7 +137,7 @@ const VALID_FORMAT_COMBINATIONS = [
   {isPublicCall: false, auth: 'signed-claims'        , body: 'formdata'},
   {isPublicCall: false, auth: 'simple-claims'        , body: 'formdata'},
   {isPublicCall: false, auth: 'querystring-client-id', body: 'formdata'},
-  {clientCustomBucket: 'custom-client-test.appspot.com'},
+  {clientCustomBucket: 'b-dentrino-client-test.appspot.com', clientCustomGoogleProject: 'b-dentrino'},
 ]
 
 describe('POST simulations/ortho', () => {
@@ -144,13 +148,18 @@ describe('POST simulations/ortho', () => {
   describe.each(VALID_FORMAT_COMBINATIONS)(`on a successful request (format = %o)`, (formatCfg) => {
     let response
     let bucketname
+    let googleProject
+    let storageId
 
     beforeAll(async () => {
       bucketname = formatCfg.clientCustomBucket || 'dentrino-test.appspot.com'
+      googleProject = formatCfg.clientCustomGoogleProject || 'default'
+      storageId = `${googleProject}/${bucketname}`
       const result = await prepareAndRunSimulation({
         mode: 'ortho',
         apiClientCfg: {
           customBucket: formatCfg.clientCustomBucket,
+          customGoogleProject: formatCfg.clientCustomGoogleProject,
         },
         requestCfg: {
           format: formatCfg,
@@ -160,10 +169,10 @@ describe('POST simulations/ortho', () => {
     })
 
     describeSimulationMetadataChanges(() => {
-      return {response}
+      return {response, googleProject}
     })
     describeSimulationStorageChanges(() => {
-      return {response, bucketname}
+      return {response, bucketname, googleProject, storageId}
     })
 
     test(`respond 201`, async () => {
@@ -172,7 +181,7 @@ describe('POST simulations/ortho', () => {
     })
 
     test(`create a new simulation with the params used`, async () => {
-      const simulation = await QuickSimulation.get(response.body.simulation.id)
+      const simulation = await QuickSimulation.get(response.body.simulation.id, {source: googleProject})
       expect(simulation.params).toEqual({
         mode: 'ortho',
         blend: 'poisson',
@@ -192,11 +201,20 @@ describe('POST simulations/cosmetic', () => {
 
   describe.each(VALID_FORMAT_COMBINATIONS)(`on a successful request (format = %o)`, (formatCfg) => {
     let response
-    let bucketname = 'dentrino-test.appspot.com'
+    let bucketname
+    let googleProject
+    let storageId
 
     beforeAll(async () => {
+      bucketname = formatCfg.clientCustomBucket || 'dentrino-test.appspot.com'
+      googleProject = formatCfg.clientCustomGoogleProject || 'default'
+      storageId = `${googleProject}/${bucketname}`
       const result = await prepareAndRunSimulation({
         mode: 'cosmetic',
+        apiClientCfg: {
+          customBucket: formatCfg.clientCustomBucket,
+          customGoogleProject: formatCfg.clientCustomGoogleProject,
+        },
         requestCfg: {
           format: formatCfg,
           params: {
@@ -217,10 +235,10 @@ describe('POST simulations/cosmetic', () => {
     })
 
     describeSimulationMetadataChanges(() => {
-      return {response, bucketname}
+      return {response, googleProject}
     })
     describeSimulationStorageChanges(() => {
-      return {response, bucketname}
+      return {response, bucketname, googleProject, storageId}
     })
 
     test(`respond 201`, async () => {
@@ -230,7 +248,7 @@ describe('POST simulations/cosmetic', () => {
     })
 
     test(`create a new simulation with the params used`, async () => {
-      const simulation = await QuickSimulation.get(response.body.simulation.id)
+      const simulation = await QuickSimulation.get(response.body.simulation.id, {source: googleProject})
       expect(simulation.params).toEqual({
         mode: 'cosmetic',
         blend: 'poisson',
@@ -278,19 +296,27 @@ describe('PATCH simulations/:id', () => {
     {isPublicCall: true , auth: 'signed-claims'        , body: 'json'},
     {isPublicCall: false, auth: 'querystring-client-id', body: 'json'},
     {isPublicCall: false, auth: 'signed-claims'        , body: 'formdata'},
+    {clientCustomGoogleProject: 'b-dentrino'},
   ]
   describe.each(PATCH_FORMAT_COMBINATIONS)(`on a successful request (format = %o)`, (formatCfg) => {
     let response
+    let googleProject
 
     beforeAll(async () => {
+      googleProject = formatCfg.clientCustomGoogleProject || 'default'
       const result = await prepareAndRunSimulation({
         mode: 'update',
         simulationCfg: {
+          source: googleProject,
           metadata: {
             captureType: "file",
             externalCustomerId: "old-customer123",
             feedbackScore: 1.0,
           },
+        },
+        apiClientCfg: {
+          customBucket: formatCfg.clientCustomBucket,
+          customGoogleProject: formatCfg.clientCustomGoogleProject,
         },
         requestCfg: {
           format: formatCfg,
@@ -309,7 +335,7 @@ describe('PATCH simulations/:id', () => {
     })
 
     describeSimulationMetadataChanges(() => {
-      return {response}
+      return {response, googleProject}
     })
 
     test(`respond 200`, async () => {
@@ -787,20 +813,22 @@ function describeSingleSimulationErrors({mode}) {
 function describeSimulationMetadataChanges(getParams) {
   describe(`common metadata changes`, () => {
     let response
+    let googleProject
 
     beforeEach(() => {
       const params = getParams()
       response = params.response
+      googleProject = params.googleProject
     })
 
     test(`create a new simulation`, async () => {
-      const simulation = await QuickSimulation.get(response.body.simulation.id)
+      const simulation = await QuickSimulation.get(response.body.simulation.id, {source: googleProject})
       expect(simulation).toBeTruthy()
     })
 
     test(`simulation has metadata`, async () => {
       const simResponded = response.body.simulation
-      const simulation = await QuickSimulation.get(simResponded.id)
+      const simulation = await QuickSimulation.get(simResponded.id, {source: googleProject})
       expect(simulation.id).toEqual(simResponded.id)
       expect(simulation.metadata).toEqual({
         captureType: 'camera',
@@ -811,7 +839,7 @@ function describeSimulationMetadataChanges(getParams) {
 
     test(`respond simulation metadata`, async () => {
       const simResponded = response.body.simulation
-      const simulation = await QuickSimulation.get(simResponded.id)
+      const simulation = await QuickSimulation.get(simResponded.id, {source: googleProject})
       expect(simResponded.metadata).toEqual(simulation.metadata)
     })
   })
@@ -821,15 +849,19 @@ function describeSimulationStorageChanges(getParams) {
   describe(`storage data`, () => {
     let response
     let bucketname
+    let googleProject
+    let storageId
 
     beforeEach(() => {
       const params = getParams()
       response = params.response
       bucketname = params.bucketname
+      googleProject = params.googleProject
+      storageId = params.storageId
     })
 
     test(`simulation has storage data`, async () => {
-      const simulation = await QuickSimulation.get(response.body.simulation.id)
+      const simulation = await QuickSimulation.get(response.body.simulation.id, {source: googleProject})
       expect(simulation.storage.bucket).toEqual(bucketname)
       expect(simulation.storage.directoryPath).toBeDefined()
       expect(simulation.storage.originalPath).toBeDefined()
@@ -852,22 +884,22 @@ function describeSimulationStorageChanges(getParams) {
     })
 
     test(`uploads original image`, async () => {
-      const uploaded = storage.uploads[bucketname]['original.jpg']
+      const uploaded = storage.uploads[storageId]['original.jpg']
       expect(uploaded).toEqual(photoInput)
     })
 
     test(`uploads result image`, async () => {
-      const uploaded = storage.uploads[bucketname]['result.jpg']
+      const uploaded = storage.uploads[storageId]['result.jpg']
       expect(uploaded).toEqual(photoAfterSimulation)
     })
 
     test(`uploads preprocessed image`, async () => {
-      const uploaded = storage.uploads[bucketname]['before.jpg']
+      const uploaded = storage.uploads[storageId]['before.jpg']
       expect(uploaded).toEqual(photoBefore)
     })
 
     test(`uploads morphed image`, async () => {
-      const uploaded = storage.uploads[bucketname]['morphed.png']
+      const uploaded = storage.uploads[storageId]['morphed.png']
       expect(uploaded).toEqual(mouthMorphed)
     })
   })
@@ -918,6 +950,7 @@ async function prepareAndRunSimulation({mode='ortho', apiClientCfg={}, requestCf
     recaptchaMinScore = 0.75,
     allowedHosts = ['http://localhost:8080'],
     customBucket: apiCustomBucket,
+    customGoogleProject: apiCustomGoogleProject,
   } = apiClientCfg
   const recaptchaAttrs = {}
   if (recaptchaSecret) recaptchaAttrs.secret = recaptchaSecret
@@ -927,6 +960,7 @@ async function prepareAndRunSimulation({mode='ortho', apiClientCfg={}, requestCf
     defaultConfig: {
       recaptcha: recaptchaAttrs,
       customBucket: apiCustomBucket,
+      customGoogleProject: apiCustomGoogleProject,
       allowedHosts,
     }
   })
@@ -935,8 +969,10 @@ async function prepareAndRunSimulation({mode='ortho', apiClientCfg={}, requestCf
   let simulation = null
   if (mode === 'update') {
     if (!simulationCfg.clientId) simulationCfg.clientId = client.id
+    const {source} = simulationCfg
+    delete simulationCfg.source
     simulation = Factory.build('quick_simulation', simulationCfg)
-    await simulation.save()
+    await simulation.save({source})
   }
 
   const simulationClient = new ApiSimulationClient({

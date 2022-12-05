@@ -28,8 +28,9 @@ Factory.define('api_client', ApiClient)
     }
     if (!apiConfigs) return
     for (let apiId of Object.keys(apiConfigs)) {
-      const {customBucket, enabled, allowedHosts, recaptcha} = apiConfigs[apiId]
+      const {customGoogleProject, customBucket, enabled, allowedHosts, recaptcha} = apiConfigs[apiId]
       if (customBucket) client.setCustomBucket({api: apiId, bucket: customBucket})
+      if (customGoogleProject) client.setCustomGoogleProject({api: apiId, projectKey: customGoogleProject})
       if (typeof(enabled) === true) client.enableApi({api: apiId})
       if (typeof(enabled) === false) client.disableApi({api: apiId})
       if (allowedHosts) {

@@ -11,7 +11,7 @@ import FileType from 'file-type'
 const {SECONDS, MINUTES, HOURS, DAYS} = timeInSeconds
 
 const me = new (class {
-  async upload({bucket, simulation, uploadsConfig, info, clientId, root='.api-simulations/'}) {
+  async upload({googleProjectKey, bucket, simulation, uploadsConfig, info, clientId, root='.api-simulations/'}) {
     const success = simulation.success
     const folderpath = path.join(root, (success ? 'success' : 'fail'), `${simulation.id}SIM_${clientId}CLI`)
     const rawUploadsConfig = [{
@@ -40,6 +40,7 @@ const me = new (class {
       rawUploadsConfig.push(cfg.rawCfg)
     }
     await me.rawUpload({
+      googleProjectKey,
       bucket,
       uploads: rawUploadsConfig,
       folderpath,
@@ -56,12 +57,12 @@ const me = new (class {
     }
   }
 
-  async rawUpload({bucket, uploads = [], folderpath}) {
+  async rawUpload({googleProjectKey, bucket, uploads = [], folderpath}) {
     uploads.forEach((up) => {
       up.filepath = path.join(folderpath, up.filename)
     })
 
-    const uploadTasks = uploads.map((up) => me.#upload(bucket, up))
+    const uploadTasks = uploads.map((up) => me.#upload({googleProjectKey, bucket}, up))
     await Promise.all(uploadTasks)
 
     const gcloudSigner = GcloudPresignedCredentialsProvider.build({bucket})
@@ -84,9 +85,9 @@ const me = new (class {
     return uploads
   }
 
-  async #upload(bucket, {content, filepath, isPublic=false}) {
+  async #upload({googleProjectKey, bucket}, {content, filepath, isPublic=false}) {
     await new Promise((resolve, reject) => {
-      const file = this.#getFile({bucket, filepath})
+      const file = this.#getFile({googleProjectKey, bucket, filepath})
       const passthroughStream = new stream.PassThrough()
       passthroughStream.write(content)
       passthroughStream.end()
@@ -105,8 +106,8 @@ const me = new (class {
     })
   }
 
-  #getFile({bucket, filepath}) {
-    return storageFactory()
+  #getFile({googleProjectKey, bucket, filepath}) {
+    return storageFactory({projectKey: googleProjectKey})
       .bucket(bucket)
       .file(filepath)
   }

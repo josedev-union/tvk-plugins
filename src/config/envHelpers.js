@@ -1,18 +1,31 @@
-export function parseFirebaseProjects(entriesListStr) {
+import path from 'path'
+
+export function parseObjects(entriesListStr, objectKeysOrder) {
   const entries = parseList(entriesListStr)
   if (!entries) return []
   return entries.map((entry) => {
-    let [name, projectId, databaseURL, serviceAccountCredentialPath] = entry.split(/\s*[|]\s*/)
-    if (!databaseURL) databaseURL = 'localhost:8080'
-    if (!projectId) projectId = 'dentrino-local-us'
-    const config = { databaseURL, projectId }
-    if (serviceAccountCredentialPath) {
-      const serviceAccount = require(serviceAccountCredentialPath)
-      const credential = cert(serviceAccount)
-      Object.assign(config, { credential })
-    }
-    return {name, config}
+    const parts = entry.split(/\s*[;]\s*/)
+    const obj = {}
+    parts.forEach((value, inx) => {
+      const key = objectKeysOrder[inx]
+      obj[key] = value
+    })
+    return obj
   })
+}
+
+export function parseGoogleProjects(entriesListStr) {
+  const parsedEntries = parseObjects(entriesListStr, ['projectKey', 'projectId', 'credentialPath'])
+  if (!parsedEntries) return {}
+  const googleProjectsEntries = parsedEntries.map((entry) => {
+    if (!entry.projectId) projectId = 'dentrino-local'
+    if (entry.credentialPath) {
+      entry.credentialCfg = require(path.join('../../', entry.credentialPath))
+    }
+    return [entry.projectKey, entry]
+  })
+
+  return Object.fromEntries(googleProjectsEntries)
 }
 
 export function normalizePort(val) {
@@ -42,7 +55,7 @@ export function parseBool(val) {
 export function parseList(val) {
   if (!val) return []
   if (Array.isArray(val)) return val
-  return val.split(/\s*[,]\s*/g)
+  return val.split(/\s*[|]\s*/g)
 }
 
 export function toFilepathRegex(str) {
