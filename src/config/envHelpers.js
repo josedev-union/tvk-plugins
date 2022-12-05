@@ -20,7 +20,10 @@ export function parseGoogleProjects(entriesListStr) {
   const googleProjectsEntries = parsedEntries.map((entry) => {
     if (!entry.projectId) projectId = 'dentrino-local'
     if (entry.credentialPath) {
-      entry.credentialCfg = require(path.join('../../', entry.credentialPath))
+      if (!path.isAbsolute(entry.credentialPath)) {
+        entry.credentialPath = path.resolve('../../', entry.credentialPath)
+      }
+      entry.credentialCfg = require(entry.credentialPath)
     }
     return [entry.projectKey, entry]
   })
