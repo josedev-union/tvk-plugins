@@ -1,3 +1,4 @@
+import fs from 'fs'
 import path from 'path'
 
 export function parseObjects(entriesListStr, objectKeysOrder) {
@@ -21,9 +22,9 @@ export function parseGoogleProjects(entriesListStr) {
     if (!entry.projectId) projectId = 'dentrino-local'
     if (entry.credentialPath) {
       if (!path.isAbsolute(entry.credentialPath)) {
-        entry.credentialPath = path.resolve('../../', entry.credentialPath)
+        entry.credentialPath = path.resolve(entry.credentialPath)
       }
-      entry.credentialCfg = require(entry.credentialPath)
+      entry.credentialCfg = JSON.parse(fs.readFileSync(entry.credentialPath))
     }
     return [entry.projectKey, entry]
   })

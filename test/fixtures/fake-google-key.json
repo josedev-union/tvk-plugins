@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "dentrino-test-us",
+  "private_key_id": "e85c4dfe4d8a639550c2d87fead52bac2a7db5f7",
+  "private_key": "-----BEGIN PRIVATE KEY-----\newogICJ0eXBlIjogInNlcnZpY2VfYWNjb3VudCIsCiAgInByb2plY3RfaWQiOiAiZGVudHJpbm8t\ndGVzdC11cyIsCiAgInByaXZhdGVfa2V5X2lkIjogImU4NWM0ZGZlNGQ4YTYzOTU1MGMyZDg3ZmVh\nZDUyYmFjMmE3ZGI1ZjciLAogICJwcml2YXRlX2tleSI6ICItLS0tLUJFR0lOIFBSSVZBVEUgS0VZ\nLS0tLS1cblxuLS0tLS1FTkQgUFJJVkFURSBLRVktLS0tLVxuIiwKICAiY2xpZW50X2VtYWlsIjog\nImRlbnRyaW5vLXN0YWdpbmdAYXBwc3BvdC5nc2VydmljZWFjY291bnQuY29tIiwKICAiY2xpZW50\nX2lkIjogIjExMzQxNDczNjc2NzIxODU1OTczMiIsCiAgImF1dGhfdXJpIjogImh0dHBzOi8vYWNj\nb3VudHMuZ29vZ2xlLmNvbS9vL29hdXRoMi9hdXRoIiwKICAidG9rZW5fdXJpIjogImh0dHBzOi8v\nb2F1dGgyLmdvb2dsZWFwaXMuY29tL3Rva2VuIiwKICAiYXV0aF9wcm92aWRlcl94NTA5X2NlcnRf\ndXJsIjogImh0dHBzOi8vd3d3Lmdvb2dsZWFwaXMuY29tL29hdXRoMi92MS9jZXJ0cyIsCiAgImNs\naWVudF94NTA5X2NlcnRfdXJsIjogImh0dHBzOi8vd3d3Lmdvb2dsZWFwaXMuY29tL3JvYm90L3Yx\nL21ldGFkYXRhL3g1MDkvZGVudHJpbm8tc3RhZ2luZyU0MGFwcHNwb3QuZ3NlcnZpY2VhY2NvdW50\nLmNvbSIKfQo=\n-----END PRIVATE KEY-----\n",
+  "client_email": "dentrino-test-us@appspot.gserviceaccount.com",
+  "client_id": "983560046890378880875",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/dentrino-test-us%40appspot.gserviceaccount.com"
+}
