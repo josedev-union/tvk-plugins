@@ -6,11 +6,13 @@
     "shell": "firebase functions:shell",
     "start": "npm run shell",
 
-    "deploy": "firebase -P dentrino-staging deploy --only functions:simulations_api",
+    "deploy:dent": "firebase -P dentrino-staging deploy --only functions:simulations_api",
+    "deploy:bdent": "firebase -P b-dentrino-staging deploy --only functions:simulations_api",
+    "deploy": "npm run deploy:dent && npm run deploy:bdent",
     "save_config": "firebase -P dentrino-staging functions:config:get > .runtimeconfig.json",
     "logs": "firebase -P dentrino-staging functions:log",
 
-    "prod:deploy": "firebase -P dentrino-production deploy --only functions:simulations_api",
+    "prod:deploy:dent": "firebase -P dentrino-production deploy --only functions:simulations_api",
     "prod:save_config": "firebase -P dentrino-production functions:config:get > .runtimeconfig.prod.json",
     "prod:logs": "firebase -P dentrino-production functions:log"
   },
