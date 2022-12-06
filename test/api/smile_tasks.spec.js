@@ -223,7 +223,6 @@ describe(`when rate limit is checked`, () => {
     const resp3 = await simplePostTask({user: users[2], client: apiClient, ip: ips[2]})
     expect(resp1.status).toBe(200)
     expect(resp2.status).toBe(200)
-    console.log(resp3.body)
     expect(resp3.status).toBe(429)
   })
 
