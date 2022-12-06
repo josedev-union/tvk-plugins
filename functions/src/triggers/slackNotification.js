@@ -1,8 +1,3 @@
-// simulations_api.slackNotify.watch_staging({bucket: 'dentrino-staging.appspot.com', name: '.api-simulations/success/ODMzNjM5MjEyNTI5NStDQVhQQVN7SIM_ODMzNjkxMTQ4NTY2OXo+bzk2MUdm_default_testCLI/info.json', contentType: 'image/jpeg'})
-// simulations_api.slackNotify.watch_staging({bucket: 'dentrino-staging.appspot.com', name: '.api-simulations/success/ODMzNjM5NDU0Mzk0N1pMPVJPI3BcSIM_ODMzNjkxOTc4NTE5Mk9tZT4rYVJ2_testextCLI/info.json', contentType: 'image/jpeg'})
-// simulations_api.slackNotify.watch_staging({bucket: 'dentrino-staging.appspot.com', name: '.api-simulations/fail/ODMzNjM5MjA2MzM2MSwhPjN7NG5GSIM_ODMzNjkxMTQ4NTY2OXo+bzk2MUdm_default_testCLI/info.json', contentType: 'image/jpeg'})
-// GOOGLE_APPLICATION_CREDENTIALS="../keys/dentrino-staging.json" npm run shell
-
 const functions = require('firebase-functions')
 const { WebClient: SlackWeb } = require('@slack/web-api')
 const {SlackSimulationsClient} = require('../helpers/SlackSimulationsClient')
@@ -14,22 +9,27 @@ const {defineFunctionsToWatchBuckets} = require('../helpers/functions')
 // Constants
 // ------------------------------------
 const SLACK_CHANNEL_STAG_ORTHO_PILOT = 'C042YDEF0BV'
-const SLACK_CHANNEL_STAG_GENERAL = 'C02DY7HHE8K'
-const SLACK_CHANNEL_PROD_GENERAL = 'C02EMRWB256'
+const SLACK_CHANNEL_STAG_ON_DEMAND = 'C02DY7HHE8K'
+const SLACK_CHANNEL_PROD_ON_DEMAND = 'C02EMRWB256'
 const SLACK_NOTIFIERS = [
   {
     when: {bucket: 'staging', clientId: 'testext'},
     notifyToChannel: SLACK_CHANNEL_STAG_ORTHO_PILOT,
   },
   {
-    when: {bucket: 'staging'},
-    notifyToChannel: SLACK_CHANNEL_STAG_GENERAL,
-    except: {clientId: 'testext'},
+    when: {bucket: 'b-dentrino-staging'},
+    notifyToChannel: SLACK_CHANNEL_STAG_ORTHO_PILOT,
   },
-  {
-    when: {bucket: 'production'},
-    notifyToChannel: SLACK_CHANNEL_PROD_GENERAL,
-  },
+
+  // TODO: Change it to work with Dentrino On Demand results
+  // {
+  //   when: {bucket: 'staging', onDemandResults: true},
+  //   notifyToChannel: SLACK_CHANNEL_STAG_ON_DEMAND,
+  // },
+  // {
+  //   when: {bucket: 'production', onDemandResults: true},
+  //   notifyToChannel: SLACK_CHANNEL_PROD_ON_DEMAND,
+  // },
 ]
 
 // ------------------------------------
