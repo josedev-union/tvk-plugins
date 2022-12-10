@@ -4,6 +4,8 @@ import {TagSet} from '../utils/TagSet'
 import {env} from '../config/env'
 
 export const api = new (class {
+  #callbacks = null
+
   setId({apiId, clientIsFrontend=false}) {
     if (clientIsFrontend) {
       apiId = `public-${apiId}`
@@ -11,9 +13,15 @@ export const api = new (class {
     return (req, res, next) => {
       res.locals.dentApiId = apiId
       res.locals.dentIsFrontendRoute = clientIsFrontend
-      this.addInfo(res, {api: apiId})
+      this.#setup(req, res)
       next()
     }
+  }
+
+  addCallback(callbackId, func) {
+    if (!this.#callbacks) this.#callbacks = {}
+    if (!this.#callbacks[callbackId]) this.#callbacks[callbackId] = []
+    this.#callbacks[callbackId].push(func)
   }
 
   corsOnError() {
@@ -40,7 +48,12 @@ export const api = new (class {
   }
 
   addTags(res, newTags) {
-    api.getTags(res).add(newTags)
+    const allTags = api.getTags(res)
+    allTags.add(newTags)
+    this.#callCallbacks('tags.add', {
+      allTags: allTags.tags,
+      addedTags: new TagSet(newTags).tags,
+    })
   }
 
   getId(res) {
@@ -51,26 +64,10 @@ export const api = new (class {
     return res.locals.dentApiInfo || {}
   }
 
-  getReqInfo(req) {
-    return api.#pick(req, ['method', 'headers', 'protocol', 'query', 'baseurl', 'ip', 'originalurl', 'path'])
-  }
-
-  getEnvInfo() {
-    return {
-      env: env.name,
-      logLevel: env.logLevel,
-      isProduction: env.isProduction(),
-      isStaging: env.isStaging(),
-      isTest: env.isTest(),
-      isDevelopment: env.isDevelopment(),
-      isLocal: env.isLocal(),
-      isNonLocal: env.isNonLocal(),
-    }
-  }
-
   addInfo(res, extraInfo) {
     const info = api.getInfo(res)
     res.locals.dentApiInfo = Object.assign(info, extraInfo)
+    this.#callCallbacks('info.add', {addedInfo: extraInfo, allInfo: info})
   }
 
   convertToRichError(err, req, res, next) {
@@ -79,29 +76,60 @@ export const api = new (class {
       logger.warn("Can't convert it to RichError", err)
       return next(err)
     }
-    const requestInfo = api.getReqInfo(req)
-    const apiInfo = api.getInfo(res)
-    const envInfo = api.getEnvInfo()
-    richError.addDebugDetails({
-      requestInfo,
-      apiInfo,
-      envInfo,
-    })
+    const info = api.getInfo(res)
+    richError.addDebugDetails(info)
     api.addTags(res, richError.tags)
     return next(richError)
+  }
+
+  #setup(req, res) {
+    const {dentIsFrontendRoute: isFrontEndRoute} = res.locals
+    const apiId = this.getId(res)
+    const requestInfo = this.#getReqInfo(req)
+    const envInfo = this.#getEnvInfo()
+    this.addInfo(res, {
+      api: {
+        id: apiId,
+        isFrontEndRoute,
+      },
+      request: requestInfo,
+      env: envInfo,
+    })
+
+    this.addTags(res, this.#tagsFor(req, res))
+  }
+
+  #tagsFor(req, res) {
+    const {dentIsFrontendRoute: isFrontEndRoute} = res.locals
+    const apiId = this.getId(res)
+    const originalTags = {
+      'api:id': apiId,
+      "api:isFrontEndRoute": String(isFrontEndRoute),
+      'req:method': req.method,
+      'req:protocol': req.protocol,
+      "env:name": env.name,
+    }
+    return new TagSet(originalTags)
+  }
+
+  #getReqInfo(req) {
+    return api.#pick(req, ['method', 'headers', 'protocol', 'query', 'baseurl', 'ip', 'originalurl', 'path'])
+  }
+
+  #getEnvInfo() {
+    return {
+      name: env.name,
+    }
   }
 
   #pick(obj, keys) {
     return keys.reduce((o,k) => Object.assign(o, {[k]: obj[k]}), {})
   }
 
-  #tagsFor(req, res) {
-    const apiId = getId(res)
-    const tags = new TagSet({
-      'api:id': apiId,
-      'api:route': req.route,
-      'req:method': req.method,
-      'req:protocol': req.protocol,
-    })
+  #callCallbacks(callbackId, params) {
+    if (!this.#callbacks || !this.#callbacks[callbackId]) return
+    for (let callback of this.#callbacks[callbackId]) {
+      callback(params)
+    }
   }
 })()
