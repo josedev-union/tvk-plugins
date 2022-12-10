@@ -5,6 +5,7 @@ import {QuickSimulationClient} from "../../models/clients/QuickSimulationClient"
 import {simulationResultsUploader} from "../../models/storage/simulationResultsUploader"
 import {QuickSimulation} from "../../models/database/QuickSimulation"
 import {logger} from '../../instrumentation/logger'
+import {metrics} from '../../instrumentation/metrics'
 import {env} from "../../config/env"
 import {asyncRoute} from '../../middlewares/expressAsync'
 import {quickApi} from '../../middlewares/quickApi'
@@ -73,38 +74,42 @@ function newQuickSimulationRoute() {
     const bucket = apiClient.customBucket({api: apiId}) || env.gcloudBucket
     const googleProjectKey = apiClient.customGoogleProject({api: apiId}) || 'default'
 
-    const simulation = await timeoutManager.exec(env.quickApiSimulationTimeout, async () => {
-      const client = new QuickSimulationClient()
-      const expiresAt = Math.round(timeoutManager.nextExpiresAtInSeconds() * 1000.0)
-      quickApi.setSimulationStarted(res)
-      return await client.requestSimulation({
-        id: dbSimulation.id,
-        photo: photo.content,
-        expiresAt: expiresAt,
-        options: dbSimulation.buildJobOptions(),
-        safe: true,
-      })
-    }, {id: 'wait-simulation'})
+    const simulation = metrics.stopwatch('api:quickSimulations:runSimulation', async () => {
+      return await timeoutManager.exec(env.quickApiSimulationTimeout, async () => {
+        const client = new QuickSimulationClient()
+        const expiresAt = Math.round(timeoutManager.nextExpiresAtInSeconds() * 1000.0)
+        quickApi.setSimulationStarted(res)
+        return await client.requestSimulation({
+          id: dbSimulation.id,
+          photo: photo.content,
+          expiresAt: expiresAt,
+          options: dbSimulation.buildJobOptions(),
+          safe: true,
+        })
+      }, {id: 'wait-simulation'})
+    })
 
-    const uploadResults = await timeoutManager.exec(env.quickApiResultsUploadTimeout, async () => {
-      return await simulationResultsUploader.upload({
-        googleProjectKey,
-        bucket,
-        clientId: apiClient.id,
-        simulation,
-        uploadsConfig: {
-          original: {extensionPlaceholder: photo.filenameExtension},
-          before: {getUrl: true, isPublic: true},
-          result: {getUrl: true, isPublic: true},
-          morphed: {getUrl: false},
-        },
-        info: {
-          ip: req.ip,
-          params: dbSimulation.params,
-          metadata: dbSimulation.metadata,
-        },
-      })
-    }, {id: 'wait-firestorage-upload'})
+    const uploadResults = await metrics.stopwatch('api:quickSimulations:uploadResults', async () => {
+      return await timeoutManager.exec(env.quickApiResultsUploadTimeout, async () => {
+        return await simulationResultsUploader.upload({
+          googleProjectKey,
+          bucket,
+          clientId: apiClient.id,
+          simulation,
+          uploadsConfig: {
+            original: {extensionPlaceholder: photo.filenameExtension},
+            before: {getUrl: true, isPublic: true},
+            result: {getUrl: true, isPublic: true},
+            morphed: {getUrl: false},
+          },
+          info: {
+            ip: req.ip,
+            params: dbSimulation.params,
+            metadata: dbSimulation.metadata,
+          },
+        })
+      }, {id: 'wait-firestorage-upload'})
+    })
 
     Object.entries(uploadResults.results).forEach(([resultName, result]) => {
       if (result.filepath) {
