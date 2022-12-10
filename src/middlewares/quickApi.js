@@ -7,7 +7,6 @@ import axios from 'axios'
 
 import {cors} from './cors'
 import {api} from './api'
-import {timeout} from "./timeout"
 import {rateLimit} from "./rateLimit"
 
 import {env} from "../config/env"
