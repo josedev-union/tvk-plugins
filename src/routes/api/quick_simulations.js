@@ -74,7 +74,7 @@ function newQuickSimulationRoute() {
     const bucket = apiClient.customBucket({api: apiId}) || env.gcloudBucket
     const googleProjectKey = apiClient.customGoogleProject({api: apiId}) || 'default'
 
-    const simulation = metrics.stopwatch('api:quickSimulations:runSimulation', async () => {
+    const simulation = await metrics.stopwatch('api:quickSimulations:runSimulation', async () => {
       return await timeoutManager.exec(env.quickApiSimulationTimeout, async () => {
         const client = new QuickSimulationClient()
         const expiresAt = Math.round(timeoutManager.nextExpiresAtInSeconds() * 1000.0)
@@ -88,6 +88,12 @@ function newQuickSimulationRoute() {
         })
       }, {id: 'wait-simulation'})
     })
+
+    if (!simulation.id) {
+      throw api.newServerError({
+        debugMessage: `Simulation response should have id but got ${simulation}`,
+      })
+    }
 
     const uploadResults = await metrics.stopwatch('api:quickSimulations:uploadResults', async () => {
       return await timeoutManager.exec(env.quickApiResultsUploadTimeout, async () => {
@@ -104,7 +110,6 @@ function newQuickSimulationRoute() {
           },
           info: {
             ip: req.ip,
-            params: dbSimulation.params,
             metadata: dbSimulation.metadata,
           },
         })

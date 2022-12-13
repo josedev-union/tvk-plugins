@@ -40,6 +40,16 @@ export const api = new (class {
     })
   }
 
+  newServerError({httpCode=500, id='internal-server-error', publicMessage='Internal Server Error', debugMessage}={}) {
+    return new RichError({
+      httpCode,
+      id,
+      publicMessage,
+      debugMessage: debugMessage || publicMessage,
+      logLevel: 'error',
+    })
+  }
+
   getTags(res) {
     if (!res.locals.dentApiTags) {
       res.locals.dentApiTags = new TagSet()

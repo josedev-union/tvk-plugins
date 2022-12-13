@@ -42,6 +42,10 @@ jest.mock('../../src/models/storage/storageFactory', () => {
   const path = require('path')
   const { BufferWritable } = require('../../src/utils/BufferWritable')
   const storage = {
+    publicUrls: {},
+    uploads: {},
+    signedUrls: {},
+
     bucket: jest.fn().mockImplementation((bucketname) => {
       storage.bucketname = bucketname
       storage.storageId = `${storage.projectKey}/${bucketname}`
@@ -55,15 +59,12 @@ jest.mock('../../src/models/storage/storageFactory', () => {
     }),
 
     publicUrl: jest.fn().mockImplementation(() => {
-      if (!storage.publicUrls) storage.publicUrls = {}
       const url = `http://gcloud.presigned.com/public/${storage.projectKey}/${storage.bucketname}/${storage.filepath}`
       storage.publicUrls[storage.filename] = url
       return url
     }),
 
     createWriteStream: jest.fn().mockImplementation(() => {
-      if (!storage.uploads) storage.uploads = {}
-
       const {storageId, uploads, filepath, filename} = storage
       if (!uploads[storageId]) uploads[storageId] = {}
 
@@ -76,8 +77,6 @@ jest.mock('../../src/models/storage/storageFactory', () => {
     }),
 
     getSignedUrl: jest.fn().mockImplementation((opts) => {
-      if (!storage.signedUrls) storage.signedUrls = {}
-
       const {filepath, filename, signedUrls, bucketname, projectKey} = storage
       const signedUrl = `http://gcloud.presigned.com/${projectKey}/${bucketname}/${filepath}`
       signedUrls[filename] = signedUrl
@@ -881,6 +880,8 @@ function describeSimulationStorageChanges(getParams) {
       const simResponded = response.body.simulation
       expect(simResponded.storage.resultUrl).toEqual(storage.publicUrls['result.jpg'])
       expect(simResponded.storage.beforeUrl).toEqual(storage.publicUrls['before.jpg'])
+      expect(simResponded.storage.resultUrl).not.toBeFalsy()
+      expect(simResponded.storage.beforeUrl).not.toBeFalsy()
     })
 
     test(`uploads original image`, async () => {
