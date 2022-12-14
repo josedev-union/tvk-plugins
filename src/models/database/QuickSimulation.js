@@ -229,7 +229,7 @@ export class QuickSimulation {
     const options = {
       whiten: this.params[PARAM_KEY_WHITEN],
       brightness: 1.0 + this.params[PARAM_KEY_BRIGHTNESS],
-      ortho: this.params[PARAM_KEY_BLEND] === PARAM_VALUE_MODE_ORTHO,
+      ortho: this.params[PARAM_KEY_MODE] === PARAM_VALUE_MODE_ORTHO,
       poisson: this.params[PARAM_KEY_BLEND] === PARAM_VALUE_BLEND_POISSON,
     }
     if (this.params[PARAM_KEY_STYLE_MODE] === PARAM_VALUE_STYLE_MODE_MIX) {
