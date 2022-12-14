@@ -12,6 +12,7 @@ import {quickApi} from '../../middlewares/quickApi'
 import {api} from '../../middlewares/api'
 import {apisRouter} from '../../middlewares/apisRouter'
 import {timeout} from "../../middlewares/timeout"
+import {getNowInMillis} from '../../utils/time'
 
 export default apisRouter.newRouterBuilder((newApiRoute) => {
   newApiRoute({
@@ -77,13 +78,15 @@ function newQuickSimulationRoute() {
     const simulation = await metrics.stopwatch('api:quickSimulations:runSimulation', async () => {
       return await timeoutManager.exec(env.quickApiSimulationTimeout, async () => {
         const client = new QuickSimulationClient()
-        const expiresAt = Math.round(timeoutManager.nextExpiresAtInSeconds() * 1000.0)
+        const nextTimeout = Math.round(timeoutManager.nextExpiresAtInSeconds() * 1000.0)
+        const queueTimeout = Math.round(getNowInMillis() + env.quickApiSimulationQueueTimeout * 1000.0)
+        const expiresAt = Math.min(nextTimeout, queueTimeout)
         quickApi.setSimulationStarted(res)
         return await client.requestSimulation({
           id: dbSimulation.id,
           photo: photo.content,
-          expiresAt: expiresAt,
           options: dbSimulation.buildJobOptions(),
+          expiresAt,
           safe: true,
         })
       }, {id: 'wait-simulation'})
