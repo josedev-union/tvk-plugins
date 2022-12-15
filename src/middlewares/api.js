@@ -1,4 +1,5 @@
 import {logger} from '../instrumentation/logger'
+import {metrics} from '../instrumentation/metrics'
 import {RichError} from '../utils/RichError'
 import {TagSet} from '../utils/TagSet'
 import {env} from '../config/env'
@@ -106,10 +107,14 @@ export const api = new (class {
       env: envInfo,
     })
 
-    this.addTags(res, this.#tagsFor(req, res))
+    const reqSize = req.headers['content-length']
+    if (typeof(reqSize) !== 'undefined') {
+      metrics.addRequestBytesMeasure({apiId, env: env.name, bytes: reqSize})
+    }
+    this.addTags(res, this.#tagsFor({req, res, reqSize}))
   }
 
-  #tagsFor(req, res) {
+  #tagsFor({req, res, reqSize}) {
     const {dentIsFrontendRoute: isFrontEndRoute} = res.locals
     const apiId = this.getId(res)
     const originalTags = {
@@ -118,6 +123,9 @@ export const api = new (class {
       'req:method': req.method,
       'req:protocol': req.protocol,
       "env:name": env.name,
+    }
+    if (typeof(reqSize) !== 'undefined') {
+      originalTags['req:content:megabytes'] = (reqSize/1024.0/1024.0).toFixed(3)
     }
     return new TagSet(originalTags)
   }
