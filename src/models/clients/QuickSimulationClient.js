@@ -42,7 +42,7 @@ export class QuickSimulationClient {
 
   async #publishRequest(id, photoBuffer, photoRedisKey, expiresAt, options) {
     const photoEncrypted = this.#encrypt(photoBuffer)
-    await redisSetex(photoRedisKey, 10, photoEncrypted)
+    await redisSetex(photoRedisKey, 45, photoEncrypted)
     var params = {
       photo_redis_key: photoRedisKey,
       expires_at: expiresAt,
