@@ -9,7 +9,6 @@ const {defineFunctionsToWatchBuckets} = require('../helpers/functions')
 // Constants
 // ------------------------------------
 const SLACK_CHANNEL_STAG_ORTHO_PILOT = 'C042YDEF0BV'
-const SLACK_CHANNEL_PROD_ORTHO_PILOT = 'C04FP4J2VA8'
 const SLACK_CHANNEL_STAG_ON_DEMAND = 'C02DY7HHE8K'
 const SLACK_CHANNEL_PROD_ON_DEMAND = 'C02EMRWB256'
 const SLACK_NOTIFIERS = [
@@ -20,10 +19,6 @@ const SLACK_NOTIFIERS = [
   {
     when: {bucket: 'b-dentrino-staging'},
     notifyToChannel: SLACK_CHANNEL_STAG_ORTHO_PILOT,
-  },
-  {
-    when: {bucket: 'b-dentrino-production'},
-    notifyToChannel: SLACK_CHANNEL_PROD_ORTHO_PILOT,
   },
 
   // TODO: Change it to work with Dentrino On Demand results
