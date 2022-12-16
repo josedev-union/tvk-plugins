@@ -1,3 +1,4 @@
+import './metrics'
 import {Database} from '../models/database/Database'
 import Handlebars from 'hbs'
 import {i18n} from '../shared/i18n'

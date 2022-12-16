@@ -2,18 +2,18 @@ import fs from 'fs'
 import path from 'path'
 import {promisify} from "util"
 import multer from 'multer'
-import FileType from 'file-type'
 import axios from 'axios'
 
 import {cors} from './cors'
 import {api} from './api'
-import {timeout} from "./timeout"
 import {rateLimit} from "./rateLimit"
 
 import {env} from "../config/env"
 import {simpleCrypto} from "../shared/simpleCrypto"
 import {RichError} from "../utils/RichError"
+import {imgHelpers} from "../utils/imgHelpers"
 import {logger} from '../instrumentation/logger'
+import {metrics} from '../instrumentation/metrics'
 import {ApiClient} from "../models/database/ApiClient"
 import {QuickSimulation} from "../models/database/QuickSimulation"
 
@@ -205,6 +205,12 @@ export const quickApi = new (class {
       file.filenameExtension = path.extname(file.originalFilename)
       files[file.fieldname] = file
 
+      const {dentApiId: apiId} = res.locals
+      metrics.addImageBytesMeasure({apiId, env: env.name, bytes: file.size})
+      api.addTags(res, {
+        "simulation:params:image:megabytes": (file.size/1024.0/1024.0).toFixed(3),
+      })
+
       if (file.size >= env.quickApiMaxUploadSizeBytes) {
         file.content = '[HIDDEN]'
         throw quickApi.#newBadParamsError({
@@ -226,6 +232,7 @@ export const quickApi = new (class {
       const clientId = res.locals.dentClientId
       const {data: bodyData, images: bodyImages} = res.locals.dentParsedBody
       await quickApi.#processImageFields({
+        res,
         images: bodyImages,
         imgFields: ['imgPhoto'],
       })
@@ -253,11 +260,16 @@ export const quickApi = new (class {
           message,
         })
       }
+      for (const [key, value] of Object.entries(quickSimulation.params)) {
+        api.addTags(res, {
+          [`simulation:params:${key}`]: String(value),
+        })
+      }
       res.locals.dentQuickSimulation = quickSimulation
     })
   }
 
-  async #processImageFields({images, imgFields}) {
+  async #processImageFields({images, imgFields, res}) {
     for (var i = 0; i < imgFields.length; i++) {
       const field = imgFields[i]
       const photo = images[field]
@@ -272,7 +284,12 @@ export const quickApi = new (class {
         })
       }
 
-      const {ext: extension} = (await FileType.fromBuffer(photo.content)) || {}
+      const extension = await imgHelpers.getExtension(photo.content)
+      if (extension) {
+        api.addTags(res, {
+          "simulation:params:image:extension": extension,
+        })
+      }
 
       if (!extension || !extension.match(env.supportedImagesFilepathRegex)) {
         throw quickApi.#newBadParamsError({
@@ -282,6 +299,21 @@ export const quickApi = new (class {
             receivedPhotoType: extension
           }
         })
+      }
+
+      const dimensions = await imgHelpers.getDimensions(photo.content)
+      if (dimensions) {
+        const {width, height} = dimensions
+        const area = width * height
+        const areaSqrt = Math.round(Math.sqrt(area))
+        api.addTags(res, {
+          "simulation:params:image:width": String(width),
+          "simulation:params:image:height": String(height),
+          "simulation:params:image:area": String(area),
+          "simulation:params:image:areaSqrt": String(areaSqrt),
+        })
+        const {dentApiId: apiId} = res.locals
+        metrics.addImageDimensionsMeasure({apiId, env: env.name, dimensions: {width, height, area, areaSqrt}})
       }
     }
   }

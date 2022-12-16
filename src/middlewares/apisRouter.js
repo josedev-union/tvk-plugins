@@ -6,6 +6,7 @@ import {getModel} from "./getModel"
 import {env} from "../config/env"
 import {logger} from '../instrumentation/logger'
 import {asyncRoute} from './expressAsync'
+import {metricsMid} from "./metrics"
 
 export const apisRouter = new (class {
   newRouterBuilder(addRoutes) {
@@ -55,8 +56,10 @@ export const apisRouter = new (class {
       ...apisRouter.#getApiTypeMiddlewares({clientIsFrontend}),
 
       // after
-      timeout.ensure({httpCodeOverride: 408, id: 'parse-body', timeoutSecs: env.quickApiInputUploadTimeout}, [
-        quickApi.parseRequestBody,
+      metricsMid.stopwatch('api:parseRequestBody', [
+        timeout.ensure({httpCodeOverride: 408, id: 'parse-body', timeoutSecs: env.quickApiInputUploadTimeout}, [
+          quickApi.parseRequestBody,
+        ]),
       ]),
       quickApi.validateBodyData,
 
@@ -71,8 +74,10 @@ export const apisRouter = new (class {
         quickApi.validateAuthToken({secretKey: 'exposedSecret'}),
         quickApi.rateLimit(),
         timeout.blowIfTimedout,
-        timeout.ensure({id: 'recaptcha-validation', timeoutSecs: env.quickApiRecaptchaTimeout}, [
-          quickApi.validateRecaptcha,
+        metricsMid.stopwatch('api:validateRecaptcha', [
+          timeout.ensure({id: 'recaptcha-validation', timeoutSecs: env.quickApiRecaptchaTimeout}, [
+            quickApi.validateRecaptcha,
+          ]),
         ]),
         timeout.blowIfTimedout,
       ]

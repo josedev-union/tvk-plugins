@@ -11,13 +11,17 @@ export class TagSet {
     const originalLabel = label
     const originalValue = value
     try {
-      if (typeof(value) === 'undefined') {
-        const tags = (label instanceof TagSet) ? label.tags : label
-        Object.keys(tags).forEach((l) => this.add(l, tags[l]))
-        return
+      if (typeof(value) === 'undefined' && typeof(label) !== 'string') {
+        let tags = undefined
+        if (label instanceof TagSet) tags = label.tags
+        else if (typeof(label) === 'object' && label !== null) tags = label
+        if (tags) {
+          Object.keys(tags).forEach((l) => this.add(l, tags[l]))
+          return
+        }
       }
       label = this.#normalizeLabel(label)
-      value = this.#normalizeValue(value)
+      value = this.#normalizeValue(value, label)
       if (!label) throw new Error(`Invalid tag label: ${originalLabel}`)
       this.tags[label] = value
     } catch(err) {
@@ -43,10 +47,10 @@ export class TagSet {
     return str.toLowerCase()
   }
 
-  #normalizeValue(value) {
+  #normalizeValue(value, label) {
     const valType = typeof(value)
     if (['boolean', 'undefined'].includes(valType) || value === null) return String(value)
-    if (valType !== 'string') throw new Error(`Tag value ${value} should be string, boolean, undefined or null`)
+    if (valType !== 'string') throw new Error(`Invalid tag value: ${label}:${value} : Value should be string, boolean, undefined or null`)
     return value
   }
 }

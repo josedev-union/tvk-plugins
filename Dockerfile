@@ -11,6 +11,7 @@ ADD package-lock.json ./package-lock.json
 ADD src ./src
 ADD assets ./assets
 ADD public ./public
+ADD newrelic.js ./newrelic.js
 
 # Preparing for distribution
 RUN npm install && \
