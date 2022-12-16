@@ -13,6 +13,7 @@
     "logs": "firebase -P dentrino-staging functions:log",
 
     "prod:deploy:dent": "firebase -P dentrino-production deploy --only functions:simulations_api",
+    "prod:deploy:bdent": "firebase -P b-dentrino-production deploy --only functions:simulations_api",
     "prod:save_config": "firebase -P dentrino-production functions:config:get > .runtimeconfig.prod.json",
     "prod:logs": "firebase -P dentrino-production functions:log"
   },
