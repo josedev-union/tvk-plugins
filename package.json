@@ -15,8 +15,7 @@
     "console": "node -r dotenv/config -r @babel/register -r ./src/config/config.js",
     "script": "npm run dev-build && node -r dotenv/config -r @babel/register -r ./src/config/config.js ./scripts/$SCRIPT.js",
     "test:run": "jest -i",
-    "test": "firebase emulators:exec 'npm run test:run'",
-    "func:deploy": "firebase -P dentrino-staging deploy --only functions:simulations_api"
+    "test": "firebase emulators:exec 'npm run test:run'"
   },
   "dependencies": {
     "@godaddy/terminus": "^4.1.2",
