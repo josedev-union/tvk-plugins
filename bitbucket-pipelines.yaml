@@ -1,0 +1,48 @@
+options:
+  docker: true
+
+definitions:
+  steps:
+    - step: &build-image
+        name: Build Docker image
+        image: node:16-alpine
+        script:
+          - docker build -t build_image .
+          - docker save --output tmp-image.docker build_image
+        artifacts:
+          - tmp-image.docker
+    - step: &push-gcp
+        name: Push to GCP registry
+        image: google/cloud-sdk:alpine
+        script:
+          - docker load --input ./tmp-image.docker
+          # Authenticating with the service account key file
+          - echo $GCLOUD_API_KEYFILE | base64 -d > ./gcloud-api-key.json
+          - gcloud auth activate-service-account --key-file gcloud-api-key.json
+          - gcloud config set project $GCLOUD_PROJECT
+          # Tag container & push
+          - export TAG=$(echo "$BITBUCKET_TAG" | sed -e "s/v//g")
+          - export SUFFIX=$([[ ! -z "$TAG" ]] && echo ":$TAG" || echo ":$BITBUCKET_BRANCH")
+          - export IMAGE_NAME=gcr.io/dentrino-production/dentrino-simulations-api${SUFFIX}
+          - docker tag build_image ${IMAGE_NAME}
+          # Login to google docker hub
+          - cat ./gcloud-api-key.json | docker login -u _json_key --password-stdin https://gcr.io
+          - docker push ${IMAGE_NAME}
+
+pipelines:
+  tags:
+    v*:
+      - step: *build-image
+      - step: *push-gcp
+
+  branches:
+    master:
+      - step: *build-image
+      - step: *push-gcp
+    dev:
+      - step: *build-image
+      - step: *push-gcp
+
+  pull-requests:
+    '**':
+      - step: *build-image
