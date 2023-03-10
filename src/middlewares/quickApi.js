@@ -269,6 +269,15 @@ export const quickApi = new (class {
     })
   }
 
+  /**
+   * Validate the existence of required images in the request and
+   * get the extension and dimension info of them.
+   *
+   * @param {object} param
+   * @param[0] {object (images) } - Image list
+   * @param[1] {array (imgFields) } - List of image fields
+   * @param[2] {object (res) } - Response object
+   */
   async #processImageFields({images, imgFields, res}) {
     for (var i = 0; i < imgFields.length; i++) {
       const field = imgFields[i]

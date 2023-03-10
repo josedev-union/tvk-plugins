@@ -1,25 +1,21 @@
-import express from 'express'
-const router = express.Router()
-
 import {QuickSimulationClient} from "../../models/clients/QuickSimulationClient"
 import {simulationResultsUploader} from "../../models/storage/simulationResultsUploader"
 import {QuickSimulation} from "../../models/database/QuickSimulation"
-import {logger} from '../../instrumentation/logger'
 import {metrics} from '../../instrumentation/metrics'
 import {env} from "../../config/env"
 import {asyncRoute} from '../../middlewares/expressAsync'
 import {quickApi} from '../../middlewares/quickApi'
 import {api} from '../../middlewares/api'
-import {apisRouter} from '../../middlewares/apisRouter'
 import {timeout} from "../../middlewares/timeout"
 import {getNowInMillis} from '../../utils/time'
+import { QuickRouter } from "../router/quick"
 
-export default apisRouter.newRouterBuilder((newApiRoute) => {
-  newApiRoute({
-    apiId: 'cosmetic-simulations',
-    method: 'POST',
-    path: '/cosmetic',
-    middlewares: [
+
+export default ({clientIsFrontend = false}) => {
+  return new QuickRouter(clientIsFrontend).
+  post(
+    '/cosmetic',
+    [
       quickApi.dataToQuickSimulation({
         force: {
           mode: 'cosmetic',
@@ -27,14 +23,13 @@ export default apisRouter.newRouterBuilder((newApiRoute) => {
         },
         customizable: ['mixFactor', 'styleMode', 'whiten', 'brightness'],
       }),
-    ]
-  }, newQuickSimulationRoute())
-
-  newApiRoute({
-    apiId: 'ortho-simulations',
-    method: 'POST',
-    path: '/ortho',
-    middlewares: [
+      newQuickSimulationRoute(),
+    ],
+    {'id': 'cosmetic-simulations'},
+  ).
+  post(
+    '/ortho',
+    [
       quickApi.dataToQuickSimulation({
         force: {
           mode: 'ortho',
@@ -44,27 +39,21 @@ export default apisRouter.newRouterBuilder((newApiRoute) => {
         },
         customizable: [],
       }),
-    ]
-  }, newQuickSimulationRoute())
+      newQuickSimulationRoute(),
+    ],
+    {'id': 'ortho-simulations'},
+  ).
+  patch(
+    '/:id',
+    [
+      patchSimulationRoute(),
+    ],
+    {'id': 'patch-simulations'},
+  ).
+  build()
+}
 
-  // newApiRoute({
-  //   apiId: 'get-simulation',
-  //   method: 'GET',
-  //   path: '/:id',
-  // }, getSimulationRoute())
 
-  // newApiRoute({
-  //   apiId: 'list-simulations',
-  //   method: 'GET',
-  //   path: '/',
-  // }, listSimulationsRoute())
-
-  newApiRoute({
-    apiId: 'patch-simulation',
-    method: 'PATCH',
-    path: '/:id',
-  }, patchSimulationRoute())
-})
 
 function newQuickSimulationRoute() {
   return asyncRoute(async (req, res) => {
