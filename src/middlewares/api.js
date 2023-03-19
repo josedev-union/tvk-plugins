@@ -7,14 +7,34 @@ import {env} from '../config/env'
 export const api = new (class {
   #callbacks = null
 
-  setId({apiId, clientIsFrontend=false}) {
-    if (clientIsFrontend) {
-      apiId = `public-${apiId}`
-    }
+  /**
+   * @param {dict}
+   *    {string} apiId
+   * @returns {async function} A route handler which sets api id and the flag indicating api's visibility
+   * Dependency handlers
+   *    []
+   */
+  setId(id) {
     return (req, res, next) => {
-      res.locals.dentApiId = apiId
-      res.locals.dentIsFrontendRoute = clientIsFrontend
+      console.log("dev: setid")
+      res.locals.dentApiId = id
       this.#setup(req, res)
+      next()
+    }
+  }
+
+  setPublic() {
+    return (req, res, next) => {
+      console.log("dev: setPublic")
+      res.locals.dentIsFrontendRoute = true
+      next()
+    }
+  }
+
+  setPrivate() {
+    return (req, res, next) => {
+      console.log("dev: setPrivate")
+      res.locals.dentIsFrontendRoute = false
       next()
     }
   }

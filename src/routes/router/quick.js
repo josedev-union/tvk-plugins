@@ -1,73 +1,78 @@
-import {quickApi} from "../../middlewares/quickApi"
-import {api} from '../../middlewares/api'
-import {timeout} from "../../middlewares/timeout"
-import {getModel} from "../../middlewares/getModel"
-import {env} from "../../config/env"
 import {metricsMid} from "../../middlewares/metrics"
-import { CorsRouter } from "./cors"
+import {timeout} from "../../middlewares/timeout"
+import {quickApi} from "../../middlewares/quickApi"
+import {sanitizer} from '../../models/tools/sanitizer'
+import {env} from "../../config/env"
+import {QuickSegment} from "../../models/database/QuickSimulation"
+
+import { QuickRouter } from "./base"
 
 
-export class QuickRouter extends CorsRouter {
+/***
+ * This is a router class for Segment
+ *  - Set api id
+ *  - Set request timeout
+ *  - Parse auth token
+ *  - Validate the client status and api visability
+ */
+export class QuickFullRouter extends QuickRouter {
 
-  name = "Quick"
+  name = "QuickFullRouter"
 
-  #mhandlers = [
-    quickApi.parseAuthToken,
-    getModel.client,
-    quickApi.validateClient,
-    quickApi.validateApiVisibility,
-    quickApi.validateBodyData,
-  ]
-
-  constructor(isFront) {
-    super()
-    this.isFront = isFront
-  }
-
-  #conditionalHandlers(handlers, kwargs) {
-    const apiId = kwargs["id"]
-
-    commonMiddlewares = [      
-      api.setId({apiId, clientIsFrontend: this.isFront}),
-      timeout.ensure({id: 'full-route', timeoutSecs: env.quickApiRouteTimeout}),
+  conditionalHandlers(handlers, kwargs) {
+    let res = [
       metricsMid.stopwatch('api:parseRequestBody', [
         timeout.ensure({httpCodeOverride: 408, id: 'parse-body', timeoutSecs: env.quickApiInputUploadTimeout}, [
           quickApi.parseRequestBody,
         ]),
       ]),
+      quickApi.validateBodyData,
       ...handlers,
     ]
-
-    publicMiddlewares = [
-      api.corsOnError,
-      quickApi.enforceCors,
-      quickApi.validateAuthToken({secretKey: 'exposedSecret'}),
-      quickApi.rateLimit(),
-      timeout.blowIfTimedout,
-      metricsMid.stopwatch('api:validateRecaptcha', [
-        timeout.ensure({id: 'recaptcha-validation', timeoutSecs: env.quickApiRecaptchaTimeout}, [
-          quickApi.validateRecaptcha,
-        ]),
-      ]),
-      timeout.blowIfTimedout,
-    ]
-
-    privateMiddlewares = [
-      quickApi.validateAuthToken({secretKey: 'secret'}),
-      quickApi.rateLimit({ip: false}),
-    ]
-    if (this.isFront) {
-      return [
-        ...commonMiddlewares,
-        ...publicMiddlewares,
-      ]
-    }
-    return [
-      ...commonMiddlewares,
-      ...privateMiddlewares,
-    ]
+    return super.conditionalHandlers(res, kwargs)
   }
 }
 
 
+export class QuickSegmentTaskRouter extends QuickRouter {
 
+  name = "QuickSegmentTaskRouter"
+  PARAMS_WHITELIST = []
+
+  conditionalHandlers(handlers, kwargs) {
+    console.log("dev: conditionalHandlers")
+    let res = [
+      metricsMid.stopwatch('api:parseRequestBody', [
+        timeout.ensure({httpCodeOverride: 408, id: 'parse-body', timeoutSecs: env.quickApiInputUploadTimeout}, [
+          quickApi.parseRequestBody,
+        ]),
+      ]),
+      quickApi.validateBodyData,
+      quickApi.dataToModel(QuickSegment),
+      ...handlers,
+    ]
+    return super.conditionalHandlers(res, kwargs)
+  }
+}
+
+
+export class QuickSythTaskRouter extends QuickRouter {
+
+  name = "QuickSythTaskRouter"
+  PARAMS_WHITELIST = []
+
+  conditionalHandlers(handlers, kwargs) {
+    console.log("dev: conditionalHandlers")
+    let res = [
+      metricsMid.stopwatch('api:parseRequestBody', [
+        timeout.ensure({httpCodeOverride: 408, id: 'parse-body', timeoutSecs: env.quickApiInputUploadTimeout}, [
+          quickApi.parseRequestBody,
+        ]),
+      ]),
+      quickApi.validateBodyData,
+      quickApi.dataToModel(QuickSegment),
+      ...handlers,
+    ]
+    return super.conditionalHandlers(res, kwargs)
+  }
+}

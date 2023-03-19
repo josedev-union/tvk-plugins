@@ -7,6 +7,12 @@ export class TagSet {
     this.add(tags)
   }
 
+  /**
+   * Add tags in the Tageset instance
+   * @param {object|TagSet|string} label 
+   * @param {string|boolean|undefined|null} value 
+   * @returns 
+   */
   add(label, value) {
     const originalLabel = label
     const originalValue = value

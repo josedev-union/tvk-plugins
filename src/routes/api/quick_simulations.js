@@ -8,15 +8,17 @@ import {quickApi} from '../../middlewares/quickApi'
 import {api} from '../../middlewares/api'
 import {timeout} from "../../middlewares/timeout"
 import {getNowInMillis} from '../../utils/time'
-import { QuickRouter } from "../router/quick"
+import { QuickFullRouter } from "../router/quick"
 
 
 export default ({clientIsFrontend = false}) => {
-  return new QuickRouter(clientIsFrontend).
+  return new QuickFullRouter({isPublic: clientIsFrontend}).
   post(
     '/cosmetic',
     [
-      quickApi.dataToQuickSimulation({
+      quickApi.dataToModel(
+      QuickSimulation,
+      {
         force: {
           mode: 'cosmetic',
           blend: 'poisson',
@@ -30,7 +32,9 @@ export default ({clientIsFrontend = false}) => {
   post(
     '/ortho',
     [
-      quickApi.dataToQuickSimulation({
+      quickApi.dataToModel(
+      QuickSimulation,
+      {
         force: {
           mode: 'ortho',
           blend: 'poisson',
@@ -52,7 +56,6 @@ export default ({clientIsFrontend = false}) => {
   ).
   build()
 }
-
 
 
 function newQuickSimulationRoute() {
