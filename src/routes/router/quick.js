@@ -3,7 +3,7 @@ import {timeout} from "../../middlewares/timeout"
 import {quickApi} from "../../middlewares/quickApi"
 import {sanitizer} from '../../models/tools/sanitizer'
 import {env} from "../../config/env"
-import {QuickSegment} from "../../models/database/QuickSimulation"
+import {QuickSegment, QuickSynth} from "../../models/database/QuickTask.js"
 
 import { QuickRouter } from "./base"
 
@@ -40,7 +40,6 @@ export class QuickSegmentTaskRouter extends QuickRouter {
   PARAMS_WHITELIST = []
 
   conditionalHandlers(handlers, kwargs) {
-    console.log("dev: conditionalHandlers")
     let res = [
       metricsMid.stopwatch('api:parseRequestBody', [
         timeout.ensure({httpCodeOverride: 408, id: 'parse-body', timeoutSecs: env.quickApiInputUploadTimeout}, [
@@ -62,7 +61,6 @@ export class QuickSythTaskRouter extends QuickRouter {
   PARAMS_WHITELIST = []
 
   conditionalHandlers(handlers, kwargs) {
-    console.log("dev: conditionalHandlers")
     let res = [
       metricsMid.stopwatch('api:parseRequestBody', [
         timeout.ensure({httpCodeOverride: 408, id: 'parse-body', timeoutSecs: env.quickApiInputUploadTimeout}, [
@@ -70,7 +68,7 @@ export class QuickSythTaskRouter extends QuickRouter {
         ]),
       ]),
       quickApi.validateBodyData,
-      quickApi.dataToModel(QuickSegment),
+      quickApi.dataToModel(QuickSynth, {customizable: ['mix_factor', 'start_style_stats', 'end_style_stats', 'start_style_path', 'end_style_path']}),
       ...handlers,
     ]
     return super.conditionalHandlers(res, kwargs)

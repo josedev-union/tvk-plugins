@@ -1,7 +1,7 @@
 import fs from 'fs'
 import {env} from '../../config/env'
 import {logger} from '../../instrumentation/logger'
-import {idGenerator} from '../../models/tools/idGenerator'
+import {idGenerator} from '../tools/idGenerator'
 import {redisPubsub, buffersRedis, redisSubscribe} from "../../config/redis"
 import {RichError} from "../../utils/RichError"
 import {simpleCrypto} from "../../shared/simpleCrypto"
@@ -17,25 +17,23 @@ const redisDelSafe = (key) => !key ? undefined : redisDel(key)
 
 
 // TODO(joseb): Declare a basic class and inherit it
-export class QuickSimulationClient {
-  static PUBSUB_PREFIX = 'listener:pipeline-in-memory'
-  static pubsubRequestKey() { return `${this.PUBSUB_PREFIX}:request` }
+export class QuickSegmentClient {
+  static PUBSUB_PREFIX = 'listener:quick:segment'
+  static pubsubRequestKey() { console.log(`${this.PUBSUB_PREFIX}:request`);return `${this.PUBSUB_PREFIX}:request` }
   static pubsubResponseKey(id) { return `${this.PUBSUB_PREFIX}:${id}:response` }
 
-  async requestSimulation({id, photo, photoPath, expiresAt=0, options={}, safe=false}) {
+  async request({id, photo, photoPath, expiresAt=0, options={}, safe=false}) {
     if (!id) id = idGenerator.newOrderedId()
-    logger.verbose(`[${id}] Requesting Simulation (${JSON.stringify(options)})`)
-    const photoRedisKey = `pipeline:listener:${id}:photo`
+    logger.verbose(`[${id}] Requesting task (${JSON.stringify(options)})`)
+    const photoRedisKey = `task:listener:${id}:photo`
     if (!photo) photo = await readfile(photoPath)
     const photoBuffer = Buffer.from(photo, 'binary')
     await this.#publishRequest(id, photoBuffer, photoRedisKey, expiresAt, options)
-    const pubsubChannel = QuickSimulationClient.pubsubResponseKey(id)
-    const {result, before, morphed, error} = await this.#waitResponse({pubsubChannel, safe})
+    const pubsubChannel = QuickSegmentClient.pubsubResponseKey(id)
+    const {result, error} = await this.#waitResponse({pubsubChannel, safe})
     return {
       id,
-      before,
       result,
-      morphed,
       error,
       original: photo,
       success: !error,
@@ -55,7 +53,7 @@ export class QuickSimulationClient {
       id: id,
       params: params
     })
-    redisPubsub.publish(QuickSimulationClient.pubsubRequestKey(), publishedMessage)
+    redisPubsub.publish(QuickSegmentClient.pubsubRequestKey(), publishedMessage)
     logger.verbose(`[${id}]: Params Published: ${publishedMessage}`)
   }
 
@@ -69,27 +67,20 @@ export class QuickSimulationClient {
     }
 
     const resultRedisKey = message['data']['result_redis_key']
-    const beforeRedisKey = message['data']['before_redis_key']
-    const morphedRedisKey = message['data']['morphed_redis_key']
-    const [resultPhoto, beforePhoto, morphedMouth] = (await Promise.all([
+    const [resultPhoto,] = (await Promise.all([
       redisGetSafe(resultRedisKey),
-      redisGetSafe(beforeRedisKey),
-      redisGetSafe(morphedRedisKey),
     ]))
     .map(content => this.#decrypt(content))
 
     redisDelSafe(resultRedisKey)
-    redisDelSafe(beforeRedisKey)
-    redisDelSafe(morphedRedisKey)
-
+    console.log("dev: result")
+    console.log(messageStr)
     const response = {
       'result': resultPhoto,
-      'before': beforePhoto,
-      'morphed': morphedMouth,
     }
-    if (!resultPhoto || !beforePhoto) {
+    if (!resultPhoto) {
       const errorObj = this.#throwError({
-        message: "Couldn't find simulation result recorded",
+        message: "Couldn't find task result recorded",
         safe,
       })
       Object.assign(response, errorObj)
@@ -113,7 +104,7 @@ export class QuickSimulationClient {
     if (message.match(/timeout/i)) {
       return this.#throwTimeoutError({message, safe})
     }
-    let publicMessage = 'Error when executing simulation'
+    let publicMessage = 'Error when executing task'
     let errorTag = 'generic'
     let subtype = undefined
 
@@ -126,15 +117,15 @@ export class QuickSimulationClient {
     }
     const error = new RichError({
       httpCode: 422,
-      id: 'simulation-error',
+      id: 'task-error',
       subtype,
       subtypeIsPublic: true,
       publicMessage,
       debugMessage: message,
       logLevel: 'error',
       tags: {
-        'simulation:success': false,
-        'simulation:error': errorTag,
+        'task:success': false,
+        'task:error': errorTag,
       },
     })
 
@@ -146,14 +137,14 @@ export class QuickSimulationClient {
     const error = new RichError({
       httpCode: 504,
       id: 'timeout',
-      subtype: 'simulation-timeout',
+      subtype: 'task-timeout',
       publicMessage: 'Operation took too long',
       debugMessage: message,
       logLevel: 'error',
       tags: {
-        'simulation:success': false,
-        'error:timeout': 'simulation-queue-wait',
-        'simulation:error': 'queue-wait',
+        'task:success': false,
+        'error:timeout': 'task-queue-wait',
+        'task:error': 'queue-wait',
       },
     })
 

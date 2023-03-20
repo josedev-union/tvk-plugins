@@ -17,14 +17,15 @@ export default ({clientIsFrontend = false}) => {
     '/cosmetic',
     [
       quickApi.dataToModel(
-      QuickSimulation,
-      {
-        force: {
-          mode: 'cosmetic',
-          blend: 'poisson',
-        },
-        customizable: ['mixFactor', 'styleMode', 'whiten', 'brightness'],
-      }),
+        QuickSimulation,
+        {
+          force: {
+            mode: 'cosmetic',
+            blend: 'poisson',
+          },
+          customizable: ['mixFactor', 'styleMode', 'whiten', 'brightness'],
+        }
+      ),
       newQuickSimulationRoute(),
     ],
     {'id': 'cosmetic-simulations'},
@@ -33,16 +34,17 @@ export default ({clientIsFrontend = false}) => {
     '/ortho',
     [
       quickApi.dataToModel(
-      QuickSimulation,
-      {
-        force: {
-          mode: 'ortho',
-          blend: 'poisson',
-          styleMode: 'mix_manual',
-          mixFactor: 0,
-        },
-        customizable: [],
-      }),
+        QuickSimulation,
+        {
+          force: {
+            mode: 'ortho',
+            blend: 'poisson',
+            styleMode: 'mix_manual',
+            mixFactor: 0,
+          },
+          customizable: [],
+        }
+      ),
       newQuickSimulationRoute(),
     ],
     {'id': 'ortho-simulations'},

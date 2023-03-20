@@ -45,7 +45,6 @@ export class BasicRouter {
       ...this.basicHandlers,
       ...this.conditionalHandlers(handlers, kwargs)
     ]
-    console.log(r)
     return r
   }
 
@@ -135,7 +134,6 @@ export class QuickRouter extends BasicRouter {
 
   conditionalHandlers(handlers, kwargs) {
     if (this.isPublic) {
-      console.log("dev: public")
       return [
         api.setPublic(),
         quickApi.enforceCors,
@@ -151,7 +149,6 @@ export class QuickRouter extends BasicRouter {
         ...handlers,
       ]
     }
-    console.log("dev: private")
     return [
       api.setPrivate(),
       quickApi.validateAuthToken({secretKey: 'secret'}),

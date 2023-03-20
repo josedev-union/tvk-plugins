@@ -71,3 +71,4 @@ ignore/
 keys/
 
 src/start.js*
+*_credentials.json

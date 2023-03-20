@@ -1,4 +1,4 @@
-import {QuickSegmentClient} from "../../models/clients/QuickSegmentClient"
+import {QuickSegmentClient} from "../../models/clients/QuickSegment"
 import {metrics} from '../../instrumentation/metrics'
 import {env} from "../../config/env"
 import {asyncRoute} from '../../middlewares/expressAsync'
@@ -37,10 +37,10 @@ function post() {
         const queueTimeout = Math.round(getNowInMillis() + env.quickApiSimulationQueueTimeout * 1000.0)
         const expiresAt = Math.min(nextTimeout, queueTimeout)
         quickApi.setSimulationStarted(res)
-        return await client.requestSimulation({
+        return await client.request({
           // id: dbSimulation.id,
           photo: photo.content,
-          options: {},
+          options: dbSimulation.buildJobOptions(),
           expiresAt,
           safe: true,
         })

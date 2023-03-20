@@ -14,20 +14,23 @@ const redisDel = promisify(buffersRedis.del).bind(buffersRedis)
 
 const redisGetSafe = (key) => !key ? undefined : redisGet(key)
 const redisDelSafe = (key) => !key ? undefined : redisDel(key)
-const PUBSUB_PREFIX = 'listener:quick:segment'
 
-export class QuickSegmentClient {
+const PUBSUB_PREFIX = 'listener:quick:synth'
+
+// TODO(joseb): Declare a basic class and inherit it
+export class QuickSynthClient {
+  static PUBSUB_PREFIX = 'listener:quick:synth'
   static pubsubRequestKey() { return `${PUBSUB_PREFIX}:request` }
-  static pubsubResponseKey(id) { return `${PUBSUB_PREFIX}:${id}:response` }
+  static pubsubResponseKey(id) { return `${this.PUBSUB_PREFIX}:${id}:response` }
 
-  async requestSimulation({id, photo, photoPath, expiresAt=0, options={}, safe=false}) {
+  async request({id, photo, photoPath, expiresAt=0, options={}, safe=false}) {
     if (!id) id = idGenerator.newOrderedId()
-    logger.verbose(`[${id}] Requesting Simulation (${JSON.stringify(options)})`)
+    logger.verbose(`[${id}] Requesting task (${JSON.stringify(options)})`)
     const photoRedisKey = `task:listener:${id}:photo`
     if (!photo) photo = await readfile(photoPath)
     const photoBuffer = Buffer.from(photo, 'binary')
     await this.#publishRequest(id, photoBuffer, photoRedisKey, expiresAt, options)
-    const pubsubChannel = QuickSegmentClient.pubsubResponseKey(id)
+    const pubsubChannel = QuickSynthClient.pubsubResponseKey(id)
     const {result, error} = await this.#waitResponse({pubsubChannel, safe})
     return {
       id,
@@ -51,7 +54,7 @@ export class QuickSegmentClient {
       id: id,
       params: params
     })
-    redisPubsub.publish(QuickSegmentClient.pubsubRequestKey(), publishedMessage)
+    redisPubsub.publish(QuickSynthClient.pubsubRequestKey(), publishedMessage)
     logger.verbose(`[${id}]: Params Published: ${publishedMessage}`)
   }
 
@@ -78,7 +81,7 @@ export class QuickSegmentClient {
     }
     if (!resultPhoto) {
       const errorObj = this.#throwError({
-        message: "Couldn't find simulation result recorded",
+        message: "Couldn't find task result recorded",
         safe,
       })
       Object.assign(response, errorObj)
@@ -102,7 +105,7 @@ export class QuickSegmentClient {
     if (message.match(/timeout/i)) {
       return this.#throwTimeoutError({message, safe})
     }
-    let publicMessage = 'Error when executing simulation'
+    let publicMessage = 'Error when executing task'
     let errorTag = 'generic'
     let subtype = undefined
 
@@ -115,15 +118,15 @@ export class QuickSegmentClient {
     }
     const error = new RichError({
       httpCode: 422,
-      id: 'simulation-error',
+      id: 'task-error',
       subtype,
       subtypeIsPublic: true,
       publicMessage,
       debugMessage: message,
       logLevel: 'error',
       tags: {
-        'simulation:success': false,
-        'simulation:error': errorTag,
+        'task:success': false,
+        'task:error': errorTag,
       },
     })
 
@@ -135,14 +138,14 @@ export class QuickSegmentClient {
     const error = new RichError({
       httpCode: 504,
       id: 'timeout',
-      subtype: 'simulation-timeout',
+      subtype: 'task-timeout',
       publicMessage: 'Operation took too long',
       debugMessage: message,
       logLevel: 'error',
       tags: {
-        'simulation:success': false,
-        'error:timeout': 'simulation-queue-wait',
-        'simulation:error': 'queue-wait',
+        'task:success': false,
+        'error:timeout': 'task-queue-wait',
+        'task:error': 'queue-wait',
       },
     })
 
