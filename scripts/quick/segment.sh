@@ -16,14 +16,9 @@ KEY=$DENTRINO_CLIENT_SECRET:$DENTRINO_API_SECRET
 SIGNATURE=$(echo -n "$MSG" | openssl dgst -sha256 -hex -hmac $KEY  | sed 's/^.* //')
 AUTHORIZATION_TOKEN=$(echo -n "$DENTRINO_CLIENT_ID:$SIGNATURE" | base64 -w0)
 
-curl -XPOST \
+res=$(curl -XPOST \
   -H "Content-Type: multipart/form-data" \
 	-F "imgPhoto=@$IMAGE_PATH" \
-	"https://api.e91efc7.dentrino.ai/api/segment?clientId=ODMyMDc2MzEwOTA5OGRVW3MvVnFU"
+	"https://api.e91efc7.dentrino.ai/api/segment?clientId=ODMyMDc2MzEwOTA5OGRVW3MvVnFU")
 
-
-
-# with open("/tmp/segment.png", "wb") as binary_file:
-
-#     # Write bytes to file
-#     binary_file.write(result["result"])
+echo $res

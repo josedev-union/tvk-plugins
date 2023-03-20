@@ -82,7 +82,6 @@ export const quickApi = new (class {
    */
   get validateApiVisibility() {
     return asyncMiddleware('quickApi.validateApiVisibility', async (req, res, next) => {
-      console.log("dev: validateApiVisibility")
       const {dentApiId: apiId, dentClient: client} = res.locals
       if (!client.apiIsEnabled({api: apiId})) {
         throw quickApi.#newAuthorizationError({
@@ -100,7 +99,6 @@ export const quickApi = new (class {
    */
   get validateClient() {
     return asyncMiddleware('quickApi.validateClient', async (req, res, next) => {
-      console.log("dev: validateClient")
       const {dentClient: client} = res.locals
       if (client.isRevoked()) {
         throw quickApi.#newAuthorizationError({
@@ -113,7 +111,6 @@ export const quickApi = new (class {
 
   rateLimit({ip: ipLimiting=true, client: clientLimiting=true}={}) {
     return asyncMiddleware('quickApi.rateLimit', async (req, res, next) => {
-      console.log("dev: rateLimit")
       const {dentApiId: apiId, dentClient: client} = res.locals
       const timeWindowMillis = env.quickApiRateLimit_timeWindowSeconds * 1000.0
 
@@ -181,7 +178,6 @@ export const quickApi = new (class {
 
   get parseRequestBody() {
     return asyncMiddleware('quickApi.parseRequestBody', async (req, res, next) => {
-      console.log("dev: parseRequestBody")
       const {fields, files} = await quickApi.#readBody(req, res)
       const {data: dataJson} = fields
       const data = quickApi.#parseJson(dataJson) || {}
@@ -246,7 +242,6 @@ export const quickApi = new (class {
 
   dataToModel(modelConstructor, {customizable, force={}}={}) {
     return asyncMiddleware('quickApi.dataToSimulationOptions', async (req, res, next) => {
-      console.log("dev: dataToModel")
       const clientId = res.locals.dentClientId
       const {data: bodyData, images: bodyImages} = res.locals.dentParsedBody
       await quickApi.processImageFields({
@@ -356,7 +351,6 @@ export const quickApi = new (class {
    */
   get parseAuthToken() {
     return asyncMiddleware('quickApi.parseAuthToken', async (req, res) => {
-      console.log("dev: parseAuthToken")
       const token = quickApi.#getToken(req)
       const queryClientId = req.query.clientId
       delete req.query.clientId
@@ -454,7 +448,6 @@ export const quickApi = new (class {
       throw quickApi.#newAuthorizationError({
         message: `Couldn't decode claims json "${b64Claims}"`,
         details: {
-          receivedToken: token,
           receivedClaimsInBase64: b64Claims,
         }
       })
@@ -465,7 +458,6 @@ export const quickApi = new (class {
       throw quickApi.#newAuthorizationError({
         message: `claims is not a valid json - ${claimsJson}`,
         details: {
-          receivedToken: token,
           receivedClaims: claimsJson,
         }
       })
@@ -523,7 +515,6 @@ export const quickApi = new (class {
 
   validateAuthToken({secretKey}) {
     return asyncMiddleware('quickApi.validateAuthToken', async (req, res) => {
-      console.log("dev: validateAuthToken")
       const {dentClient: client, dentIsFrontendRoute: isFrontEndRoute} = res.locals
       if (!isFrontEndRoute) return
       const {claimsJson, signature} = res.locals.dentParsedToken
@@ -543,7 +534,6 @@ export const quickApi = new (class {
 
   get validateBodyData() {
     return asyncMiddleware('quickApi.validateBodyData', async (req, res) => {
-      console.log("dev: validateBodyData")
       if (!res.locals.dentIsFrontendRoute) {
         return
       }
