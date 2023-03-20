@@ -25,7 +25,6 @@ export default ({clientIsFrontend = false}) => {
 
 function post() {
   return asyncRoute(async (req, res) => {
-    console.log("dev: post")
     const timeoutManager = timeout.getManager(res)
     const dbSimulation = res.locals.dentQuickSimulation
     const photo = res.locals.dentParsedBody.images['imgPhoto']

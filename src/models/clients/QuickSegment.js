@@ -73,8 +73,6 @@ export class QuickSegmentClient {
     .map(content => this.#decrypt(content))
 
     redisDelSafe(resultRedisKey)
-    console.log("dev: result")
-    console.log(messageStr)
     const response = {
       'result': resultPhoto,
     }

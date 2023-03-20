@@ -18,7 +18,6 @@ export const getModel = new (class {
    */
   get client() {
     return asyncMiddleware('getModel.client', async (req, res, next) => {
-      console.log("dev: client")
       const clientId = res.locals.dentClientId
       const client = await ApiClient.get(clientId)
       if (!client) {
