@@ -19,7 +19,7 @@ AUTHORIZATION_TOKEN=$(echo -n "$DENTRINO_CLIENT_ID:$SIGNATURE" | base64 -w0)
 curl -XPOST \
   -H "Content-Type: multipart/form-data" \
 	-F "imgPhoto=@$IMAGE_PATH" \
-	"http://localhost:3000/api/segment?clientId=ODMyMDc2MzEwOTA5OGRVW3MvVnFU"
+	"https://api.e91efc7.dentrino.ai/api/segment?clientId=ODMyMDc2MzEwOTA5OGRVW3MvVnFU"
 
 
 
