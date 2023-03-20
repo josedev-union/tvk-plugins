@@ -15,7 +15,7 @@ import {imgHelpers} from "../utils/imgHelpers"
 import {logger} from '../instrumentation/logger'
 import {metrics} from '../instrumentation/metrics'
 import {ApiClient} from "../models/database/ApiClient"
-import {QuickSimulation} from "../models/database/QuickSimulation"
+import {timeout} from "./timeout"
 
 import {helpers} from '../routes/helpers'
 import {asyncMiddleware, invokeMiddleware, invokeMiddlewares} from './expressAsync'
@@ -45,6 +45,7 @@ const multerUpload = multer({
   }
 })
 
+
 export const quickApi = new (class {
   get enforceCors() {
     return asyncMiddleware('quickApi.enforceCors', async (req, res, next) => {
@@ -72,8 +73,16 @@ export const quickApi = new (class {
     })
   }
 
+
+  /**
+   * @returns {async function} A route handler which checks if the ApiClient is allowed to use the api.
+   * Dependency handlers
+   *    - getModel.client
+   *    - api.setId
+   */
   get validateApiVisibility() {
     return asyncMiddleware('quickApi.validateApiVisibility', async (req, res, next) => {
+      console.log("dev: validateApiVisibility")
       const {dentApiId: apiId, dentClient: client} = res.locals
       if (!client.apiIsEnabled({api: apiId})) {
         throw quickApi.#newAuthorizationError({
@@ -84,8 +93,14 @@ export const quickApi = new (class {
     })
   }
 
+  /**
+   * @returns {async function} A route handler which checks `revoked` status of the ApiClient
+   * Dependency handlers
+   *    - getModel.client
+   */
   get validateClient() {
     return asyncMiddleware('quickApi.validateClient', async (req, res, next) => {
+      console.log("dev: validateClient")
       const {dentClient: client} = res.locals
       if (client.isRevoked()) {
         throw quickApi.#newAuthorizationError({
@@ -98,6 +113,7 @@ export const quickApi = new (class {
 
   rateLimit({ip: ipLimiting=true, client: clientLimiting=true}={}) {
     return asyncMiddleware('quickApi.rateLimit', async (req, res, next) => {
+      console.log("dev: rateLimit")
       const {dentApiId: apiId, dentClient: client} = res.locals
       const timeWindowMillis = env.quickApiRateLimit_timeWindowSeconds * 1000.0
 
@@ -165,6 +181,7 @@ export const quickApi = new (class {
 
   get parseRequestBody() {
     return asyncMiddleware('quickApi.parseRequestBody', async (req, res, next) => {
+      console.log("dev: parseRequestBody")
       const {fields, files} = await quickApi.#readBody(req, res)
       const {data: dataJson} = fields
       const data = quickApi.#parseJson(dataJson) || {}
@@ -227,16 +244,18 @@ export const quickApi = new (class {
     return {fields, files}
   }
 
-  dataToQuickSimulation({customizable, force={}}={}) {
+  dataToModel(modelConstructor, {customizable, force={}}={}) {
     return asyncMiddleware('quickApi.dataToSimulationOptions', async (req, res, next) => {
+      console.log("dev: dataToModel")
       const clientId = res.locals.dentClientId
       const {data: bodyData, images: bodyImages} = res.locals.dentParsedBody
-      await quickApi.#processImageFields({
+      await quickApi.processImageFields({
         res,
         images: bodyImages,
         imgFields: ['imgPhoto'],
       })
 
+      // Set default params(force) and filter others than customizable and force
       const params = Object.assign({}, bodyData, force)
       if (typeof(customizable) !== 'undefined') {
         Object.keys(params).forEach((key) => {
@@ -246,13 +265,13 @@ export const quickApi = new (class {
         })
       }
 
-      const quickSimulation = QuickSimulation.build({
+      const model = modelConstructor.build({
         clientId,
         params,
         metadata: bodyData,
       })
-      quickSimulation.normalizeData()
-      const errors = quickSimulation.validationErrors()
+      model.normalizeData()
+      const errors = model.validationErrors()
       if (errors.length > 0) {
         const {message} = errors[0]
         throw quickApi.#newBadParamsError({
@@ -260,16 +279,25 @@ export const quickApi = new (class {
           message,
         })
       }
-      for (const [key, value] of Object.entries(quickSimulation.params)) {
+      for (const [key, value] of Object.entries(model.params)) {
         api.addTags(res, {
           [`simulation:params:${key}`]: String(value),
         })
       }
-      res.locals.dentQuickSimulation = quickSimulation
+      res.locals.dentQuickSimulation = model
     })
   }
 
-  async #processImageFields({images, imgFields, res}) {
+  /**
+   * Validate the existence of required images in the request and
+   * get the extension and dimension info of them, and set as tags.
+   *
+   * @param {object} param
+   * @param[0] {object (images) } - Image list
+   * @param[1] {array (imgFields) } - List of image fields
+   * @param[2] {object (res) } - Response object
+   */
+  async processImageFields({images, imgFields, res}) {
     for (var i = 0; i < imgFields.length; i++) {
       const field = imgFields[i]
       const photo = images[field]
@@ -318,8 +346,17 @@ export const quickApi = new (class {
     }
   }
 
+  /**
+   * @returns {async function}  A route handler which parses the bearer token from the req header
+   * Update the Response object as followings;
+   *    - res.locals.dentClientId {string}
+   *    - res.locals.dentParsedToken {string}
+   * Dependency handlers
+   *    []
+   */
   get parseAuthToken() {
     return asyncMiddleware('quickApi.parseAuthToken', async (req, res) => {
+      console.log("dev: parseAuthToken")
       const token = quickApi.#getToken(req)
       const queryClientId = req.query.clientId
       delete req.query.clientId
@@ -486,6 +523,7 @@ export const quickApi = new (class {
 
   validateAuthToken({secretKey}) {
     return asyncMiddleware('quickApi.validateAuthToken', async (req, res) => {
+      console.log("dev: validateAuthToken")
       const {dentClient: client, dentIsFrontendRoute: isFrontEndRoute} = res.locals
       if (!isFrontEndRoute) return
       const {claimsJson, signature} = res.locals.dentParsedToken
@@ -505,6 +543,7 @@ export const quickApi = new (class {
 
   get validateBodyData() {
     return asyncMiddleware('quickApi.validateBodyData', async (req, res) => {
+      console.log("dev: validateBodyData")
       if (!res.locals.dentIsFrontendRoute) {
         return
       }
@@ -543,6 +582,10 @@ export const quickApi = new (class {
         }
       }
     })
+  }
+
+  globalTimeout(id) {
+    return timeout.ensure({id: id, timeoutSecs: env.quickApiRouteTimeout})
   }
 
   setSimulationStarted(res) {

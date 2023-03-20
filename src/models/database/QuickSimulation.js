@@ -1,10 +1,7 @@
 import {Database} from '../database/Database'
-import {idGenerator} from '../tools/idGenerator'
-import {sanitizer} from '../tools/sanitizer'
 import {normalizer} from '../tools/normalizer'
 import {validator} from '../tools/validator'
-import {Enum} from '../tools/Enum'
-import * as path from 'path'
+import {QuickBase} from './QuickTask.js'
 
 // Params Constants
 const PARAM_KEY_STYLE_MODE = 'styleMode'
@@ -67,32 +64,25 @@ const MDATA_CAPTURE_VALUES = [
 ]
 
 
-// Attributes Whitelists
-const PARAMS_WHITELIST = ALL_PARAM_KEYS
-const METADATA_WHITELIST = ALL_MDATA_KEYS
-const STORAGE_WHITELIST = [
-  'bucket',
-  'directoryPath',
-  'beforePath',
-  'originalPath',
-  'resultPath',
-]
 
-export class QuickSimulation {
-  static get COLLECTION_NAME() { return 'quick_simulations' }
 
-  constructor({id, createdAt, clientId, storage={}, params={}, metadata={}} = {}) {
-    this.id = id
-    this.createdAt = createdAt
-    this.clientId = clientId
-    this.storage = storage
-    this.params = params
-    this.metadata = metadata
-  }
+
+export class QuickSimulation extends QuickBase {
+  static #COLLECTION_NAME = 'quick_simulations'
+  // Attributes Whitelists
+  PARAMS_WHITELIST = ALL_PARAM_KEYS
+  METADATA_WHITELIST = ALL_MDATA_KEYS
+  STORAGE_WHITELIST = [
+    'bucket',
+    'directoryPath',
+    'beforePath',
+    'originalPath',
+    'resultPath',
+  ]
 
   static build({id, createdAt, clientId, storage, params, metadata}={}) {
     const simulation = new QuickSimulation({
-      id: id || QuickSimulation.newId(),
+      id: id || this.newId(),
       createdAt: createdAt || Database.toTimestamp(new Date()),
       clientId,
     })
@@ -100,39 +90,6 @@ export class QuickSimulation {
     simulation.addMetadata(metadata)
     simulation.addParams(params)
     return simulation
-  }
-
-  async save({attrs, skipNormalization, skipValidation, source}={}) {
-    const db = Database.instance({name: source || Database.sourceOf(this)})
-    if (!skipNormalization) {
-      this.normalizeData()
-    }
-    if (!skipValidation) {
-      const errors = this.validationErrors()
-      if (errors.length > 0) {
-        return {errors}
-      }
-    }
-    const result = await db.save(this, `${QuickSimulation.COLLECTION_NAME}/${this.id}`, false, attrs)
-    return {result}
-  }
-
-  addMetadata(metadata) {
-    if (!metadata) return
-    metadata = sanitizer.onlyKeys(metadata, METADATA_WHITELIST)
-    Object.assign(this.metadata, metadata)
-  }
-
-  addStorageData(storage) {
-    if (!storage) return
-    storage = sanitizer.onlyKeys(storage, STORAGE_WHITELIST)
-    Object.assign(this.storage, storage)
-  }
-
-  addParams(params) {
-    if (!params) return
-    params = sanitizer.onlyKeys(params, PARAMS_WHITELIST)
-    Object.assign(this.params, params)
   }
 
   normalizeData() {
@@ -238,41 +195,5 @@ export class QuickSimulation {
     return options
   }
 
-  static async get(id, {source}={}) {
-    const db = Database.instance({name: source})
-    return await db.get(QuickSimulation, id)
-  }
-
-  static async list({orderBy='id', orderAsc=false, filters={}, source}) {
-    const db = Database.instance({name: source})
-    let query = db.startQuery(QuickSimulation.COLLECTION_NAME)
-
-    Object.entries(filters).forEach(([field, value]) => {
-      query = query.where(field, '==', value)
-    })
-
-    query = query
-      .orderBy(orderBy, (orderAsc ? 'asc' : 'desc'))
-      .limit(100)
-    return await db.getResults(QuickSimulation, query)
-  }
-
-  static newId(createdAt) {
-    return idGenerator.newOrderedId()
-  }
-
-  static #prepareBuildAttrs({storage={}, params={}, metadata={}}) {
-    const id = attrs.id || QuickSimulation.newId()
-    const createdAt = attrs.createdAt || Database.toTimestamp(new Date())
-    storage = sanitizer.onlyKeys(storage, STORAGE_WHITELIST)
-    params = sanitizer.onlyKeys(params, PARAMS_WHITELIST)
-    metadata = sanitizer.onlyKeys(metadata, METADATA_WHITELIST)
-    return {
-      id,
-      createdAt,
-      storage,
-      params,
-      metadata,
-    }
-  }
 }
+
