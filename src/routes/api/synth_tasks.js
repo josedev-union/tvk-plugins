@@ -58,7 +58,7 @@ function post() {
         id: dbSimulation.id,
         createdAt: dbSimulation.createdAt.toDate(),
         metadata: dbSimulation.metadata,
-        result: simulation.result,
+        result: Buffer.from(simulation.result, 'binary').toString('base64'),
       }
     })
   })
