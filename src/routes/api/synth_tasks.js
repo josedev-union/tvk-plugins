@@ -6,11 +6,11 @@ import {quickApi} from '../../middlewares/quickApi'
 import {api} from '../../middlewares/api'
 import {timeout} from "../../middlewares/timeout"
 import {getNowInMillis} from '../../utils/time'
-import { QuickSythTaskRouter } from "../router/quick"
+import { QuickSynthTaskRouter } from "../router/quick"
 
 
 export default ({clientIsFrontend = false}) => {
-  let r = new QuickSythTaskRouter({isPublic: clientIsFrontend})
+  let r = new QuickSynthTaskRouter({isPublic: clientIsFrontend})
   return  r.
   post(
     '/',
@@ -27,7 +27,7 @@ function post() {
   return asyncRoute(async (req, res) => {
     const timeoutManager = timeout.getManager(res)
     const dbSimulation = res.locals.dentQuickSimulation
-    const photo = res.locals.dentParsedBody.images['imgPhoto']
+    const photo = res.locals.dentParsedBody.images['segmap']
 
     const simulation = await metrics.stopwatch('api:quickSynthTask:runSimulation', async () => {
       return await timeoutManager.exec(env.quickApiSimulationTimeout, async () => {

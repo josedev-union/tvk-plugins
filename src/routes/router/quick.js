@@ -8,13 +8,6 @@ import {QuickSegment, QuickSynth} from "../../models/database/QuickTask.js"
 import { QuickRouter } from "./base"
 
 
-/***
- * This is a router class for Segment
- *  - Set api id
- *  - Set request timeout
- *  - Parse auth token
- *  - Validate the client status and api visability
- */
 export class QuickFullRouter extends QuickRouter {
 
   name = "QuickFullRouter"
@@ -55,9 +48,9 @@ export class QuickSegmentTaskRouter extends QuickRouter {
 }
 
 
-export class QuickSythTaskRouter extends QuickRouter {
+export class QuickSynthTaskRouter extends QuickRouter {
 
-  name = "QuickSythTaskRouter"
+  name = "QuickSynthTaskRouter"
   PARAMS_WHITELIST = []
 
   conditionalHandlers(handlers, kwargs) {
