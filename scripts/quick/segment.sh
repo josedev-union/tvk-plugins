@@ -8,17 +8,19 @@ if [ -z "$DENTRINO_CLIENT_SECRET" ]; then
     read -r USERNAME_INPUT
     DENTRINO_CLIENT_SECRET=$USERNAME_INPUT
 fi
-DENTRINO_API_SECRET=ff5da5e257233200e1c0a902bbce0c3f
 IMAGE_PATH=$(dirname "$0")/seg_input.jpg
-MD5_B64=$(cat $IMAGE_PATH | openssl md5 -binary | base64 -w0)
-MSG=$USER_ID:$MD5_B64
-KEY=$DENTRINO_CLIENT_SECRET:$DENTRINO_API_SECRET
-SIGNATURE=$(echo -n "$MSG" | openssl dgst -sha256 -hex -hmac $KEY  | sed 's/^.* //')
-AUTHORIZATION_TOKEN=$(echo -n "$DENTRINO_CLIENT_ID:$SIGNATURE" | base64 -w0)
 
+CLAIMS_JSON="{\"clientId\": \"$DENTRINO_CLIENT_ID\", \"paramsHashed\": \"none\"}"
+
+PART1=$(echo -n $CLAIMS_JSON|base64 -w0)
+PART2=$(echo -n $CLIENT_SECRET | openssl sha256 -hmac "$CLAIMS_JSON")
+SIGNATURE="$PART1:$PART2"
+
+echo $SIGNATURE
 res=$(curl -XPOST \
   -H "Content-Type: multipart/form-data" \
+  -H "Authorization: Bearer $SIGNATURE" \
 	-F "imgPhoto=@$IMAGE_PATH" \
-	"https://api.e91efc7.dentrino.ai/api/segment?clientId=ODMyMDc2MzEwOTA5OGRVW3MvVnFU")
+	"https://api.e91efc7.dentrino.ai/api/segment")
 
 echo $res

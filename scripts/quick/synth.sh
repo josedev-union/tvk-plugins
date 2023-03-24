@@ -8,26 +8,19 @@ if [ -z "$DENTRINO_CLIENT_SECRET" ]; then
     read -r USERNAME_INPUT
     DENTRINO_CLIENT_SECRET=$USERNAME_INPUT
 fi
-DENTRINO_API_SECRET=ff5da5e257233200e1c0a902bbce0c3f
-IMAGE_PATH=$(dirname "$0")/synth_input.png
-MD5_B64=$(cat $IMAGE_PATH | openssl md5 -binary | base64 -w0)
-MSG=$USER_ID:$MD5_B64
-KEY=$DENTRINO_CLIENT_SECRET:$DENTRINO_API_SECRET
-SIGNATURE=$(echo -n "$MSG" | openssl dgst -sha256 -hex -hmac $KEY  | sed 's/^.* //')
-AUTHORIZATION_TOKEN=$(echo -n "$DENTRINO_CLIENT_ID:$SIGNATURE" | base64 -w0)
+SEGMAP_PATH=$(dirname "$0")/synth_input.png
 
+CLAIMS_JSON="{\"clientId\": \"$DENTRINO_CLIENT_ID\", \"paramsHashed\": \"none\"}"
+
+PART1=$(echo -n $CLAIMS_JSON|base64 -w0)
+PART2=$(echo -n $CLIENT_SECRET | openssl sha256 -hmac "$CLAIMS_JSON")
+SIGNATURE="$PART1:$PART2"
+
+echo $SIGNATURE
 res=$(curl -XPOST \
-  -H "Authorization: Bearer $AUTHORIZATION_TOKEN" \
   -H "Content-Type: multipart/form-data" \
-	-F "segmap=@$IMAGE_PATH" \
-	"http://localhost:3000/api/synth?clientId=$DENTRINO_CLIENT_ID" | jq .simulation.result)
+  -H "Authorization: Bearer $SIGNATURE" \
+	-F "segmap=@$SEGMAP_PATH" \
+	"https://api.e91efc7.dentrino.ai/api/synth")
+
 echo $res
-echo $res > synth_output.html
-
-
-
-
-# with open("/tmp/segment.png", "wb") as binary_file:
-
-#     # Write bytes to file
-#     binary_file.write(result["result"])
