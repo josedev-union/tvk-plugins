@@ -16,7 +16,6 @@ export const api = new (class {
    */
   setId(id) {
     return (req, res, next) => {
-      console.log("dev: setid")
       res.locals.dentApiId = id
       this.#setup(req, res)
       next()
@@ -25,7 +24,6 @@ export const api = new (class {
 
   setPublic() {
     return (req, res, next) => {
-      console.log("dev: setPublic")
       res.locals.dentIsFrontendRoute = true
       next()
     }
@@ -33,7 +31,6 @@ export const api = new (class {
 
   setPrivate() {
     return (req, res, next) => {
-      console.log("dev: setPrivate")
       res.locals.dentIsFrontendRoute = false
       next()
     }

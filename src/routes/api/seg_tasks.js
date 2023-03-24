@@ -29,6 +29,9 @@ function post() {
     const dbSimulation = res.locals.dentQuickSimulation
     const photo = res.locals.dentParsedBody.images['imgPhoto']
 
+    res.status(201).json({
+      success: true,
+    })
     const simulation = await metrics.stopwatch('api:quickSegmentTask:runSimulation', async () => {
       return await timeoutManager.exec(env.quickApiSimulationTimeout, async () => {
         const client = new QuickSegmentClient()

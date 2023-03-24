@@ -14,12 +14,7 @@ export class QuickFullRouter extends QuickRouter {
 
   conditionalHandlers(handlers, kwargs) {
     let res = [
-      metricsMid.stopwatch('api:parseRequestBody', [
-        timeout.ensure({httpCodeOverride: 408, id: 'parse-body', timeoutSecs: env.quickApiInputUploadTimeout}, [
-          quickApi.parseRequestBody,
-        ]),
-      ]),
-      quickApi.validateBodyData,
+      quickApi.processImageFields(),
       ...handlers,
     ]
     return super.conditionalHandlers(res, kwargs)
@@ -34,12 +29,7 @@ export class QuickSegmentTaskRouter extends QuickRouter {
 
   conditionalHandlers(handlers, kwargs) {
     let res = [
-      metricsMid.stopwatch('api:parseRequestBody', [
-        timeout.ensure({httpCodeOverride: 408, id: 'parse-body', timeoutSecs: env.quickApiInputUploadTimeout}, [
-          quickApi.parseRequestBody,
-        ]),
-      ]),
-      quickApi.validateBodyData,
+      quickApi.processImageFields(),
       quickApi.dataToModel(QuickSegment),
       ...handlers,
     ]
@@ -55,12 +45,7 @@ export class QuickSynthTaskRouter extends QuickRouter {
 
   conditionalHandlers(handlers, kwargs) {
     let res = [
-      metricsMid.stopwatch('api:parseRequestBody', [
-        timeout.ensure({httpCodeOverride: 408, id: 'parse-body', timeoutSecs: env.quickApiInputUploadTimeout}, [
-          quickApi.parseRequestBody,
-        ]),
-      ]),
-      quickApi.validateBodyData,
+      quickApi.processImageFields(["segmap"]),
       quickApi.dataToModel(QuickSynth, {customizable: ['mix_factor', 'start_style_stats', 'end_style_stats', 'start_style_path', 'end_style_path']}),
       ...handlers,
     ]
