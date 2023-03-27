@@ -34,6 +34,7 @@ export class QuickSynthClient {
     } else {
       startStyleBuffer = Buffer.from(startStyleImg, 'binary')
     }
+    let endStyleBuffer = null
     if (!endStyleImg) {
       endStyleBuffer = endStyleImg
     } else {
@@ -41,10 +42,12 @@ export class QuickSynthClient {
     }
     await this.#publishRequest(id, segmapBuffer, startStyleBuffer, endStyleBuffer, expiresAt, options)
     const pubsubChannel = QuickSynthClient.pubsubResponseKey(id)
-    const {result, error} = await this.#waitResponse({pubsubChannel, safe})
+    const {result, startStats, endStats, error} = await this.#waitResponse({pubsubChannel, safe})
     return {
       id,
       result,
+      startStats,
+      endStats,
       error,
       original: segmap,
       success: !error,
@@ -102,8 +105,8 @@ export class QuickSynthClient {
     redisDelSafe(resultRedisKey)
     const response = {
       'result': resultPhoto,
-      'start_stats': message['data']['start_stats'],
-      'end_stats': message['data']['end_stats'],
+      'startStats': message['data']['start_stats'],
+      'endStats': message['data']['end_stats'],
     }
     if (!resultPhoto) {
       const errorObj = this.#throwError({

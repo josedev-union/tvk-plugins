@@ -56,7 +56,6 @@ function post() {
         debugMessage: `Simulation response should have id but got ${simulation}`,
       })
     }
-
     res.status(201).json({
       success: true,
       simulation: {
@@ -64,6 +63,8 @@ function post() {
         createdAt: dbSimulation.createdAt.toDate(),
         metadata: dbSimulation.metadata,
         result: Buffer.from(simulation.result, 'binary').toString('base64'),
+        startStats: simulation.startStats,
+        endStats: simulation.endStats,
       }
     })
   })

@@ -19,7 +19,7 @@ const redisDelSafe = (key) => !key ? undefined : redisDel(key)
 // TODO(joseb): Declare a basic class and inherit it
 export class QuickSegmentClient {
   static PUBSUB_PREFIX = 'listener:quick:segment'
-  static pubsubRequestKey() { console.log(`${this.PUBSUB_PREFIX}:request`);return `${this.PUBSUB_PREFIX}:request` }
+  static pubsubRequestKey() { return `${this.PUBSUB_PREFIX}:request` }
   static pubsubResponseKey(id) { return `${this.PUBSUB_PREFIX}:${id}:response` }
 
   async request({id, photo, photoPath, expiresAt=0, options={}, safe=false}) {
