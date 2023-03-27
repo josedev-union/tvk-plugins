@@ -183,7 +183,7 @@ export const quickApi = new (class {
       const data = quickApi.#parseJson(dataJson) || {}
       const images = {}
       for (let fileKey in files) {
-        if (fileKey.startsWith('img')) {
+        if (['img', 'seg'].some(word => fileKey.startsWith(word))) {
           images[fileKey] = files[fileKey]
         }
       }
@@ -241,15 +241,9 @@ export const quickApi = new (class {
   }
 
   dataToModel(modelConstructor, {customizable, force={}}={}) {
-    return asyncMiddleware('quickApi.dataToSimulationOptions', async (req, res, next) => {
+    return asyncMiddleware('quickApi.dataToModel', async (req, res, next) => {
       const clientId = res.locals.dentClientId
-      const {data: bodyData, images: bodyImages} = res.locals.dentParsedBody
-      await quickApi.processImageFields({
-        res,
-        images: bodyImages,
-        imgFields: ['imgPhoto'],
-      })
-
+      const {data: bodyData} = res.locals.dentParsedBody
       // Set default params(force) and filter others than customizable and force
       const params = Object.assign({}, bodyData, force)
       if (typeof(customizable) !== 'undefined') {
@@ -287,58 +281,58 @@ export const quickApi = new (class {
    * Validate the existence of required images in the request and
    * get the extension and dimension info of them, and set as tags.
    *
-   * @param {object} param
-   * @param[0] {object (images) } - Image list
-   * @param[1] {array (imgFields) } - List of image fields
-   * @param[2] {object (res) } - Response object
+   * @param {array} param - List of image fields
    */
-  async processImageFields({images, imgFields, res}) {
-    for (var i = 0; i < imgFields.length; i++) {
-      const field = imgFields[i]
-      const photo = images[field]
+  processImageFields(imgFields=["imgPhoto"]) {
+    return asyncMiddleware('quickApi.processImageFields', async (req, res, next) => {
+      const {images: images} = res.locals.dentParsedBody
+      for (var i = 0; i < imgFields.length; i++) {
+        const field = imgFields[i]
+        const photo = images[field]
 
-      if (!photo || !photo.content || photo.size === 0) {
-        throw quickApi.#newBadParamsError({
-          subtype: 'no-photo',
-          message: `${field} is mandatory`,
-          details: {
-            imgParamsReceived: Object.keys(images)
-          }
-        })
-      }
+        if (!photo || !photo.content || photo.size === 0) {
+          throw quickApi.#newBadParamsError({
+            subtype: 'no-photo',
+            message: `${field} is mandatory`,
+            details: {
+              imgParamsReceived: Object.keys(images)
+            }
+          })
+        }
 
-      const extension = await imgHelpers.getExtension(photo.content)
-      if (extension) {
-        api.addTags(res, {
-          "simulation:params:image:extension": extension,
-        })
-      }
+        const extension = await imgHelpers.getExtension(photo.content)
+        if (extension) {
+          api.addTags(res, {
+            "simulation:params:image:extension": extension,
+          })
+        }
 
-      if (!extension || !extension.match(env.supportedImagesFilepathRegex)) {
-        throw quickApi.#newBadParamsError({
-          subtype: 'unknown-format',
-          message: `${field} format is unknown`,
-          details: {
-            receivedPhotoType: extension
-          }
-        })
-      }
+        if (!extension || !extension.match(env.supportedImagesFilepathRegex)) {
+          throw quickApi.#newBadParamsError({
+            subtype: 'unknown-format',
+            message: `${field} format is unknown`,
+            details: {
+              receivedPhotoType: extension
+            }
+          })
+        }
 
-      const dimensions = await imgHelpers.getDimensions(photo.content)
-      if (dimensions) {
-        const {width, height} = dimensions
-        const area = width * height
-        const areaSqrt = Math.round(Math.sqrt(area))
-        api.addTags(res, {
-          "simulation:params:image:width": String(width),
-          "simulation:params:image:height": String(height),
-          "simulation:params:image:area": String(area),
-          "simulation:params:image:areaSqrt": String(areaSqrt),
-        })
-        const {dentApiId: apiId} = res.locals
-        metrics.addImageDimensionsMeasure({apiId, env: env.name, dimensions: {width, height, area, areaSqrt}})
+        const dimensions = imgHelpers.getDimensions(photo.content)
+        if (dimensions) {
+          const {width, height} = dimensions
+          const area = width * height
+          const areaSqrt = Math.round(Math.sqrt(area))
+          api.addTags(res, {
+            "simulation:params:image:width": String(width),
+            "simulation:params:image:height": String(height),
+            "simulation:params:image:area": String(area),
+            "simulation:params:image:areaSqrt": String(areaSqrt),
+          })
+          const {dentApiId: apiId} = res.locals
+          metrics.addImageDimensionsMeasure({apiId, env: env.name, dimensions: {width, height, area, areaSqrt}})
+        }
       }
-    }
+    })
   }
 
   /**

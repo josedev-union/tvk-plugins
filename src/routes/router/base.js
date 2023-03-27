@@ -146,6 +146,12 @@ export class QuickRouter extends BasicRouter {
           ]),
         ]),
         timeout.blowIfTimedout,
+        metricsMid.stopwatch('api:parseRequestBody', [
+          timeout.ensure({httpCodeOverride: 408, id: 'parse-body', timeoutSecs: env.quickApiInputUploadTimeout}, [
+            quickApi.parseRequestBody,
+          ]),
+        ]),
+        quickApi.validateBodyData,
         ...handlers,
       ]
     }
@@ -153,6 +159,12 @@ export class QuickRouter extends BasicRouter {
       api.setPrivate(),
       quickApi.validateAuthToken({secretKey: 'secret'}),
       quickApi.rateLimit({ip: false}),
+      metricsMid.stopwatch('api:parseRequestBody', [
+        timeout.ensure({httpCodeOverride: 408, id: 'parse-body', timeoutSecs: env.quickApiInputUploadTimeout}, [
+          quickApi.parseRequestBody,
+        ]),
+      ]),
+      quickApi.validateBodyData,
       ...handlers,
     ]
   }
