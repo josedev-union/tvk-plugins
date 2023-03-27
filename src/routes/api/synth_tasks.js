@@ -27,8 +27,11 @@ function post() {
   return asyncRoute(async (req, res) => {
     const timeoutManager = timeout.getManager(res)
     const dbSimulation = res.locals.dentQuickSimulation
-    const photo = res.locals.dentParsedBody.images['segmap']
-
+    const segmap = res.locals.dentParsedBody.images['segmap']
+    const imgStartStats = res.locals.dentParsedBody.images['imgStartStats']
+    const imgEndStats = res.locals.dentParsedBody.images['imgEndStats']
+    const startStats = imgStartStats === undefined ? null: imgStartStats.content
+    const endStats = imgEndStats === undefined ? null: imgEndStats.content
     const simulation = await metrics.stopwatch('api:quickSynthTask:runSimulation', async () => {
       return await timeoutManager.exec(env.quickApiSimulationTimeout, async () => {
         const client = new QuickSynthClient()
@@ -38,7 +41,9 @@ function post() {
         quickApi.setSimulationStarted(res)
         return await client.request({
           // id: dbSimulation.id,
-          photo: photo.content,
+          segmap: segmap.content,
+          startStatsImg: startStats,
+          endStatsImg: endStats,
           options: dbSimulation.buildJobOptions(),
           expiresAt,
           safe: true,

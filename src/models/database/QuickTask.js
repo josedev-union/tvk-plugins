@@ -139,8 +139,6 @@ export class QuickSynth extends QuickBase {
   normalizeData() {
     // Params
     this.params['mix_factor'] = normalizer.toFloat(this.params['mix_factor'] || 0.5 )
-    this.params['start_style_path'] = normalizer.toChoicesString(this.params['start_style_path'] || null)
-    this.params['end_style_path'] = normalizer.toChoicesString(this.params['end_style_path'] || null)
     this.params['start_style_stats'] = normalizer.toChoicesString(this.params['start_style_stats'] || null)
     this.params['end_style_stats'] = normalizer.toChoicesString(this.params['end_style_stats'] || null)
   }
@@ -148,8 +146,6 @@ export class QuickSynth extends QuickBase {
   buildJobOptions() {
     return  {
       mix_factor: this.params['mix_factor'],
-      start_style_path: this.params['start_style_path'],
-      end_style_path: this.params['end_style_path'],
       start_style_stats: this.params['start_style_stats'],
       end_style_stats: this.params['end_style_stats'],
     }

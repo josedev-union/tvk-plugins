@@ -23,29 +23,32 @@ export class QuickSynthClient {
   static pubsubRequestKey() { return `${PUBSUB_PREFIX}:request` }
   static pubsubResponseKey(id) { return `${this.PUBSUB_PREFIX}:${id}:response` }
 
-  async request({id, photo, photoPath, expiresAt=0, options={}, safe=false}) {
+  async request({id, segmap, segmapPath, startStatsImg, endStatsImg, expiresAt=0, options={}, safe=false}) {
     if (!id) id = idGenerator.newOrderedId()
     logger.verbose(`[${id}] Requesting task (${JSON.stringify(options)})`)
-    const photoRedisKey = `task:listener:${id}:photo`
-    if (!photo) photo = await readfile(photoPath)
-    const photoBuffer = Buffer.from(photo, 'binary')
-    await this.#publishRequest(id, photoBuffer, photoRedisKey, expiresAt, options)
+    const segmapRedisKey = `task:listener:${id}:segmap`
+    const startStatsImgRedisKey = `task:listener:${id}:startStats`
+    const endStatsImgRedisKey = `task:listener:${id}:endStats`
+    
+    if (!segmap) segmap = await readfile(segmapPath)
+    const segmapBuffer = Buffer.from(segmap, 'binary')
+    await this.#publishRequest(id, segmapBuffer, segmapRedisKey, expiresAt, options)
     const pubsubChannel = QuickSynthClient.pubsubResponseKey(id)
     const {result, error} = await this.#waitResponse({pubsubChannel, safe})
     return {
       id,
       result,
       error,
-      original: photo,
+      original: segmap,
       success: !error,
     }
   }
 
-  async #publishRequest(id, photoBuffer, photoRedisKey, expiresAt, options) {
-    const photoEncrypted = this.#encrypt(photoBuffer)
-    await redisSetex(photoRedisKey, 45, photoEncrypted)
+  async #publishRequest(id, segmapBuffer, segmapRedisKey, expiresAt, options) {
+    const segmapEncrypted = this.#encrypt(segmapBuffer)
+    await redisSetex(segmapRedisKey, 45, segmapEncrypted)
     var params = {
-      photo_redis_key: photoRedisKey,
+      segmap_redis_key: segmapRedisKey,
       expires_at: expiresAt,
       ...options
     }
