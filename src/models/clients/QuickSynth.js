@@ -76,6 +76,8 @@ export class QuickSynthClient {
     redisDelSafe(resultRedisKey)
     const response = {
       'result': resultPhoto,
+      'start_stats': message['data']['start_stats'],
+      'end_stats': message['data']['end_stats'],
     }
     if (!resultPhoto) {
       const errorObj = this.#throwError({
