@@ -1,11 +1,12 @@
 options:
   docker: true
 
+image: node:16-alpine
+
 definitions:
   steps:
     - step: &build-image
         name: Build Docker image
-        image: node:16-alpine
         script:
           - apk add make git
           - make build
