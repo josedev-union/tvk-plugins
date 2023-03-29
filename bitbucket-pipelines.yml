@@ -27,6 +27,7 @@ definitions:
     - step: &deploy-staging
         name: Deploy staging
         script:
+          - apk add make git
           - IMAGE_REF=$(make image_tag)
           - pipe: atlassian/google-gke-kubectl-run:2.2.0
             variables:
