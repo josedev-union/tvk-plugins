@@ -26,20 +26,28 @@ definitions:
 
     - step: &deploy-staging
         name: Deploy staging
+        image: google/cloud-sdk:alpine
         script:
+          # roles/container.developer
           - apk add make git
           - IMAGE_REF=$(make image_tag)
-          - pipe: atlassian/google-gke-kubectl-run:2.2.0
-            variables:
-              # roles/container.developer
-              KEY_FILE: $GCP_KEY_JSON_STAGING
-              PROJECT: $GKE_PROJECT
-              COMPUTE_ZONE: $GKE_ZONE
-              CLUSTER_NAME: $GKE_CLUSTER_NAME
-              KUBECTL_COMMAND: 'set image deployment.v1.apps/dentrino-simulations-api'
-              KUBECTL_ARGS:
-                - 'dentrino-simulations-api=$IMAGE_REF'
-                - '-n staging'
+          - echo $GCLOUD_API_KEYFILE | base64 -d > ./gcloud-api-key.json
+          - gcloud auth activate-service-account --key-file gcloud-api-key.json
+          - gcloud container clusters get-credentials $GKE_CLUSTER_NAME --zone $GKE_ZONE --project $GCLOUD_PROJECT
+          - gcloud components install gke-gcloud-auth-plugin
+          - kubectl set image deployment.v1.apps/dentrino-simulations-api dentrino-simulations-api=$IMAGE_REF -n staging
+          ## NOTE(joseb): Once this https://bitbucket.org/atlassian/google-gke-kubectl-run/pull-requests/22 is merged,
+          ## we can use pipe.
+          # - pipe: atlassian/google-gke-kubectl-run:2.2.0
+          #   variables:
+          #     KEY_FILE: $GCP_KEY_JSON_STAGING
+          #     PROJECT: $GKE_PROJECT
+          #     COMPUTE_ZONE: $GKE_ZONE
+          #     CLUSTER_NAME: $GKE_CLUSTER_NAME
+          #     KUBECTL_COMMAND: 'set image deployment.v1.apps/dentrino-simulations-api'
+          #     KUBECTL_ARGS:
+          #       - 'dentrino-simulations-api=$IMAGE_REF'
+          #       - '-n staging'
 
     - step: &push-prod
         name: Push to prod gcr
