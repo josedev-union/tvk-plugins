@@ -1,4 +1,4 @@
-FROM gcr.io/dentrino-production/dentrino-simulations-api-base:latest
+FROM node:16.16.0-alpine3.16
 MAINTAINER support@tastytech.ca
 
 WORKDIR /app
