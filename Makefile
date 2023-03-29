@@ -12,7 +12,7 @@ image_tag:
 build:
 	docker build -t $(COMMIT_IMAGE) .
 
-push: build
+push:
 	docker push $(COMMIT_IMAGE)
 
 update_latest: push
