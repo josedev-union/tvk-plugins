@@ -1,0 +1,71 @@
+options:
+  docker: true
+
+definitions:
+  steps:
+    - step: &build-image
+        name: Build Docker image
+        image: node:16-alpine
+        script:
+          - apk add make git
+          - make build
+
+    - step: &push-staging
+        name: Push to staging gcr
+        script:
+          # roles/artifactregistry.writer
+          - apk add make git
+          - echo $GCP_KEY_JSON_STAGING | base64 -d > ./gcloud-api-key.json
+          - cat ./gcloud-api-key.json | docker login -u _json_key --password-stdin https://gcr.io
+          - make update_latest
+
+    - step: &deploy-staging
+        name: Deploy staging
+        script:
+          - IMAGE_REF=$(make image_tag)
+          - pipe: atlassian/google-gke-kubectl-run:2.2.0
+            variables:
+              # roles/container.developer
+              KEY_FILE: $GCP_KEY_JSON_STAGING
+              PROJECT: $GKE_PROJECT
+              COMPUTE_ZONE: $GKE_ZONE
+              CLUSTER_NAME: $GKE_CLUSTER_NAME
+              KUBECTL_COMMAND: 'set image deployment.v1.apps/dentrino-simulations-api'
+              KUBECTL_ARGS:
+                - 'dentrino-simulations-api=$IMAGE_REF'
+                - '-n staging'
+
+    - step: &push-prod
+        name: Push to prod gcr
+        image: google/cloud-sdk:alpine
+        script:
+          # roles/artifactregistry.writer
+          - apk add make git
+          - echo $GCP_KEY_JSON_PROD | base64 -d > ./gcloud-api-key.json
+          - cat ./gcloud-api-key.json | docker login -u _json_key --password-stdin https://gcr.io
+          - PROJECT_ID=dentrino-production make update_latest
+
+    - step: &deploy-prod
+        name: Deploy production
+        script:
+          - echo "NOTE: Production deployment is performed by IaC."
+
+pipelines:
+  tags:
+    v*:
+      - step: *build-image
+      - step: *push-prod
+      - step: *deploy-prod
+  branches:
+    prod:
+      - step: *build-image
+      - step: *push-prod
+      - step: *deploy-prod
+    staging:
+      - step: *build-image
+      - step: *push-staging
+      - step: *deploy-staging
+
+  pull-requests:
+    '**':
+      - step: *build-image

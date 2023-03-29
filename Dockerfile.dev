@@ -1,4 +1,4 @@
-FROM gcr.io/dentrino-staging/dentrino-web-base:latest
+FROM node:16.16.0-alpine3.16
 MAINTAINER support@tastytech.ca
 
 # Adding Files
