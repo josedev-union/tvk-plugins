@@ -27,8 +27,11 @@ function post() {
   return asyncRoute(async (req, res) => {
     const timeoutManager = timeout.getManager(res)
     const dbSimulation = res.locals.dentQuickSimulation
-    const photo = res.locals.dentParsedBody.images['segmap']
-
+    const segmap = res.locals.dentParsedBody.images['segmap']
+    const imgStartStyle = res.locals.dentParsedBody.images['imgStartStyle']
+    const imgEndStyle = res.locals.dentParsedBody.images['imgEndStyle']
+    const startStyle = imgStartStyle === undefined ? null: imgStartStyle.content
+    const endStyle = imgEndStyle === undefined ? null: imgEndStyle.content
     const simulation = await metrics.stopwatch('api:quickSynthTask:runSimulation', async () => {
       return await timeoutManager.exec(env.quickApiSimulationTimeout, async () => {
         const client = new QuickSynthClient()
@@ -38,7 +41,9 @@ function post() {
         quickApi.setSimulationStarted(res)
         return await client.request({
           // id: dbSimulation.id,
-          photo: photo.content,
+          segmap: segmap.content,
+          startStyleImg: startStyle,
+          endStyleImg: endStyle,
           options: dbSimulation.buildJobOptions(),
           expiresAt,
           safe: true,
@@ -51,7 +56,6 @@ function post() {
         debugMessage: `Simulation response should have id but got ${simulation}`,
       })
     }
-
     res.status(201).json({
       success: true,
       simulation: {
@@ -59,6 +63,8 @@ function post() {
         createdAt: dbSimulation.createdAt.toDate(),
         metadata: dbSimulation.metadata,
         result: Buffer.from(simulation.result, 'binary').toString('base64'),
+        startStats: simulation.startStats,
+        endStats: simulation.endStats,
       }
     })
   })

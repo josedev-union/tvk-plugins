@@ -9,6 +9,8 @@ if [ -z "$DENTRINO_CLIENT_SECRET" ]; then
     DENTRINO_CLIENT_SECRET=$USERNAME_INPUT
 fi
 SEGMAP_PATH=$(dirname "$0")/synth_input.png
+START_STYLE_PATH=$(dirname "$0")/start_style.jpg
+END_STYLE_PATH=$(dirname "$0")/end_style.jpg
 
 CLAIMS_JSON="{\"clientId\": \"$DENTRINO_CLIENT_ID\", \"paramsHashed\": \"none\"}"
 
@@ -21,6 +23,9 @@ res=$(curl -XPOST \
   -H "Content-Type: multipart/form-data" \
   -H "Authorization: Bearer $SIGNATURE" \
   -F "segmap=@$SEGMAP_PATH" \
-  "https://api.e91efc7.dentrino.ai/api/synth")
+  -F "imgStartStyle=@$START_STYLE_PATH" \
+  -F "imgEndStyle=@$END_STYLE_PATH" \
+  http://localhost:3000/api/synth)
+  # "https://api.e91efc7.dentrino.ai/api/synth")
 
 echo $res

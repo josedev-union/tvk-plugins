@@ -15,39 +15,68 @@ const redisDel = promisify(buffersRedis.del).bind(buffersRedis)
 const redisGetSafe = (key) => !key ? undefined : redisGet(key)
 const redisDelSafe = (key) => !key ? undefined : redisDel(key)
 
-const PUBSUB_PREFIX = 'listener:quick:synth'
 
 // TODO(joseb): Declare a basic class and inherit it
 export class QuickSynthClient {
   static PUBSUB_PREFIX = 'listener:quick:synth'
-  static pubsubRequestKey() { return `${PUBSUB_PREFIX}:request` }
+  static pubsubRequestKey() { return `${this.PUBSUB_PREFIX}:request` }
   static pubsubResponseKey(id) { return `${this.PUBSUB_PREFIX}:${id}:response` }
 
-  async request({id, photo, photoPath, expiresAt=0, options={}, safe=false}) {
+  async request({id, segmap, segmapPath, startStyleImg, endStyleImg, expiresAt=0, options={}, safe=false}) {
     if (!id) id = idGenerator.newOrderedId()
     logger.verbose(`[${id}] Requesting task (${JSON.stringify(options)})`)
-    const photoRedisKey = `task:listener:${id}:photo`
-    if (!photo) photo = await readfile(photoPath)
-    const photoBuffer = Buffer.from(photo, 'binary')
-    await this.#publishRequest(id, photoBuffer, photoRedisKey, expiresAt, options)
+
+    if (!segmap) segmap = await readfile(segmapPath)
+    const segmapBuffer = Buffer.from(segmap, 'binary')
+    let startStyleBuffer = null
+    if (!startStyleImg) {
+      startStyleBuffer = startStyleImg
+    } else {
+      startStyleBuffer = Buffer.from(startStyleImg, 'binary')
+    }
+    let endStyleBuffer = null
+    if (!endStyleImg) {
+      endStyleBuffer = endStyleImg
+    } else {
+      endStyleBuffer = Buffer.from(endStyleImg, 'binary')
+    }
+    await this.#publishRequest(id, segmapBuffer, startStyleBuffer, endStyleBuffer, expiresAt, options)
     const pubsubChannel = QuickSynthClient.pubsubResponseKey(id)
-    const {result, error} = await this.#waitResponse({pubsubChannel, safe})
+    const {result, startStats, endStats, error} = await this.#waitResponse({pubsubChannel, safe})
     return {
       id,
       result,
+      startStats,
+      endStats,
       error,
-      original: photo,
+      original: segmap,
       success: !error,
     }
   }
 
-  async #publishRequest(id, photoBuffer, photoRedisKey, expiresAt, options) {
-    const photoEncrypted = this.#encrypt(photoBuffer)
-    await redisSetex(photoRedisKey, 45, photoEncrypted)
+  async #publishRequest(id, segmapBuffer, startStyleBuffer, endStyleBuffer, expiresAt, options) {
+    const segmapRedisKey = `task:listener:${id}:segmap`
+    const startStyleImgRedisKey = `task:listener:${id}:startStyle`
+    const endStyleImgRedisKey = `task:listener:${id}:endStyle`
+
+    const segmapEncrypted = this.#encrypt(segmapBuffer)
+    const startStyleEncrypted = this.#encrypt(startStyleBuffer)
+    const endStyleEncrypted = this.#encrypt(endStyleBuffer)
+
+    await redisSetex(segmapRedisKey, 45, segmapEncrypted)
+
     var params = {
-      photo_redis_key: photoRedisKey,
+      segmap_redis_key: segmapRedisKey,
       expires_at: expiresAt,
       ...options
+    }
+    if (startStyleEncrypted) {
+      await redisSetex(startStyleImgRedisKey, 45, startStyleEncrypted)
+      params["start_style_redis_key"] = startStyleImgRedisKey
+    }
+    if (endStyleEncrypted) {
+      await redisSetex(endStyleImgRedisKey, 45, endStyleEncrypted)
+      params["end_style_redis_key"] = endStyleImgRedisKey
     }
 
     const publishedMessage = JSON.stringify({
@@ -76,6 +105,8 @@ export class QuickSynthClient {
     redisDelSafe(resultRedisKey)
     const response = {
       'result': resultPhoto,
+      'startStats': message['data']['start_stats'],
+      'endStats': message['data']['end_stats'],
     }
     if (!resultPhoto) {
       const errorObj = this.#throwError({
