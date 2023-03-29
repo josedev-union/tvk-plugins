@@ -15,7 +15,7 @@ import {imgHelpers} from "../utils/imgHelpers"
 import {logger} from '../instrumentation/logger'
 import {metrics} from '../instrumentation/metrics'
 import {ApiClient} from "../models/database/ApiClient"
-import {QuickSimulation} from "../models/database/QuickSimulation"
+import {timeout} from "./timeout"
 
 import {helpers} from '../routes/helpers'
 import {asyncMiddleware, invokeMiddleware, invokeMiddlewares} from './expressAsync'
@@ -41,9 +41,10 @@ const multerUpload = multer({
   limits: {
     fieldSize: 1*1024*1024,
     fileSize: env.quickApiMaxUploadSizeBytes+1024,
-    files: 1,
+    files: 3,
   }
 })
+
 
 export const quickApi = new (class {
   get enforceCors() {
@@ -72,6 +73,13 @@ export const quickApi = new (class {
     })
   }
 
+
+  /**
+   * @returns {async function} A route handler which checks if the ApiClient is allowed to use the api.
+   * Dependency handlers
+   *    - getModel.client
+   *    - api.setId
+   */
   get validateApiVisibility() {
     return asyncMiddleware('quickApi.validateApiVisibility', async (req, res, next) => {
       const {dentApiId: apiId, dentClient: client} = res.locals
@@ -84,6 +92,11 @@ export const quickApi = new (class {
     })
   }
 
+  /**
+   * @returns {async function} A route handler which checks `revoked` status of the ApiClient
+   * Dependency handlers
+   *    - getModel.client
+   */
   get validateClient() {
     return asyncMiddleware('quickApi.validateClient', async (req, res, next) => {
       const {dentClient: client} = res.locals
@@ -170,7 +183,7 @@ export const quickApi = new (class {
       const data = quickApi.#parseJson(dataJson) || {}
       const images = {}
       for (let fileKey in files) {
-        if (fileKey.startsWith('img')) {
+        if (['img', 'seg'].some(word => fileKey.startsWith(word))) {
           images[fileKey] = files[fileKey]
         }
       }
@@ -227,16 +240,11 @@ export const quickApi = new (class {
     return {fields, files}
   }
 
-  dataToQuickSimulation({customizable, force={}}={}) {
-    return asyncMiddleware('quickApi.dataToSimulationOptions', async (req, res, next) => {
+  dataToModel(modelConstructor, {customizable, force={}}={}) {
+    return asyncMiddleware('quickApi.dataToModel', async (req, res, next) => {
       const clientId = res.locals.dentClientId
-      const {data: bodyData, images: bodyImages} = res.locals.dentParsedBody
-      await quickApi.#processImageFields({
-        res,
-        images: bodyImages,
-        imgFields: ['imgPhoto'],
-      })
-
+      const {data: bodyData} = res.locals.dentParsedBody
+      // Set default params(force) and filter others than customizable and force
       const params = Object.assign({}, bodyData, force)
       if (typeof(customizable) !== 'undefined') {
         Object.keys(params).forEach((key) => {
@@ -246,13 +254,13 @@ export const quickApi = new (class {
         })
       }
 
-      const quickSimulation = QuickSimulation.build({
+      const model = modelConstructor.build({
         clientId,
         params,
         metadata: bodyData,
       })
-      quickSimulation.normalizeData()
-      const errors = quickSimulation.validationErrors()
+      model.normalizeData()
+      const errors = model.validationErrors()
       if (errors.length > 0) {
         const {message} = errors[0]
         throw quickApi.#newBadParamsError({
@@ -260,64 +268,81 @@ export const quickApi = new (class {
           message,
         })
       }
-      for (const [key, value] of Object.entries(quickSimulation.params)) {
+      for (const [key, value] of Object.entries(model.params)) {
         api.addTags(res, {
           [`simulation:params:${key}`]: String(value),
         })
       }
-      res.locals.dentQuickSimulation = quickSimulation
+      res.locals.dentQuickSimulation = model
     })
   }
 
-  async #processImageFields({images, imgFields, res}) {
-    for (var i = 0; i < imgFields.length; i++) {
-      const field = imgFields[i]
-      const photo = images[field]
+  /**
+   * Validate the existence of required images in the request and
+   * get the extension and dimension info of them, and set as tags.
+   *
+   * @param {array} param - List of image fields
+   */
+  processImageFields(imgFields=["imgPhoto"]) {
+    return asyncMiddleware('quickApi.processImageFields', async (req, res, next) => {
+      const {images: images} = res.locals.dentParsedBody
+      for (var i = 0; i < imgFields.length; i++) {
+        const field = imgFields[i]
+        const photo = images[field]
 
-      if (!photo || !photo.content || photo.size === 0) {
-        throw quickApi.#newBadParamsError({
-          subtype: 'no-photo',
-          message: `${field} is mandatory`,
-          details: {
-            imgParamsReceived: Object.keys(images)
-          }
-        })
-      }
+        if (!photo || !photo.content || photo.size === 0) {
+          throw quickApi.#newBadParamsError({
+            subtype: 'no-photo',
+            message: `${field} is mandatory`,
+            details: {
+              imgParamsReceived: Object.keys(images)
+            }
+          })
+        }
 
-      const extension = await imgHelpers.getExtension(photo.content)
-      if (extension) {
-        api.addTags(res, {
-          "simulation:params:image:extension": extension,
-        })
-      }
+        const extension = await imgHelpers.getExtension(photo.content)
+        if (extension) {
+          api.addTags(res, {
+            "simulation:params:image:extension": extension,
+          })
+        }
 
-      if (!extension || !extension.match(env.supportedImagesFilepathRegex)) {
-        throw quickApi.#newBadParamsError({
-          subtype: 'unknown-format',
-          message: `${field} format is unknown`,
-          details: {
-            receivedPhotoType: extension
-          }
-        })
-      }
+        if (!extension || !extension.match(env.supportedImagesFilepathRegex)) {
+          throw quickApi.#newBadParamsError({
+            subtype: 'unknown-format',
+            message: `${field} format is unknown`,
+            details: {
+              receivedPhotoType: extension
+            }
+          })
+        }
 
-      const dimensions = await imgHelpers.getDimensions(photo.content)
-      if (dimensions) {
-        const {width, height} = dimensions
-        const area = width * height
-        const areaSqrt = Math.round(Math.sqrt(area))
-        api.addTags(res, {
-          "simulation:params:image:width": String(width),
-          "simulation:params:image:height": String(height),
-          "simulation:params:image:area": String(area),
-          "simulation:params:image:areaSqrt": String(areaSqrt),
-        })
-        const {dentApiId: apiId} = res.locals
-        metrics.addImageDimensionsMeasure({apiId, env: env.name, dimensions: {width, height, area, areaSqrt}})
+        const dimensions = imgHelpers.getDimensions(photo.content)
+        if (dimensions) {
+          const {width, height} = dimensions
+          const area = width * height
+          const areaSqrt = Math.round(Math.sqrt(area))
+          api.addTags(res, {
+            "simulation:params:image:width": String(width),
+            "simulation:params:image:height": String(height),
+            "simulation:params:image:area": String(area),
+            "simulation:params:image:areaSqrt": String(areaSqrt),
+          })
+          const {dentApiId: apiId} = res.locals
+          metrics.addImageDimensionsMeasure({apiId, env: env.name, dimensions: {width, height, area, areaSqrt}})
+        }
       }
-    }
+    })
   }
 
+  /**
+   * @returns {async function}  A route handler which parses the bearer token from the req header
+   * Update the Response object as followings;
+   *    - res.locals.dentClientId {string}
+   *    - res.locals.dentParsedToken {string}
+   * Dependency handlers
+   *    []
+   */
   get parseAuthToken() {
     return asyncMiddleware('quickApi.parseAuthToken', async (req, res) => {
       const token = quickApi.#getToken(req)
@@ -417,7 +442,6 @@ export const quickApi = new (class {
       throw quickApi.#newAuthorizationError({
         message: `Couldn't decode claims json "${b64Claims}"`,
         details: {
-          receivedToken: token,
           receivedClaimsInBase64: b64Claims,
         }
       })
@@ -428,7 +452,6 @@ export const quickApi = new (class {
       throw quickApi.#newAuthorizationError({
         message: `claims is not a valid json - ${claimsJson}`,
         details: {
-          receivedToken: token,
           receivedClaims: claimsJson,
         }
       })
@@ -543,6 +566,10 @@ export const quickApi = new (class {
         }
       }
     })
+  }
+
+  globalTimeout(id) {
+    return timeout.ensure({id: id, timeoutSecs: env.quickApiRouteTimeout})
   }
 
   setSimulationStarted(res) {

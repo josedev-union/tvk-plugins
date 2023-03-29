@@ -6,7 +6,16 @@ import {RichError} from "../utils/RichError"
 import {helpers} from '../routes/helpers'
 import {asyncMiddleware} from './expressAsync'
 
+
 export const getModel = new (class {
+
+  /**
+   * @returns {async function} A route handler which gets the ApiClient model object from clientId
+   * Update the Response object as followings;
+   *    - res.locals.dentClient {ApiClient}
+   * Dependency handlers
+   *    - quickApi.parseAuthToken
+   */
   get client() {
     return asyncMiddleware('getModel.client', async (req, res, next) => {
       const clientId = res.locals.dentClientId
