@@ -31,7 +31,7 @@ definitions:
           # roles/container.developer
           - apk add make git
           - IMAGE_REF=$(make image_tag)
-          - echo $GCLOUD_API_KEYFILE | base64 -d > ./gcloud-api-key.json
+          - echo $GCP_KEY_JSON_STAGING | base64 -d > ./gcloud-api-key.json
           - gcloud auth activate-service-account --key-file gcloud-api-key.json
           - gcloud container clusters get-credentials $GKE_CLUSTER_NAME --zone $GKE_ZONE --project $GCLOUD_PROJECT
           - gcloud components install gke-gcloud-auth-plugin
