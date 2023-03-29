@@ -7,62 +7,59 @@ definitions:
         name: Build Docker image
         image: node:16-alpine
         script:
-        # roles/artifactregistry.reader
-          - echo $GCLOUD_API_KEYFILE | base64 -d > ./gcloud-api-key.json
-          - cat ./gcloud-api-key.json | docker login -u _json_key --password-stdin https://gcr.io
-          - docker build -t build_image .
-          - docker save --output tmp-image.docker build_image
-        artifacts:
-          - tmp-image.docker
-    - step: &push-gcp
-        name: Push to GCP registry
-        image: google/cloud-sdk:alpine
+          - make build
+
+    - step: &push-staging
+        name: Push to staging gcr
         script:
-        # roles/artifactregistry.writer
-          - docker load --input ./tmp-image.docker
-          # Authenticating with the service account key file
-          - echo $GCLOUD_API_KEYFILE | base64 -d > ./gcloud-api-key.json
-          - gcloud auth activate-service-account --key-file gcloud-api-key.json
-          - gcloud config set project $GCLOUD_PROJECT
-          # Tag container & push
-          - export TAG=$(echo "$BITBUCKET_TAG" | sed -e "s/v//g")
-          - export SUFFIX=$([[ ! -z "$TAG" ]] && echo ":$TAG" || echo ":$BITBUCKET_BRANCH-$BITBUCKET_COMMIT")
-          - export IMAGE_NAME=gcr.io/dentrino-production/dentrino-simulations-api${SUFFIX}
-          - docker tag build_image ${IMAGE_NAME}
-          - echo ${IMAGE_NAME} > tmp-image.ref
-          # Login to google docker hub
+          # roles/artifactregistry.writer
+          - echo $GCP_KEY_JSON_STAGING | base64 -d > ./gcloud-api-key.json
           - cat ./gcloud-api-key.json | docker login -u _json_key --password-stdin https://gcr.io
-          - docker push ${IMAGE_NAME}
-        artifacts:
-          - tmp-image.ref
+          - make update_latest
+
     - step: &deploy-staging
         name: Deploy staging
         script:
-          - IMAGE_REF=$(cat ./tmp-image.ref)
+          - IMAGE_REF=$(make image_tag)
           - pipe: atlassian/google-gke-kubectl-run:2.2.0
             variables:
-            # roles/container.developer
-              KEY_FILE: $GCLOUD_API_KEYFILE
-              PROJECT: $GCLOUD_PROJECT
+              # roles/container.developer
+              KEY_FILE: $GCP_KEY_JSON_STAGING
+              PROJECT: $GKE_PROJECT
               COMPUTE_ZONE: $GKE_ZONE
               CLUSTER_NAME: $GKE_CLUSTER_NAME
               KUBECTL_COMMAND: 'set image deployment.v1.apps/dentrino-simulations-api'
               KUBECTL_ARGS:
                 - 'dentrino-simulations-api=$IMAGE_REF'
+                - '-n staging'
+
+    - step: &push-prod
+        name: Push to prod gcr
+        image: google/cloud-sdk:alpine
+        script:
+          # roles/artifactregistry.writer
+          - echo $GCP_KEY_JSON_PROD | base64 -d > ./gcloud-api-key.json
+          - cat ./gcloud-api-key.json | docker login -u _json_key --password-stdin https://gcr.io
+          - PROJECT_ID=dentrino-production make update_latest
+    - step: &deploy-prod
+        name: Deploy production
+        script:
+          - echo "NOTE: Production deployment is performed by IaC."
 
 pipelines:
   tags:
     v*:
       - step: *build-image
-      - step: *push-gcp
-
+      - step: *push-prod
+      - step: *deploy-prod
   branches:
-    master:
+    prod:
       - step: *build-image
-      - step: *push-gcp
+      - step: *push-prod
+      - step: *deploy-prod
     staging:
       - step: *build-image
-      - step: *push-gcp
+      - step: *push-staging
       - step: *deploy-staging
 
   pull-requests:
