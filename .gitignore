@@ -72,3 +72,6 @@ keys/
 
 src/start.js*
 *_credentials.json
+
+# IDE
+.vscode/
