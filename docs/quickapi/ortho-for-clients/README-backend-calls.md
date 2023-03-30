@@ -9,17 +9,25 @@ To execute a ortho simulation the API have two routes:
 
 This request is meant to be done via back-end, not directly by the front-end.
 
-## Credentials
-By default it'll use the following credentials (for testing purposes only):
-```
-CLIENT_ID=ODMzNjkxOTc4NTE5Mk9tZT4rYVJ2_testext
+## Authentication
+API requests are authenticated by a bear token in the request header.
+To generate a bear token, client id and client secret.
+```sh
+CLIENT_ID=<REPLACE_WITH_YOUR_CLIENT_ID>
+CLIENT_SECRET=<REPLACE_WITH_YOUR_CLIENT_SECRET>
+# Just set paramsHashed as none which is reserved for public endpoints.
+CLAIMS_JSON="{\"clientId\": \"$CLIENT_ID\", \"paramsHashed\": \"none\"}"
+ENCODED_CLAIMS=$(echo -n $CLAIMS_JSON|base64 -w0)
+CLAIMS_SIGNATURE=$(echo -n $CLIENT_SECRET | openssl sha256 -hmac "$CLAIMS_JSON")
+TOKEN="$ENCODED_CLAIMS:$CLAIMS_SIGNATURE"
 ```
 
 ## Executing a Simulation
 ### Request Structure
-- POST /api/simulations/ortho?clientId=$CLIENT_ID
+- POST /api/simulations/ortho
 - Headers
   - `Content-Type: multipart/form-data`
+  - `Authorization: Bearer $TOKEN`
 - Body _(format: multipart/form-data)_
   - `imgPhoto: $PHOTO_IMAGE`
 	- `data: $DATA_JSON` (Optional)
@@ -29,9 +37,10 @@ CLIENT_ID=ODMzNjkxOTc4NTE5Mk9tZT4rYVJ2_testext
 ```
 curl -XPOST \
   -H "Content-Type: multipart/form-data" \
+  -H "Authorization: Bearer $TOKEN" \
 	-F "imgPhoto=@./face.jpg" \
 	-F 'data={"captureType": "camera", "externalCustomerId": "customer-id"}' \
-	"https://api.e91efc7.dentrino.ai/api/simulations/ortho?clientId=ODMzNjkxOTc4NTE5Mk9tZT4rYVJ2_testext"
+	"https://api.e91efc7.dentrino.ai/api/simulations/ortho"
 ```
 
 ## Updating Simulation Metadata
@@ -39,6 +48,7 @@ curl -XPOST \
 - PATCH /api/simulations/$SIMULATION_ID?clientId=$CLIENT_ID
 - Headers
   - `Content-Type: multipart/form-data`
+  - `Authorization: Bearer $TOKEN`
 - Body _(format: multipart/form-data)_
 	- `data: $DATA_JSON` (Optional)
 
@@ -46,12 +56,14 @@ curl -XPOST \
 ```
 curl -XPATCH \
   -H "Content-Type: multipart/form-data" \
+  -H "Authorization: Bearer $TOKEN" \
 	-F 'data={"feedbackScore": 2.75}' \
-	"https://api.e91efc7.dentrino.ai/api/simulations/<SIMULATION ID>?clientId=ODMzNjkxOTc4NTE5Mk9tZT4rYVJ2_testext"
+	"https://api.e91efc7.dentrino.ai/api/simulations/<SIMULATION ID>"
 
 # This route can be called with json as well
 curl -XPATCH \
   -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{"feedbackScore": 2.75}' \
   "https://api.e91efc7.dentrino.ai/api/simulations/<SIMULATION ID>?clientId=ODMzNjkxOTc4NTE5Mk9tZT4rYVJ2_testext"
 ```

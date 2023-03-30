@@ -14,18 +14,16 @@ END_STYLE_PATH=$(dirname "$0")/end_style.jpg
 
 CLAIMS_JSON="{\"clientId\": \"$DENTRINO_CLIENT_ID\", \"paramsHashed\": \"none\"}"
 
-PART1=$(echo -n $CLAIMS_JSON|base64 -w0)
-PART2=$(echo -n $DENTRINO_CLIENT_SECRET | openssl sha256 -hmac "$CLAIMS_JSON")
-SIGNATURE="$PART1:$PART2"
+ENCODED_CLAIMS=$(echo -n $CLAIMS_JSON|base64 -w0)
+CLAIMS_SIGNATURE=$(echo -n $DENTRINO_CLIENT_SECRET | openssl sha256 -hmac "$CLAIMS_JSON")
+TOKEN="$ENCODED_CLAIMS:$CLAIMS_SIGNATURE"
 
-echo $SIGNATURE
 res=$(curl -XPOST \
   -H "Content-Type: multipart/form-data" \
-  -H "Authorization: Bearer $SIGNATURE" \
+  -H "Authorization: Bearer $TOKEN" \
   -F "segmap=@$SEGMAP_PATH" \
   -F "imgStartStyle=@$START_STYLE_PATH" \
   -F "imgEndStyle=@$END_STYLE_PATH" \
-  http://localhost:3000/api/synth)
-  # "https://api.e91efc7.dentrino.ai/api/synth")
+  "https://api.e91efc7.dentrino.ai/api/synth")
 
 echo $res
