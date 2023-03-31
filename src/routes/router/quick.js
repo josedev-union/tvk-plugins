@@ -46,7 +46,7 @@ export class QuickSynthTaskRouter extends QuickRouter {
   conditionalHandlers(handlers, kwargs) {
     let res = [
       quickApi.processImageFields(["segmap"]),
-      quickApi.dataToModel(QuickSynth, {customizable: ['mix_factor', 'start_style_stats', 'end_style_stats', 'start_style_path', 'end_style_path']}),
+      quickApi.dataToModel(QuickSynth, {customizable: ['mix_factor', 'start_style_stats', 'end_style_stats']}),
       ...handlers,
     ]
     return super.conditionalHandlers(res, kwargs)

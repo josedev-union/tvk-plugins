@@ -25,7 +25,7 @@ res=$(curl -XPOST \
   -F "segmap=@$SEGMAP_PATH" \
   -F "imgStartStyle=@$START_STYLE_PATH" \
   -F "imgEndStyle=@$END_STYLE_PATH" \
-  http://localhost:3000/api/synth)
-  # "https://api.e91efc7.dentrino.ai/api/synth")
+  -F 'data={"mix_factor": 0.2}' \
+  "https://api.e91efc7.dentrino.ai/api/synth")
 
 echo $res

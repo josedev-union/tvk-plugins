@@ -7,9 +7,9 @@ import {validator} from '../tools/validator'
 export class QuickBase {
 
   static #COLLECTION_NAME = 'quick'
-  static STORAGE_WHITELIST = []
-  static PARAMS_WHITELIST = []
-  static METADATA_WHITELIST = []
+  STORAGE_WHITELIST = []
+  PARAMS_WHITELIST = []
+  METADATA_WHITELIST = []
 
   static get COLLECTION_NAME() { return this.#COLLECTION_NAME }
 
@@ -111,6 +111,7 @@ export class QuickSegment extends QuickBase {
 
 export class QuickSynth extends QuickBase {
   static #COLLECTION_NAME = 'quick_synth'
+  PARAMS_WHITELIST = ['mix_factor', 'start_style_stats', 'end_style_stats']
 
   static build({id, createdAt, clientId, storage, params, metadata}={}) {
     const simulation = new QuickSynth({
