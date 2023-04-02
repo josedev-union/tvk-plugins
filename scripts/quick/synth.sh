@@ -15,7 +15,8 @@ END_STYLE_PATH=$(dirname "$0")/end_style.jpg
 CLAIMS_JSON="{\"clientId\": \"$DENTRINO_CLIENT_ID\", \"paramsHashed\": \"none\"}"
 
 ENCODED_CLAIMS=$(echo -n $CLAIMS_JSON|base64 -w0)
-CLAIMS_SIGNATURE=$(echo -n $DENTRINO_CLIENT_SECRET | openssl sha256 -hmac "$CLAIMS_JSON")
+CLAIMS_SIGNATURE=$(echo -n "$CLAIMS_JSON" | openssl dgst -sha256 -hex -hmac $DENTRINO_CLIENT_SECRET | sed 's/^.* //')
+
 TOKEN="$ENCODED_CLAIMS:$CLAIMS_SIGNATURE"
 
 res=$(curl -XPOST \

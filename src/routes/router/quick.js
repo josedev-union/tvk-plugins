@@ -1,3 +1,4 @@
+import {api} from '../../middlewares/api'
 import {metricsMid} from "../../middlewares/metrics"
 import {timeout} from "../../middlewares/timeout"
 import {quickApi} from "../../middlewares/quickApi"
