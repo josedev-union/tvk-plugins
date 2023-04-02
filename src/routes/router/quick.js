@@ -9,6 +9,11 @@ import {QuickSegment, QuickSynth} from "../../models/database/QuickTask.js"
 import { QuickRouter } from "./base"
 
 
+/**
+ * QuickFullRouterV1rc
+ * 
+ * Skip auth token parsing for private endpoints
+ */
 export class QuickFullRouterV1rc extends QuickRouter {
 
   name = "QuickFullRouter"
