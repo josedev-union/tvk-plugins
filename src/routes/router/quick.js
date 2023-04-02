@@ -8,7 +8,51 @@ import {QuickSegment, QuickSynth} from "../../models/database/QuickTask.js"
 import { QuickRouter } from "./base"
 
 
-export class QuickFullRouter extends QuickRouter {
+export class QuickFullRouterV1rc extends QuickRouter {
+
+  name = "QuickFullRouter"
+
+  conditionalHandlers(handlers, kwargs) {
+    if (this.isPublic) {
+      return [
+        api.setPublic(),
+        quickApi.enforceCors,
+        quickApi.validateAuthToken({secretKey: 'exposedSecret'}),
+        quickApi.rateLimit(),
+        timeout.blowIfTimedout,
+        metricsMid.stopwatch('api:validateRecaptcha', [
+          timeout.ensure({id: 'recaptcha-validation', timeoutSecs: env.quickApiRecaptchaTimeout}, [
+            quickApi.validateRecaptcha,
+          ]),
+        ]),
+        timeout.blowIfTimedout,
+        metricsMid.stopwatch('api:parseRequestBody', [
+          timeout.ensure({httpCodeOverride: 408, id: 'parse-body', timeoutSecs: env.quickApiInputUploadTimeout}, [
+            quickApi.parseRequestBody,
+          ]),
+        ]),
+        quickApi.validateBodyData,
+        quickApi.processImageFields(),
+        ...handlers,
+      ]
+    }
+    return [
+      api.setPrivate(),
+      quickApi.rateLimit({ip: false}),
+      metricsMid.stopwatch('api:parseRequestBody', [
+        timeout.ensure({httpCodeOverride: 408, id: 'parse-body', timeoutSecs: env.quickApiInputUploadTimeout}, [
+          quickApi.parseRequestBody,
+        ]),
+      ]),
+      quickApi.validateBodyData,
+      quickApi.processImageFields(),
+      ...handlers,
+    ]
+  }
+}
+
+
+export class QuickFullRouterV1 extends QuickRouter {
 
   name = "QuickFullRouter"
 

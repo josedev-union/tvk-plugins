@@ -8,11 +8,11 @@ import {quickApi} from '../../middlewares/quickApi'
 import {api} from '../../middlewares/api'
 import {timeout} from "../../middlewares/timeout"
 import {getNowInMillis} from '../../utils/time'
-import { QuickFullRouter } from "../router/quick"
+import { QuickFullRouterV1, QuickFullRouterV1rc } from "../router/quick"
 
 
-export default ({clientIsFrontend = false}) => {
-  return new QuickFullRouter({isPublic: clientIsFrontend}).
+export function v1rcApiQuickSimulations ({clientIsFrontend = false}) {
+  return new QuickFullRouterV1rc({isPublic: clientIsFrontend}).
   post(
     '/cosmetic',
     [
@@ -59,6 +59,53 @@ export default ({clientIsFrontend = false}) => {
   build()
 }
 
+export function v1ApiQuickSimulations ({clientIsFrontend = false}) {
+  return new QuickFullRouterV1({isPublic: clientIsFrontend}).
+  post(
+    '/cosmetic',
+    [
+      quickApi.dataToModel(
+        QuickSimulation,
+        {
+          force: {
+            mode: 'cosmetic',
+            blend: 'poisson',
+          },
+          customizable: ['mixFactor', 'styleMode', 'whiten', 'brightness'],
+        }
+      ),
+      newQuickSimulationRoute(),
+    ],
+    {'id': 'cosmetic-simulations'},
+  ).
+  post(
+    '/ortho',
+    [
+      quickApi.dataToModel(
+        QuickSimulation,
+        {
+          force: {
+            mode: 'ortho',
+            blend: 'poisson',
+            styleMode: 'mix_manual',
+            mixFactor: 0,
+          },
+          customizable: [],
+        }
+      ),
+      newQuickSimulationRoute(),
+    ],
+    {'id': 'ortho-simulations'},
+  ).
+  patch(
+    '/:id',
+    [
+      patchSimulationRoute(),
+    ],
+    {'id': 'patch-simulations'},
+  ).
+  build()
+}
 
 function newQuickSimulationRoute() {
   return asyncRoute(async (req, res) => {
