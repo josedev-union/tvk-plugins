@@ -76,7 +76,7 @@ export function v1ApiQuickSimulations ({clientIsFrontend = false}) {
       ),
       newQuickSimulationRoute(),
     ],
-    {'id': 'cosmetic-simulations'},
+    {'id': 'cosmetic-simulations-v1'},
   ).
   post(
     '/ortho',
@@ -95,14 +95,14 @@ export function v1ApiQuickSimulations ({clientIsFrontend = false}) {
       ),
       newQuickSimulationRoute(),
     ],
-    {'id': 'ortho-simulations'},
+    {'id': 'ortho-simulations-v1'},
   ).
   patch(
     '/:id',
     [
       patchSimulationRoute(),
     ],
-    {'id': 'patch-simulations'},
+    {'id': 'patch-simulations-v1'},
   ).
   build()
 }
