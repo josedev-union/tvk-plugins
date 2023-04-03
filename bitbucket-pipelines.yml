@@ -50,6 +50,11 @@ definitions:
           #     KUBECTL_ARGS:
           #       - 'dentrino-simulations-api=$IMAGE_REF'
           #       - '-n staging'
+          - pipe: atlassian/slack-notify:2.0.0
+            variables:
+              WEBHOOK_URL: $SLACK_WEBHOOK_URL
+              PRETEXT: 'Notification from Dentrino-Simulation-API'
+              MESSAGE: 'Staging deployment success! Current image is $IMAGE_REF.'
 
     - step: &push-prod
         name: Push to prod gcr
