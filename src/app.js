@@ -98,14 +98,14 @@ if (env.instSimRouter) {
   app.use('/api/users/:userId/smile-tasks/', getModel.user, apiSmileTasks);
   app.use('/public-api/simulations/', v1rcApiQuickSimulations({clientIsFrontend: true}));
   app.use('/api/simulations/', v1rcApiQuickSimulations({clientIsFrontend: false}));
-  app.use('/v1/public-api/simulations/', v1ApiQuickSimulations({clientIsFrontend: true}));
-  app.use('/v1/api/simulations/', v1ApiQuickSimulations({clientIsFrontend: false}));
-  app.use('/public-api/segment/', apiQuickSegmentRouter({clientIsFrontend: true}));
-  app.use('/api/segment/', apiQuickSegmentRouter({clientIsFrontend: false}));
-  app.use('/public-api/synth/', apiQuickSynthRouter({clientIsFrontend: true}));
-  app.use('/api/synth/', apiQuickSynthRouter({clientIsFrontend: false}));
   app.use('/api/67a4abe/smile-tasks/:smileTaskId/', getModel.smileTask, internalApiSmileTasks);
   app.use('/webhooks/828ffbc/smile-tasks/', webhooksSmileTasks);
+  app.use('/v1/public-api/simulations/', v1ApiQuickSimulations({clientIsFrontend: true}));
+  app.use('/v1/api/simulations/', v1ApiQuickSimulations({clientIsFrontend: false}));
+  app.use('/v1/public-api/segment/', apiQuickSegmentRouter({clientIsFrontend: true}));
+  app.use('/v1/api/segment/', apiQuickSegmentRouter({clientIsFrontend: false}));
+  app.use('/v1/public-api/synth/', apiQuickSynthRouter({clientIsFrontend: true}));
+  app.use('/v1/api/synth/', apiQuickSynthRouter({clientIsFrontend: false}));
   app.use(Sentry.Handlers.errorHandler());
 }
 

@@ -17,7 +17,7 @@ export default ({clientIsFrontend = false}) => {
     [
       post(),
     ],
-    {'id': 'quick-synth'},
+    {'id': 'quick-synth-v1'},
   ).
   build()
 }

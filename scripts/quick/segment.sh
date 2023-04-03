@@ -20,4 +20,4 @@ curl -XPOST \
   -H "Content-Type: multipart/form-data" \
   -H "Authorization: Bearer $TOKEN" \
   -F "imgPhoto=@$IMAGE_PATH" \
-  https://api.e91efc7.dentrino.ai/api/segment
+  https://api.e91efc7.dentrino.ai/v1/api/segment
