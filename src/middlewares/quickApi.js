@@ -510,7 +510,6 @@ export const quickApi = new (class {
   validateAuthToken({secretKey}) {
     return asyncMiddleware('quickApi.validateAuthToken', async (req, res) => {
       const {dentClient: client, dentIsFrontendRoute: isFrontEndRoute} = res.locals
-      if (!isFrontEndRoute) return
       const {claimsJson, signature} = res.locals.dentParsedToken
       const isValid = claimsJson && simpleCrypto.verifySignatureHmac(signature, claimsJson, client[secretKey])
       if (!isValid) {

@@ -11,7 +11,7 @@ const app = express()
 import indexRouter from './routes/index'
 import instantSimulations from './routes/instant_simulations'
 import apiSmileTasks from './routes/api/smile_tasks'
-import apiQuickSimulations from './routes/api/quick_simulations'
+import {v1ApiQuickSimulations, v1rcApiQuickSimulations} from './routes/api/quick_simulations'
 import apiQuickSegmentRouter from './routes/api/seg_tasks'
 import apiQuickSynthRouter from './routes/api/synth_tasks'
 import internalApiSmileTasks from './routes/internal_api/smile_tasks'
@@ -96,8 +96,10 @@ if (env.instSimRouter) {
 } else {
   app.use('/', indexRouter);
   app.use('/api/users/:userId/smile-tasks/', getModel.user, apiSmileTasks);
-  app.use('/public-api/simulations/', apiQuickSimulations({clientIsFrontend: true}));
-  app.use('/api/simulations/', apiQuickSimulations({clientIsFrontend: false}));
+  app.use('/public-api/simulations/', v1rcApiQuickSimulations({clientIsFrontend: true}));
+  app.use('/api/simulations/', v1rcApiQuickSimulations({clientIsFrontend: false}));
+  app.use('/v1/public-api/simulations/', v1ApiQuickSimulations({clientIsFrontend: true}));
+  app.use('/v1/api/simulations/', v1ApiQuickSimulations({clientIsFrontend: false}));
   app.use('/public-api/segment/', apiQuickSegmentRouter({clientIsFrontend: true}));
   app.use('/api/segment/', apiQuickSegmentRouter({clientIsFrontend: false}));
   app.use('/public-api/synth/', apiQuickSynthRouter({clientIsFrontend: true}));
