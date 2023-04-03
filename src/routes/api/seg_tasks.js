@@ -17,7 +17,7 @@ export default ({clientIsFrontend = false}) => {
     [
       post(),
     ],
-    {'id': 'quick-segment'},
+    {'id': 'quick-segment-v1'},
   ).
   build()
 }
