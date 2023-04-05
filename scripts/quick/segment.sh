@@ -8,6 +8,11 @@ if [ -z "$DENTRINO_CLIENT_SECRET" ]; then
     read -r USERNAME_INPUT
     DENTRINO_CLIENT_SECRET=$USERNAME_INPUT
 fi
+if [ -z "$DENTRINO_API" ]; then
+    DENTRINO_API="https://api.e91efc7.dentrino.ai"
+fi
+echo "DENTRINO_API is $DENTRINO_API"
+
 IMAGE_PATH=$(dirname "$0")/seg_input.jpg
 
 CLAIMS_JSON="{\"clientId\": \"$DENTRINO_CLIENT_ID\", \"paramsHashed\": \"none\"}"
@@ -20,4 +25,4 @@ curl -XPOST \
   -H "Content-Type: multipart/form-data" \
   -H "Authorization: Bearer $TOKEN" \
   -F "imgPhoto=@$IMAGE_PATH" \
-  https://api.e91efc7.dentrino.ai/v1/api/segment
+  $DENTRINO_API/v1/api/segment
