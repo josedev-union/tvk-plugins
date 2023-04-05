@@ -8,9 +8,14 @@ if [ -z "$DENTRINO_CLIENT_SECRET" ]; then
     read -r USERNAME_INPUT
     DENTRINO_CLIENT_SECRET=$USERNAME_INPUT
 fi
-SEGMAP_PATH=$(dirname "$0")/synth_input.png
-START_STYLE_PATH=$(dirname "$0")/start_style.jpg
-END_STYLE_PATH=$(dirname "$0")/end_style.jpg
+if [ -z "$DENTRINO_API" ]; then
+    DENTRINO_API="https://api.e91efc7.dentrino.ai"
+fi
+echo "DENTRINO_API is $DENTRINO_API"
+
+SEGMAP_PATH=$(dirname "$0")/synth_input0.png
+START_STYLE_PATH=$(dirname "$0")/synth_style_start.jpg
+END_STYLE_PATH=$(dirname "$0")/synth_style_end.jpg
 
 CLAIMS_JSON="{\"clientId\": \"$DENTRINO_CLIENT_ID\", \"paramsHashed\": \"none\"}"
 
@@ -19,13 +24,11 @@ CLAIMS_SIGNATURE=$(echo -n "$CLAIMS_JSON" | openssl dgst -sha256 -hex -hmac $DEN
 
 TOKEN="$ENCODED_CLAIMS:$CLAIMS_SIGNATURE"
 
-res=$(curl -XPOST \
+curl -XPOST \
   -H "Content-Type: multipart/form-data" \
   -H "Authorization: Bearer $TOKEN" \
   -F "segmap=@$SEGMAP_PATH" \
   -F "imgStartStyle=@$START_STYLE_PATH" \
   -F "imgEndStyle=@$END_STYLE_PATH" \
   -F 'data={"mix_factor": 0.2}' \
-  "https://api.e91efc7.dentrino.ai/v1/api/synth")
-
-echo $res
+  $DENTRINO_API/v1/api/synth
