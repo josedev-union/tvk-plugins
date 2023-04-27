@@ -68,17 +68,19 @@ const MDATA_CAPTURE_VALUES = [
 
 
 export class QuickSimulation extends QuickBase {
-  static #COLLECTION_NAME = 'quick_simulations'
+  COLLECTION_NAME() { return 'quick_simulations' }
   // Attributes Whitelists
-  PARAMS_WHITELIST = ALL_PARAM_KEYS
-  METADATA_WHITELIST = ALL_MDATA_KEYS
-  STORAGE_WHITELIST = [
-    'bucket',
-    'directoryPath',
-    'beforePath',
-    'originalPath',
-    'resultPath',
-  ]
+  PARAMS_WHITELIST() { return ALL_PARAM_KEYS }
+  METADATA_WHITELIST() { return ALL_MDATA_KEYS }
+  STORAGE_WHITELIST() {
+    return [
+      'bucket',
+      'directoryPath',
+      'beforePath',
+      'originalPath',
+      'resultPath',
+    ]
+  }
 
   static build({id, createdAt, clientId, storage, params, metadata}={}) {
     const simulation = new QuickSimulation({

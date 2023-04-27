@@ -6,12 +6,10 @@ import {validator} from '../tools/validator'
 
 export class QuickBase {
 
-  static #COLLECTION_NAME = 'quick'
-  STORAGE_WHITELIST = []
-  PARAMS_WHITELIST = []
-  METADATA_WHITELIST = []
-
-  static get COLLECTION_NAME() { return this.#COLLECTION_NAME }
+  STORAGE_WHITELIST() { return [] }
+  PARAMS_WHITELIST() { return [] }
+  METADATA_WHITELIST() { return [] }
+  COLLECTION_NAME() { return 'quick' }
 
   constructor({id, createdAt, clientId, storage={}, params={}, metadata={}} = {}) {
     this.id = id
@@ -41,19 +39,19 @@ export class QuickBase {
 
   addMetadata(metadata) {
     if (!metadata) return
-    metadata = sanitizer.onlyKeys(metadata, this.METADATA_WHITELIST)
+    metadata = sanitizer.onlyKeys(metadata, this.METADATA_WHITELIST())
     Object.assign(this.metadata, metadata)
   }
 
   addStorageData(storage) {
     if (!storage) return
-    storage = sanitizer.onlyKeys(storage, this.STORAGE_WHITELIST)
+    storage = sanitizer.onlyKeys(storage, this.STORAGE_WHITELIST())
     Object.assign(this.storage, storage)
   }
 
   addParams(params) {
     if (!params) return
-    params = sanitizer.onlyKeys(params, this.PARAMS_WHITELIST)
+    params = sanitizer.onlyKeys(params, this.PARAMS_WHITELIST())
     Object.assign(this.params, params)
   }
 
@@ -68,7 +66,7 @@ export class QuickBase {
         return {errors}
       }
     }
-    const result = await db.save(this, `${this.COLLECTION_NAME}/${this.id}`, false, attrs)
+    const result = await db.save(this, `${this.COLLECTION_NAME()}/${this.id}`, false, attrs)
     return {result}
   }
 
@@ -79,7 +77,7 @@ export class QuickBase {
 
   static async list({orderBy='id', orderAsc=false, filters={}, source}) {
     const db = Database.instance({name: source})
-    let query = db.startQuery(this.COLLECTION_NAME)
+    let query = db.startQuery(this.COLLECTION_NAME())
 
     Object.entries(filters).forEach(([field, value]) => {
       query = query.where(field, '==', value)
@@ -93,8 +91,7 @@ export class QuickBase {
 }
 
 export class QuickSegment extends QuickBase {
-  static #COLLECTION_NAME = 'quick_segment'
-
+  COLLECTION_NAME() { return 'quick_segment' }
   static build({id, createdAt, clientId, storage, params, metadata}={}) {
     const simulation = new QuickSegment({
       id: id || this.newId(),
@@ -110,8 +107,8 @@ export class QuickSegment extends QuickBase {
 
 
 export class QuickSynth extends QuickBase {
-  static #COLLECTION_NAME = 'quick_synth'
-  PARAMS_WHITELIST = ['mix_factor', 'start_style_stats', 'end_style_stats']
+  COLLECTION_NAME() { return 'quick_synth' }
+  PARAMS_WHITELIST() {return ['mix_factor', 'start_style_stats', 'end_style_stats'] }
 
   static build({id, createdAt, clientId, storage, params, metadata}={}) {
     const simulation = new QuickSynth({

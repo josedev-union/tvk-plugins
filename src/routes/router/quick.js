@@ -16,7 +16,7 @@ import { QuickRouter } from "./base"
  */
 export class QuickFullRouterV1rc extends QuickRouter {
 
-  name = "QuickFullRouter"
+  NAME() { return "QuickFullRouterV1rc"}
 
   conditionalHandlers(handlers, kwargs) {
     if (this.isPublic) {
@@ -60,7 +60,7 @@ export class QuickFullRouterV1rc extends QuickRouter {
 
 export class QuickFullRouterV1 extends QuickRouter {
 
-  name = "QuickFullRouter"
+  NAME() { return "QuickFullRouterV1"}
 
   conditionalHandlers(handlers, kwargs) {
     let res = [
@@ -74,8 +74,11 @@ export class QuickFullRouterV1 extends QuickRouter {
 
 export class QuickSegmentTaskRouter extends QuickRouter {
 
-  name = "QuickSegmentTaskRouter"
-  PARAMS_WHITELIST = []
+  NAME() { return "QuickSegmentTaskRouter"}
+
+  constructor({isPublic=false}) {
+    super({isPublic: isPublic})
+  }
 
   conditionalHandlers(handlers, kwargs) {
     let res = [
@@ -90,8 +93,7 @@ export class QuickSegmentTaskRouter extends QuickRouter {
 
 export class QuickSynthTaskRouter extends QuickRouter {
 
-  name = "QuickSynthTaskRouter"
-  PARAMS_WHITELIST = []
+  NAME() { return "QuickSynthTaskRouter"}
 
   conditionalHandlers(handlers, kwargs) {
     let res = [

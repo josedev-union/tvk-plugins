@@ -13,11 +13,11 @@ import {asyncRoute} from '../../middlewares/expressAsync'
  */
 export class BasicRouter {
   // Router name
-  name = "Basic"
+  NAME() { return "Basic"}
   // The list of handlers(aka. middlewares)
-  basicHandlers = []
+  BASIC_HANDLERS() { return [] }
   // Key name in kwgard for the route id
-  routeIdKey = "id"
+  ROUTE_ID_KEY() { return "id" }
 
   constructor() {
     this.router = express.Router()
@@ -42,18 +42,10 @@ export class BasicRouter {
    */
   #fHandlers(handlers, kwargs) {
     let r = [
-      ...this.basicHandlers,
+      ...this.BASIC_HANDLERS(),
       ...this.conditionalHandlers(handlers, kwargs)
     ]
     return r
-  }
-
-  getBasichandlers() {
-    return this.basicHandlers
-  }
-
-  SetBasichandlers(handlers) {
-    this.basicHandlers = handlers
   }
 
   preflight(path, method, kwargs) {
@@ -115,16 +107,17 @@ export class BasicRouter {
  */
 export class QuickRouter extends BasicRouter {
 
-  name = "Quick"
-
-  basicHandlers = [
-    api.setId(this.apiId),
-    quickApi.globalTimeout(this.name),
-    quickApi.parseAuthToken,
-    getModel.client,
-    quickApi.validateClient,
-    quickApi.validateApiVisibility,
-  ]
+  NAME() {return "Quick"}
+  BASIC_HANDLERS() {
+    return [
+      api.setId(this.apiId),
+      quickApi.globalTimeout(this.NAME()),
+      quickApi.parseAuthToken,
+      getModel.client,
+      quickApi.validateClient,
+      quickApi.validateApiVisibility,
+    ]
+  }
 
   constructor({isPublic=false}) {
     super()
@@ -170,11 +163,8 @@ export class QuickRouter extends BasicRouter {
   }
 
   preflight(path, method, kwargs) {
-    if ("public" in kwargs) {
-      this.isPublic = kwargs["public"]
-    }
-    if (this.routeIdKey in kwargs) {
-      this.apiId = kwargs[this.routeIdKey]
+    if (this.ROUTE_ID_KEY() in kwargs) {
+      this.apiId = kwargs[this.ROUTE_ID_KEY()]
     }
     this.#enforcePreflightCors(path)
     return super.preflight(path, method, kwargs)
@@ -183,7 +173,7 @@ export class QuickRouter extends BasicRouter {
   #enforcePreflightCors(path) {
     if (this.isPublic) {
       this.router.options(path,
-        api.setPublic,
+        api.setPublic(),
         api.setId(this.apiId),
         timeout.ensure({id: 'full-route', timeoutSecs: 1.0}),
         quickApi.enforcePreflightCors,
