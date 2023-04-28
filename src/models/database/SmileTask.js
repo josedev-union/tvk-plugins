@@ -34,7 +34,7 @@ const METADATA_WHITELIST = [
 ]
 
 export class SmileTask {
-  COLLECTION_NAME() { return 'smile_tasks' }
+  static get COLLECTION_NAME() { return 'smile_tasks' }
   static get RequesterType() { return RequesterType }
   static get UPLOADED_TO_REVIEW_NAME() { return UPLOADED_TO_REVIEW_NAME }
 
@@ -67,7 +67,7 @@ export class SmileTask {
   }
 
   async save({attrs}={}) {
-    return Database.instance().save(this, `${this.COLLECTION_NAME()}/${this.id}`, false, attrs)
+    return Database.instance().save(this, `${this.COLLECTION_NAME}/${this.id}`, false, attrs)
   }
 
   addMetadata(metadata) {
@@ -96,7 +96,7 @@ export class SmileTask {
 
   static async all() {
     const db = Database.instance()
-    const query = db.startQuery(this.COLLECTION_NAME())
+    const query = db.startQuery(this.COLLECTION_NAME)
     return await db.getResults(SmileTask, query)
   }
 

@@ -68,7 +68,7 @@ const MDATA_CAPTURE_VALUES = [
 
 
 export class QuickSimulation extends QuickBase {
-  COLLECTION_NAME() { return 'quick_simulations' }
+  static get COLLECTION_NAME() { return 'quick_simulations' }
   // Attributes Whitelists
   PARAMS_WHITELIST() { return ALL_PARAM_KEYS }
   METADATA_WHITELIST() { return ALL_MDATA_KEYS }
