@@ -72,7 +72,7 @@ export class QuickBase {
 
   static async get(id, {source}={}) {
     const db = Database.instance({name: source})
-    return await db.get(QuickSimulation, id)
+    return await db.get(this, id)
   }
 
   static async list({orderBy='id', orderAsc=false, filters={}, source}) {
@@ -86,12 +86,13 @@ export class QuickBase {
     query = query
       .orderBy(orderBy, (orderAsc ? 'asc' : 'desc'))
       .limit(100)
-    return await db.getResults(QuickSimulation, query)
+    return await db.getResults(this, query)
   }
 }
 
 export class QuickSegment extends QuickBase {
   COLLECTION_NAME() { return 'quick_segment' }
+
   static build({id, createdAt, clientId, storage, params, metadata}={}) {
     const simulation = new QuickSegment({
       id: id || this.newId(),

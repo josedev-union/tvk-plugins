@@ -38,7 +38,6 @@ export class QuickFullRouterV1rc extends QuickRouter {
           ]),
         ]),
         quickApi.validateBodyData,
-        quickApi.processImageFields(),
         ...handlers,
       ]
     }
@@ -51,7 +50,6 @@ export class QuickFullRouterV1rc extends QuickRouter {
         ]),
       ]),
       quickApi.validateBodyData,
-      quickApi.processImageFields(),
       ...handlers,
     ]
   }
@@ -59,16 +57,7 @@ export class QuickFullRouterV1rc extends QuickRouter {
 
 
 export class QuickFullRouterV1 extends QuickRouter {
-
   NAME() { return "QuickFullRouterV1"}
-
-  conditionalHandlers(handlers, kwargs) {
-    let res = [
-      quickApi.processImageFields(),
-      ...handlers,
-    ]
-    return super.conditionalHandlers(res, kwargs)
-  }
 }
 
 
