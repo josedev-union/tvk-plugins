@@ -16,6 +16,7 @@ export function v1rcApiQuickSimulations ({clientIsFrontend = false}) {
   post(
     '/cosmetic',
     [
+      quickApi.processImageFields(),
       quickApi.dataToModel(
         QuickSimulation,
         {
@@ -33,6 +34,7 @@ export function v1rcApiQuickSimulations ({clientIsFrontend = false}) {
   post(
     '/ortho',
     [
+      quickApi.processImageFields(),
       quickApi.dataToModel(
         QuickSimulation,
         {
@@ -64,6 +66,7 @@ export function v1ApiQuickSimulations ({clientIsFrontend = false}) {
   post(
     '/cosmetic',
     [
+      quickApi.processImageFields(),
       quickApi.dataToModel(
         QuickSimulation,
         {
@@ -81,6 +84,7 @@ export function v1ApiQuickSimulations ({clientIsFrontend = false}) {
   post(
     '/ortho',
     [
+      quickApi.processImageFields(),
       quickApi.dataToModel(
         QuickSimulation,
         {
