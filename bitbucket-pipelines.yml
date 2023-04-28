@@ -80,7 +80,7 @@ definitions:
     - step: &deploy-prod
         name: Deploy production
         script:
-          - echo "NOTE: Production deployment is performed by IaC."
+          - echo "Production deployment is performed by IaC!"
 
 pipelines:
   branches:
