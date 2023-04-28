@@ -5,7 +5,7 @@ image: node:16-alpine
 
 definitions:
   steps:
-    - step: &build-image
+    - step: &build-staging
         name: Build Docker image
         script:
           - apk add make git
@@ -56,6 +56,16 @@ definitions:
               PRETEXT: 'Notification from Dentrino-Simulation-API'
               MESSAGE: 'Staging deployment success! Current image is $IMAGE_REF.'
 
+    - step: &build-prod
+        name: Build Docker image
+        script:
+          - apk add make git
+          - export PROJECT_ID=dentrino-production
+          - make build
+          - docker save --output image.cache $(make image_tag)
+        artifacts:
+          - image.cache
+
     - step: &push-prod
         name: Push to prod gcr
         image: google/cloud-sdk:alpine
@@ -73,21 +83,16 @@ definitions:
           - echo "NOTE: Production deployment is performed by IaC."
 
 pipelines:
-  tags:
-    v*:
-      - step: *build-image
-      - step: *push-prod
-      - step: *deploy-prod
   branches:
-    prod:
-      - step: *build-image
+    master:
+      - step: *build-prod
       - step: *push-prod
       - step: *deploy-prod
     staging:
-      - step: *build-image
+      - step: *build-staging
       - step: *push-staging
       - step: *deploy-staging
 
   pull-requests:
     '**':
-      - step: *build-image
+      - step: *build-staging
