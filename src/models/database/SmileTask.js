@@ -58,7 +58,7 @@ export class SmileTask {
   }
 
   static build(requesterType, attrs) {
-    const finalAttrs = this.#prepareBuildAttrs(requesterType, attrs)
+    const finalAttrs = SmileTask.#prepareBuildAttrs(requesterType, attrs)
     return new SmileTask(finalAttrs)
   }
 
@@ -67,7 +67,7 @@ export class SmileTask {
   }
 
   async save({attrs}={}) {
-    return Database.instance().save(this, `${this.COLLECTION_NAME}/${this.id}`, false, attrs)
+    return Database.instance().save(this, `${SmileTask.COLLECTION_NAME}/${this.id}`, false, attrs)
   }
 
   addMetadata(metadata) {
@@ -96,7 +96,7 @@ export class SmileTask {
 
   static async all() {
     const db = Database.instance()
-    const query = db.startQuery(this.COLLECTION_NAME)
+    const query = db.startQuery(SmileTask.COLLECTION_NAME)
     return await db.getResults(SmileTask, query)
   }
 
@@ -106,7 +106,7 @@ export class SmileTask {
 
   static #prepareBuildAttrs(requesterType, attrs) {
     const metadata = REQUESTER_METADATA[requesterType]
-    const id = attrs.id || this.newId()
+    const id = attrs.id || SmileTask.newId()
     attrs = Object.assign({
       id: id,
       createdAt: attrs.createdAt || Database.toTimestamp(new Date()),
@@ -116,11 +116,11 @@ export class SmileTask {
       },
     }, attrs)
     return Object.assign({
-      filepathUploaded:        this.#buildPath(metadata.pathPattern, attrs, UPLOADED_IMAGE_FILENAME),
-      filepathResult:          this.#buildPath(metadata.pathPattern, attrs, RESULT_IMAGE_FILENAME),
-      filepathPreprocessed:    this.#buildPath(metadata.pathPattern, attrs, PREPROCESSED_IMAGE_FILENAME),
-      filepathSideBySide:      this.#buildPath(metadata.pathPattern, attrs, SIDEBYSIDE_IMAGE_FILENAME),
-      filepathSideBySideSmall: this.#buildPath(metadata.pathPattern, attrs, SIDEBYSIDE_SMALL_IMAGE_FILENAME),
+      filepathUploaded:        SmileTask.#buildPath(metadata.pathPattern, attrs, UPLOADED_IMAGE_FILENAME),
+      filepathResult:          SmileTask.#buildPath(metadata.pathPattern, attrs, RESULT_IMAGE_FILENAME),
+      filepathPreprocessed:    SmileTask.#buildPath(metadata.pathPattern, attrs, PREPROCESSED_IMAGE_FILENAME),
+      filepathSideBySide:      SmileTask.#buildPath(metadata.pathPattern, attrs, SIDEBYSIDE_IMAGE_FILENAME),
+      filepathSideBySideSmall: SmileTask.#buildPath(metadata.pathPattern, attrs, SIDEBYSIDE_SMALL_IMAGE_FILENAME),
     }, attrs)
   }
 

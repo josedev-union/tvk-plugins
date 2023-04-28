@@ -66,7 +66,7 @@ export class QuickBase {
         return {errors}
       }
     }
-    const result = await db.save(this, `${this.COLLECTION_NAME}/${this.id}`, false, attrs)
+    const result = await db.save(this, `${this.constructor.COLLECTION_NAME}/${this.id}`, false, attrs)
     return {result}
   }
 
