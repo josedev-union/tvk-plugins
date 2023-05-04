@@ -40,6 +40,7 @@ export class QuickSynthClient {
     } else {
       endStyleBuffer = Buffer.from(endStyleImg, 'binary')
     }
+
     await this.#publishRequest(id, segmapBuffer, startStyleBuffer, endStyleBuffer, expiresAt, options)
     const pubsubChannel = QuickSynthClient.pubsubResponseKey(id)
     const {result, startStats, endStats, error} = await this.#waitResponse({pubsubChannel, safe})
