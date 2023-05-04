@@ -22,13 +22,26 @@ export class QuickSimulationClient {
   static pubsubRequestKey() { return `${this.PUBSUB_PREFIX}:request` }
   static pubsubResponseKey(id) { return `${this.PUBSUB_PREFIX}:${id}:response` }
 
-  async requestSimulation({id, photo, photoPath, expiresAt=0, options={}, safe=false}) {
+  async requestSimulation({id, photo, photoPath, startStyleImg, endStyleImg, expiresAt=0, options={}, safe=false}) {
     if (!id) id = idGenerator.newOrderedId()
     logger.verbose(`[${id}] Requesting Simulation (${JSON.stringify(options)})`)
-    const photoRedisKey = `pipeline:listener:${id}:photo`
+
     if (!photo) photo = await readfile(photoPath)
     const photoBuffer = Buffer.from(photo, 'binary')
-    await this.#publishRequest(id, photoBuffer, photoRedisKey, expiresAt, options)
+    let startStyleBuffer = null
+    if (!startStyleImg) {
+      startStyleBuffer = startStyleImg
+    } else {
+      startStyleBuffer = Buffer.from(startStyleImg, 'binary')
+    }
+    let endStyleBuffer = null
+    if (!endStyleImg) {
+      endStyleBuffer = endStyleImg
+    } else {
+      endStyleBuffer = Buffer.from(endStyleImg, 'binary')
+    }
+
+    await this.#publishRequest(id, photoBuffer, startStyleBuffer, endStyleBuffer, expiresAt, options)
     const pubsubChannel = QuickSimulationClient.pubsubResponseKey(id)
     const {result, before, morphed, error} = await this.#waitResponse({pubsubChannel, safe})
     return {
@@ -42,13 +55,29 @@ export class QuickSimulationClient {
     }
   }
 
-  async #publishRequest(id, photoBuffer, photoRedisKey, expiresAt, options) {
+  async #publishRequest(id, photoBuffer, startStyleBuffer, endStyleBuffer, expiresAt, options) {
+    const photoRedisKey = `pipeline:listener:${id}:photo`
+    const startStyleImgRedisKey = `pipeline:listener:${id}:startStyle`
+    const endStyleImgRedisKey = `pipeline:listener:${id}:endStyle`
+
     const photoEncrypted = this.#encrypt(photoBuffer)
+    const startStyleEncrypted = this.#encrypt(startStyleBuffer)
+    const endStyleEncrypted = this.#encrypt(endStyleBuffer)
+
     await redisSetex(photoRedisKey, 45, photoEncrypted)
+
     var params = {
       photo_redis_key: photoRedisKey,
       expires_at: expiresAt,
       ...options
+    }
+    if (startStyleEncrypted) {
+      await redisSetex(startStyleImgRedisKey, 45, startStyleEncrypted)
+      params["start_style_redis_key"] = startStyleImgRedisKey
+    }
+    if (endStyleEncrypted) {
+      await redisSetex(endStyleImgRedisKey, 45, endStyleEncrypted)
+      params["end_style_redis_key"] = endStyleImgRedisKey
     }
 
     const publishedMessage = JSON.stringify({

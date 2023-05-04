@@ -196,6 +196,4 @@ export class QuickSimulation extends QuickBase {
     }
     return options
   }
-
 }
-

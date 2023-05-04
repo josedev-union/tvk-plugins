@@ -116,6 +116,11 @@ function newQuickSimulationRoute() {
     const timeoutManager = timeout.getManager(res)
     const dbSimulation = res.locals.dentQuickSimulation
     const photo = res.locals.dentParsedBody.images['imgPhoto']
+    const imgStartStyle = res.locals.dentParsedBody.images['imgStartStyle']
+    const imgEndStyle = res.locals.dentParsedBody.images['imgEndStyle']
+    const startStyle = imgStartStyle === undefined ? null: imgStartStyle.content
+    const endStyle = imgEndStyle === undefined ? null: imgEndStyle.content
+
     const {dentClient: apiClient, dentApiId: apiId} = res.locals
     const bucket = apiClient.customBucket({api: apiId}) || env.gcloudBucket
     const googleProjectKey = apiClient.customGoogleProject({api: apiId}) || 'default'
@@ -130,6 +135,8 @@ function newQuickSimulationRoute() {
         return await client.requestSimulation({
           id: dbSimulation.id,
           photo: photo.content,
+          startStyleImg: startStyle,
+          endStyleImg: endStyle,
           options: dbSimulation.buildJobOptions(),
           expiresAt,
           safe: true,

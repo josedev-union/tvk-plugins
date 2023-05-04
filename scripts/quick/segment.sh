@@ -1,3 +1,5 @@
+#!/bin/bash
+
 if [ -z "$DENTRINO_CLIENT_ID" ]; then
     echo "Please enter DENTRINO_CLIENT_ID:"
     read -r USERNAME_INPUT
