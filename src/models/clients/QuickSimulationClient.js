@@ -1,11 +1,9 @@
 import fs from 'fs'
-import {env} from '../../config/env'
 import {logger} from '../../instrumentation/logger'
 import {idGenerator} from '../../models/tools/idGenerator'
 import {redisPubsub, buffersRedis, redisSubscribe} from "../../config/redis"
-import {RichError} from "../../utils/RichError"
-import {simpleCrypto} from "../../shared/simpleCrypto"
 import {promisify} from "util"
+import {QuickClient} from './base'
 
 const readfile = promisify(fs.readFile)
 const redisGet = promisify(buffersRedis.get).bind(buffersRedis)
@@ -16,8 +14,7 @@ const redisGetSafe = (key) => !key ? undefined : redisGet(key)
 const redisDelSafe = (key) => !key ? undefined : redisDel(key)
 
 
-// TODO(joseb): Declare a basic class and inherit it
-export class QuickSimulationClient {
+export class QuickSimulationClient extends QuickClient {
   static PUBSUB_PREFIX = 'listener:pipeline-in-memory'
   static pubsubRequestKey() { return `${this.PUBSUB_PREFIX}:request` }
   static pubsubResponseKey(id) { return `${this.PUBSUB_PREFIX}:${id}:response` }
@@ -42,7 +39,7 @@ export class QuickSimulationClient {
     }
 
     await this.#publishRequest(id, photoBuffer, startStyleBuffer, endStyleBuffer, expiresAt, options)
-    const pubsubChannel = QuickSimulationClient.pubsubResponseKey(id)
+    const pubsubChannel = this.constructor.pubsubResponseKey(id)
     const {result, before, morphed, error} = await this.#waitResponse({pubsubChannel, safe})
     return {
       id,
@@ -60,9 +57,9 @@ export class QuickSimulationClient {
     const startStyleImgRedisKey = `pipeline:listener:${id}:startStyle`
     const endStyleImgRedisKey = `pipeline:listener:${id}:endStyle`
 
-    const photoEncrypted = this.#encrypt(photoBuffer)
-    const startStyleEncrypted = this.#encrypt(startStyleBuffer)
-    const endStyleEncrypted = this.#encrypt(endStyleBuffer)
+    const photoEncrypted = this.encrypt(photoBuffer)
+    const startStyleEncrypted = this.encrypt(startStyleBuffer)
+    const endStyleEncrypted = this.encrypt(endStyleBuffer)
 
     await redisSetex(photoRedisKey, 45, photoEncrypted)
 
@@ -84,7 +81,7 @@ export class QuickSimulationClient {
       id: id,
       params: params
     })
-    redisPubsub.publish(QuickSimulationClient.pubsubRequestKey(), publishedMessage)
+    redisPubsub.publish(this.constructor.pubsubRequestKey(), publishedMessage)
     logger.verbose(`[${id}]: Params Published: ${publishedMessage}`)
   }
 
@@ -94,7 +91,7 @@ export class QuickSimulationClient {
     const message = JSON.parse(messageStr)
 
     if (message['error']) {
-      return this.#throwError({message: message['error'], safe})
+      return this.throwError({message: message['error'], safe})
     }
 
     const resultRedisKey = message['data']['result_redis_key']
@@ -105,7 +102,7 @@ export class QuickSimulationClient {
       redisGetSafe(beforeRedisKey),
       redisGetSafe(morphedRedisKey),
     ]))
-    .map(content => this.#decrypt(content))
+    .map(content => this.decrypt(content))
 
     redisDelSafe(resultRedisKey)
     redisDelSafe(beforeRedisKey)
@@ -117,7 +114,7 @@ export class QuickSimulationClient {
       'morphed': morphedMouth,
     }
     if (!resultPhoto || !beforePhoto) {
-      const errorObj = this.#throwError({
+      const errorObj = this.throwError({
         message: "Couldn't find simulation result recorded",
         safe,
       })
@@ -125,68 +122,5 @@ export class QuickSimulationClient {
     }
 
     return response
-  }
-
-  #decrypt(content) {
-    if (!content) return content
-    return simpleCrypto.decrypt(content, env.workerContentEncryptionSecret) || content
-  }
-
-  #encrypt(content) {
-    if (!content) return content
-    return simpleCrypto.encrypt(content, env.workerContentEncryptionSecret) || content
-  }
-
-  #throwError({message, safe}) {
-    if (!message) return
-    if (message.match(/timeout/i)) {
-      return this.#throwTimeoutError({message, safe})
-    }
-    let publicMessage = 'Error when executing simulation'
-    let errorTag = 'generic'
-    let subtype = undefined
-
-    if (message.match(/detect/i)) {
-      publicMessage = message
-      errorTag = 'no-face'
-      subtype = 'no-face'
-    } else if (message.match(/find.*result/)) {
-      errorTag = 'no-result-recorded'
-    }
-    const error = new RichError({
-      httpCode: 422,
-      id: 'simulation-error',
-      subtype,
-      subtypeIsPublic: true,
-      publicMessage,
-      debugMessage: message,
-      logLevel: 'error',
-      tags: {
-        'simulation:success': false,
-        'simulation:error': errorTag,
-      },
-    })
-
-    if (safe) return {error}
-    else throw error
-  }
-
-  #throwTimeoutError({message, safe}) {
-    const error = new RichError({
-      httpCode: 504,
-      id: 'timeout',
-      subtype: 'simulation-timeout',
-      publicMessage: 'Operation took too long',
-      debugMessage: message,
-      logLevel: 'error',
-      tags: {
-        'simulation:success': false,
-        'error:timeout': 'simulation-queue-wait',
-        'simulation:error': 'queue-wait',
-      },
-    })
-
-    if (safe) return {error}
-    else throw error
   }
 }

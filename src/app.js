@@ -14,6 +14,7 @@ import apiSmileTasks from './routes/api/smile_tasks'
 import {v1ApiQuickSimulations, v1rcApiQuickSimulations} from './routes/api/quick_simulations'
 import apiQuickSegmentRouter from './routes/api/seg_tasks'
 import apiQuickSynthRouter from './routes/api/synth_tasks'
+import apiQuickWhitenRouter from './routes/api/whiten_tasks'
 import internalApiSmileTasks from './routes/internal_api/smile_tasks'
 import webhooksSmileTasks from './routes/webhooks/smile_tasks'
 import {logger} from './instrumentation/logger'
@@ -106,6 +107,8 @@ if (env.instSimRouter) {
   app.use('/v1/api/segment/', apiQuickSegmentRouter({clientIsFrontend: false}));
   app.use('/v1/public-api/synth/', apiQuickSynthRouter({clientIsFrontend: true}));
   app.use('/v1/api/synth/', apiQuickSynthRouter({clientIsFrontend: false}));
+  app.use('/v1/public-api/whiten/', apiQuickWhitenRouter({clientIsFrontend: true}));
+  app.use('/v1/api/whiten/', apiQuickWhitenRouter({clientIsFrontend: false}));
   app.use(Sentry.Handlers.errorHandler());
 }
 

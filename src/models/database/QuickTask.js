@@ -20,6 +20,18 @@ export class QuickBase {
     this.metadata = metadata
   }
 
+  static build({id, createdAt, clientId, storage, params, metadata}={}) {
+    const simulation = new this({
+      id: id || this.newId(),
+      createdAt: createdAt || Database.toTimestamp(new Date()),
+      clientId,
+    })
+    simulation.addStorageData(storage)
+    simulation.addMetadata(metadata)
+    simulation.addParams(params)
+    return simulation
+  }
+
   static newId() {
     return idGenerator.newOrderedId()
   }
@@ -92,36 +104,12 @@ export class QuickBase {
 
 export class QuickSegment extends QuickBase {
   static get COLLECTION_NAME() { return 'quick_segment' }
-
-  static build({id, createdAt, clientId, storage, params, metadata}={}) {
-    const simulation = new QuickSegment({
-      id: id || this.newId(),
-      createdAt: createdAt || Database.toTimestamp(new Date()),
-      clientId,
-    })
-    simulation.addStorageData(storage)
-    simulation.addMetadata(metadata)
-    simulation.addParams(params)
-    return simulation
-  }
 }
 
 
 export class QuickSynth extends QuickBase {
   static get COLLECTION_NAME() { return 'quick_synth' }
   PARAMS_WHITELIST() {return ['mix_factor', 'start_style_stats', 'end_style_stats'] }
-
-  static build({id, createdAt, clientId, storage, params, metadata}={}) {
-    const simulation = new QuickSynth({
-      id: id || this.newId(),
-      createdAt: createdAt || Database.toTimestamp(new Date()),
-      clientId,
-    })
-    simulation.addStorageData(storage)
-    simulation.addMetadata(metadata)
-    simulation.addParams(params)
-    return simulation
-  }
 
   validationErrors() {
     const errors = []
@@ -147,6 +135,34 @@ export class QuickSynth extends QuickBase {
       mix_factor: this.params['mix_factor'],
       start_style_stats: this.params['start_style_stats'],
       end_style_stats: this.params['end_style_stats'],
+    }
+  }
+}
+
+export class QuickWhiten extends QuickBase {
+  static get COLLECTION_NAME() { return 'quick_whiten' }
+  PARAMS_WHITELIST() {return ['whiten'] }
+
+  validationErrors() {
+    const errors = []
+    validator.validateNumber({
+      fieldName: 'whiten',
+      value: this.params['whiten'],
+      min: 0.0,
+      max: 1.0,
+      addTo: errors,
+    })
+    return errors
+  }
+
+  normalizeData() {
+    // Params
+    this.params['whiten'] = normalizer.toFloat(this.params['whiten'] || 0.5 )
+  }
+
+  buildJobOptions() {
+    return  {
+      whiten: this.params['whiten'],
     }
   }
 }

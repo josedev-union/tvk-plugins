@@ -82,18 +82,6 @@ export class QuickSimulation extends QuickBase {
     ]
   }
 
-  static build({id, createdAt, clientId, storage, params, metadata}={}) {
-    const simulation = new QuickSimulation({
-      id: id || this.newId(),
-      createdAt: createdAt || Database.toTimestamp(new Date()),
-      clientId,
-    })
-    simulation.addStorageData(storage)
-    simulation.addMetadata(metadata)
-    simulation.addParams(params)
-    return simulation
-  }
-
   normalizeData() {
     // Params
     this.params[PARAM_KEY_MODE] = normalizer.toChoicesString(this.params[PARAM_KEY_MODE] || PARAM_VALUE_DEFAULT_MODE)
