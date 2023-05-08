@@ -1,4 +1,5 @@
 import {QuickWhitenClient} from "../../models/clients/QuickWhiten"
+import {simulationResultsUploader} from "../../models/storage/simulationResultsUploader"
 import {metrics} from '../../instrumentation/metrics'
 import {env} from "../../config/env"
 import {asyncRoute} from '../../middlewares/expressAsync'
@@ -29,6 +30,10 @@ function post() {
     const dbSimulation = res.locals.dentQuickSimulation
     const photo = res.locals.dentParsedBody.images['imgPhoto']
 
+    const {dentClient: apiClient, dentApiId: apiId} = res.locals
+    const bucket = apiClient.customBucket({api: apiId}) || env.gcloudBucket
+    const googleProjectKey = apiClient.customGoogleProject({api: apiId}) || 'default'
+
     const simulation = await metrics.stopwatch('api:quickWhitenTask:runSimulation', async () => {
       return await timeoutManager.exec(env.quickApiSimulationTimeout, async () => {
         const client = new QuickWhitenClient()
@@ -43,23 +48,62 @@ function post() {
           expiresAt,
           safe: true,
         })
-      }, {id: 'wait-quick-whiten-task'})
+      }, {id: 'wait-quick-whiten-simulation'})
     })
 
     if (!simulation.id) {
       throw api.newServerError({
-        debugMessage: `Simulation response should have id but got ${simulation}`,
+        debugMessage: `Whiten response should have id but got ${simulation}`,
       })
     }
+
+    const uploadResults = await metrics.stopwatch('api:quickWhitenTask:uploadResults', async () => {
+      return await timeoutManager.exec(env.quickApiResultsUploadTimeout, async () => {
+        return await simulationResultsUploader.upload({
+          googleProjectKey,
+          bucket,
+          clientId: apiClient.id,
+          simulation,
+          uploadsConfig: {
+            original: {extensionPlaceholder: photo.filenameExtension},
+            before: {getUrl: true, isPublic: true},
+            result: {getUrl: true, isPublic: true},
+          },
+          info: {
+            ip: req.ip,
+            metadata: dbSimulation.metadata,
+          },
+        })
+      }, {id: 'wait-quick-whiten-firestorage-upload'})
+    })
+
+    if (simulation.error) {
+      throw simulation.error
+    }
+
+    const {
+      before: {getUrlSigned: beforeUrl},
+      result: {getUrlSigned: resultUrl},
+    } = uploadResults.results
 
     res.status(201).json({
       success: true,
       simulation: {
-        id: dbSimulation.id,
-        createdAt: dbSimulation.createdAt.toDate(),
-        metadata: dbSimulation.metadata,
-        result: Buffer.from(simulation.result, 'binary').toString('base64'),
+        ...simulationAsJson(dbSimulation),
+        storage: {
+          beforeUrl,
+          resultUrl,
+        }
       }
     })
   })
+}
+
+function simulationAsJson(dbSimulation) {
+  return {
+    id: dbSimulation.id,
+    createdAt: dbSimulation.createdAt.toDate(),
+    metadata: dbSimulation.metadata,
+    // params: dbSimulation.params,
+  }
 }

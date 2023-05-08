@@ -64,14 +64,17 @@ export class QuickWhitenClient extends QuickClient {
     }
 
     const resultRedisKey = message['data']['result_redis_key']
-    const [resultPhoto,] = (await Promise.all([
+    const beforeRedisKey = message['data']['before_redis_key']
+    const [resultPhoto, beforePhoto] = (await Promise.all([
       redisGetSafe(resultRedisKey),
+      redisGetSafe(beforeRedisKey),
     ]))
     .map(content => this.decrypt(content))
 
     redisDelSafe(resultRedisKey)
     const response = {
       'result': resultPhoto,
+      'before': beforePhoto,
     }
     if (!resultPhoto) {
       const errorObj = this.throwError({
