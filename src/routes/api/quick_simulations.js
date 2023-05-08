@@ -66,7 +66,7 @@ export function v1rcApiQuickSimulations ({clientIsFrontend = false}) {
   patch(
     '/:id',
     [
-      patchFull()
+      patchFull(),
     ],
     {'id': 'patch-simulations'},
   ).
@@ -128,7 +128,7 @@ export function v1ApiQuickSimulations ({clientIsFrontend = false}) {
   patch(
     '/:id',
     [
-      patchFull()
+      patchFull(),
     ],
     {'id': 'patch-simulations-v1'},
   ).
