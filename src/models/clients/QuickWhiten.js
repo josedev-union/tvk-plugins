@@ -50,7 +50,6 @@ export class QuickWhitenClient extends QuickClient {
       id: id,
       params: params
     })
-    console.log(this.constructor.pubsubRequestKey())
     redisPubsub.publish(this.constructor.pubsubRequestKey(), publishedMessage)
     logger.verbose(`[${id}]: Params Published: ${publishedMessage}`)
   }

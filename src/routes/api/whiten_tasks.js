@@ -36,7 +36,6 @@ function post() {
         const queueTimeout = Math.round(getNowInMillis() + env.quickApiSimulationQueueTimeout * 1000.0)
         const expiresAt = Math.min(nextTimeout, queueTimeout)
         quickApi.setSimulationStarted(res)
-        console.log(dbSimulation.buildJobOptions())
         return await client.request({
           // id: dbSimulation.id,
           photo: photo.content,
