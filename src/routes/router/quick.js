@@ -2,9 +2,8 @@ import {api} from '../../middlewares/api'
 import {metricsMid} from "../../middlewares/metrics"
 import {timeout} from "../../middlewares/timeout"
 import {quickApi} from "../../middlewares/quickApi"
-import {sanitizer} from '../../models/tools/sanitizer'
 import {env} from "../../config/env"
-import {QuickSegment, QuickSynth, QuickWhiten} from "../../models/database/QuickTask.js"
+import {QuickSegment, QuickSynth} from "../../models/database/QuickTask.js"
 
 import { QuickRouter } from "./base"
 
@@ -88,25 +87,6 @@ export class QuickSynthTaskRouter extends QuickRouter {
     let res = [
       quickApi.processImageFields(["segmap"]),
       quickApi.dataToModel(QuickSynth, {customizable: ['mix_factor', 'start_style_stats', 'end_style_stats']}),
-      ...handlers,
-    ]
-    return super.conditionalHandlers(res, kwargs)
-  }
-}
-
-
-export class QuickWhitenRouterV1 extends QuickRouter {
-
-  NAME() { return "QuickWhitenRouterV1"}
-
-  constructor({isPublic=false}) {
-    super({isPublic: isPublic})
-  }
-
-  conditionalHandlers(handlers, kwargs) {
-    let res = [
-      quickApi.processImageFields(),
-      quickApi.dataToModel(QuickWhiten, {customizable: ['whiten']}),
       ...handlers,
     ]
     return super.conditionalHandlers(res, kwargs)
