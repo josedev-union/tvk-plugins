@@ -13,7 +13,7 @@ import {i18n} from '../shared/i18n'
 import {helpers} from './helpers'
 import {asyncRoute} from '../middlewares/expressAsync'
 import {rateLimit} from "../middlewares/rateLimit"
-import {QuickSimulationClient} from "../models/clients/QuickSimulationClient"
+import {QuickFullSimulationClient} from "../models/clients/QuickSimulationClient"
 import {GcloudPresignedCredentialsProvider} from '../models/storage/GcloudPresignedCredentialsProvider'
 import {idGenerator} from "../models/tools/idGenerator"
 import {storageFactory} from '../models/storage/storageFactory'
@@ -136,7 +136,7 @@ asyncRoute(async (req, res, next) => {
     if (!photoExt.match(env.supportedImagesFilepathRegex)) {
       throw new Error(`Invalid extension ${photoExt}`)
     }
-    const client = new QuickSimulationClient()
+    const client = new QuickFullSimulationClient()
     const expiresAt = Math.round(nowMillis + env.instSimGiveUpStartTimeout * 1000.0)
     const simOpts = {
       brightness: env.instSimBrightness,

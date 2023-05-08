@@ -6,7 +6,7 @@ import { Factory } from 'rosie'
 import axios from 'axios'
 
 import {redisPubsub, buffersRedis, redisSubscribe, clearRedis, redisUnsubscribeAll} from '../../src/config/redis'
-import {QuickSimulationClient} from "../../src/models/clients/QuickSimulationClient"
+import {QuickFullSimulationClient} from "../../src/models/clients/QuickSimulationClient"
 import {QuickSimulation} from "../../src/models/database/QuickSimulation"
 import {ApiSimulationClient} from "../helpers/ApiSimulationClient"
 import {firebaseHelpers} from '../helpers/firebaseHelpers'
@@ -1022,13 +1022,13 @@ async function sendSimulation({method, url: path, query, headers={}, data, ip}) 
 }
 
 function resetWorkerRequestMock() {
-  const channel = QuickSimulationClient.pubsubRequestKey()
+  const channel = QuickFullSimulationClient.pubsubRequestKey()
   redisUnsubscribeAll({channel})
 }
 
 async function mockWorkerRequest({error}) {
   resetWorkerRequestMock()
-  const channel = QuickSimulationClient.pubsubRequestKey()
+  const channel = QuickFullSimulationClient.pubsubRequestKey()
   const simulationRequestJson = await redisSubscribe(channel)
   const simulationRequest = JSON.parse(simulationRequestJson)
   simulationRequest.photoReaded = decrypt(await redisGet(simulationRequest.params.photo_redis_key))
@@ -1042,7 +1042,7 @@ async function mockWorkerRequest({error}) {
     await redisSetex(beforeRedisKey, 5, encrypt(Buffer.from(photoBefore, 'binary')))
     await redisSetex(morphedRedisKey, 5, encrypt(Buffer.from(mouthMorphed, 'binary')))
   }
-  const responseChannel = QuickSimulationClient.pubsubResponseKey(simulationRequest.id)
+  const responseChannel = QuickFullSimulationClient.pubsubResponseKey(simulationRequest.id)
   const responseMessage = error ? {error} : {
     status: 'success',
     data: {

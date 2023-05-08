@@ -64,10 +64,7 @@ const MDATA_CAPTURE_VALUES = [
 ]
 
 
-
-
-
-export class QuickSimulation extends QuickBase {
+export class QuickFullSimulation extends QuickBase {
   static get COLLECTION_NAME() { return 'quick_simulations' }
   // Attributes Whitelists
   PARAMS_WHITELIST() { return ALL_PARAM_KEYS }
@@ -183,5 +180,34 @@ export class QuickSimulation extends QuickBase {
       options.mix_factor = this.params[PARAM_KEY_MIX_FACTOR]
     }
     return options
+  }
+}
+
+
+export class QuickWhitenSimulation extends QuickBase {
+  static get COLLECTION_NAME() { return 'quick_whiten' }
+  PARAMS_WHITELIST() {return ['whiten'] }
+
+  validationErrors() {
+    const errors = []
+    validator.validateNumber({
+      fieldName: 'whiten',
+      value: this.params['whiten'],
+      min: 0.0,
+      max: 1.0,
+      addTo: errors,
+    })
+    return errors
+  }
+
+  normalizeData() {
+    // Params
+    this.params['whiten'] = normalizer.toFloat(this.params['whiten'] || 0.5 )
+  }
+
+  buildJobOptions() {
+    return  {
+      whiten: this.params['whiten'],
+    }
   }
 }
