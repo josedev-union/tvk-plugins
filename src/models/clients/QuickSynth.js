@@ -6,6 +6,7 @@ import {redisPubsub, buffersRedis, redisSubscribe} from "../../config/redis"
 import {RichError} from "../../utils/RichError"
 import {simpleCrypto} from "../../shared/simpleCrypto"
 import {promisify} from "util"
+import {QuickClient} from './base'
 
 const readfile = promisify(fs.readFile)
 const redisGet = promisify(buffersRedis.get).bind(buffersRedis)
@@ -16,8 +17,7 @@ const redisGetSafe = (key) => !key ? undefined : redisGet(key)
 const redisDelSafe = (key) => !key ? undefined : redisDel(key)
 
 
-// TODO(joseb): Declare a basic class and inherit it
-export class QuickSynthClient {
+export class QuickSynthClient extends QuickClient {
   static PUBSUB_PREFIX = 'listener:quick:synth'
   static pubsubRequestKey() { return `${this.PUBSUB_PREFIX}:request` }
   static pubsubResponseKey(id) { return `${this.PUBSUB_PREFIX}:${id}:response` }
@@ -42,7 +42,7 @@ export class QuickSynthClient {
     }
 
     await this.#publishRequest(id, segmapBuffer, startStyleBuffer, endStyleBuffer, expiresAt, options)
-    const pubsubChannel = QuickSynthClient.pubsubResponseKey(id)
+    const pubsubChannel = this.constructor.pubsubResponseKey(id)
     const {result, startStats, endStats, error} = await this.#waitResponse({pubsubChannel, safe})
     return {
       id,
@@ -60,9 +60,9 @@ export class QuickSynthClient {
     const startStyleImgRedisKey = `task:listener:${id}:startStyle`
     const endStyleImgRedisKey = `task:listener:${id}:endStyle`
 
-    const segmapEncrypted = this.#encrypt(segmapBuffer)
-    const startStyleEncrypted = this.#encrypt(startStyleBuffer)
-    const endStyleEncrypted = this.#encrypt(endStyleBuffer)
+    const segmapEncrypted = this.encrypt(segmapBuffer)
+    const startStyleEncrypted = this.encrypt(startStyleBuffer)
+    const endStyleEncrypted = this.encrypt(endStyleBuffer)
 
     await redisSetex(segmapRedisKey, 45, segmapEncrypted)
 
@@ -84,7 +84,7 @@ export class QuickSynthClient {
       id: id,
       params: params
     })
-    redisPubsub.publish(QuickSynthClient.pubsubRequestKey(), publishedMessage)
+    redisPubsub.publish(this.constructor.pubsubRequestKey(), publishedMessage)
     logger.verbose(`[${id}]: Params Published: ${publishedMessage}`)
   }
 
@@ -94,14 +94,14 @@ export class QuickSynthClient {
     const message = JSON.parse(messageStr)
 
     if (message['error']) {
-      return this.#throwError({message: message['error'], safe})
+      return this.throwError({message: message['error'], safe})
     }
 
     const resultRedisKey = message['data']['result_redis_key']
     const [resultPhoto,] = (await Promise.all([
       redisGetSafe(resultRedisKey),
     ]))
-    .map(content => this.#decrypt(content))
+    .map(content => this.decrypt(content))
 
     redisDelSafe(resultRedisKey)
     const response = {
@@ -110,7 +110,7 @@ export class QuickSynthClient {
       'endStats': message['data']['end_stats'],
     }
     if (!resultPhoto) {
-      const errorObj = this.#throwError({
+      const errorObj = this.throwError({
         message: "Couldn't find task result recorded",
         safe,
       })
@@ -118,68 +118,5 @@ export class QuickSynthClient {
     }
 
     return response
-  }
-
-  #decrypt(content) {
-    if (!content) return content
-    return simpleCrypto.decrypt(content, env.workerContentEncryptionSecret) || content
-  }
-
-  #encrypt(content) {
-    if (!content) return content
-    return simpleCrypto.encrypt(content, env.workerContentEncryptionSecret) || content
-  }
-
-  #throwError({message, safe}) {
-    if (!message) return
-    if (message.match(/timeout/i)) {
-      return this.#throwTimeoutError({message, safe})
-    }
-    let publicMessage = 'Error when executing task'
-    let errorTag = 'generic'
-    let subtype = undefined
-
-    if (message.match(/detect/i)) {
-      publicMessage = message
-      errorTag = 'no-face'
-      subtype = 'no-face'
-    } else if (message.match(/find.*result/)) {
-      errorTag = 'no-result-recorded'
-    }
-    const error = new RichError({
-      httpCode: 422,
-      id: 'task-error',
-      subtype,
-      subtypeIsPublic: true,
-      publicMessage,
-      debugMessage: message,
-      logLevel: 'error',
-      tags: {
-        'task:success': false,
-        'task:error': errorTag,
-      },
-    })
-
-    if (safe) return {error}
-    else throw error
-  }
-
-  #throwTimeoutError({message, safe}) {
-    const error = new RichError({
-      httpCode: 504,
-      id: 'timeout',
-      subtype: 'task-timeout',
-      publicMessage: 'Operation took too long',
-      debugMessage: message,
-      logLevel: 'error',
-      tags: {
-        'task:success': false,
-        'error:timeout': 'task-queue-wait',
-        'task:error': 'queue-wait',
-      },
-    })
-
-    if (safe) return {error}
-    else throw error
   }
 }

@@ -14,8 +14,8 @@ const redisGetSafe = (key) => !key ? undefined : redisGet(key)
 const redisDelSafe = (key) => !key ? undefined : redisDel(key)
 
 
-export class QuickSegmentClient extends QuickClient {
-  static PUBSUB_PREFIX = 'listener:quick:segment'
+export class QuickWhitenClient extends QuickClient {
+  static PUBSUB_PREFIX = 'listener:quick:whiten'
   static pubsubRequestKey() { return `${this.PUBSUB_PREFIX}:request` }
   static pubsubResponseKey(id) { return `${this.PUBSUB_PREFIX}:${id}:response` }
 
