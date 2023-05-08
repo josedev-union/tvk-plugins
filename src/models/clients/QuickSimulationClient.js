@@ -89,9 +89,8 @@ export class QuickFullSimulationClient extends QuickClient {
     const messageStr = await redisSubscribe(pubsubChannel)
     logger.verbose(`Result Received ${pubsubChannel} - ${messageStr}`)
     const message = JSON.parse(messageStr)
-
-    if (message['error']) {
-      return this.throwError({message: message['error'], safe})
+    if (message['status'] === 'error') {
+      return this.throwError({message: message['data']['error'], safe})
     }
 
     const resultRedisKey = message['data']['result_redis_key']
@@ -171,8 +170,8 @@ export class QuickWhitenSimulationClient extends QuickClient {
     logger.verbose(`Result Received ${pubsubChannel} - ${messageStr}`)
     const message = JSON.parse(messageStr)
 
-    if (message['error']) {
-      return this.throwError({message: message['error'], safe})
+    if (message['status'] === 'error') {
+      return this.throwError({message: message['data']['error'], safe})
     }
 
     const resultRedisKey = message['data']['result_redis_key']
