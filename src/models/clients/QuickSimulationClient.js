@@ -138,9 +138,10 @@ export class QuickWhitenSimulationClient extends QuickClient {
     const photoBuffer = Buffer.from(photo, 'binary')
     await this.#publishRequest(id, photoBuffer, photoRedisKey, expiresAt, options)
     const pubsubChannel = this.constructor.pubsubResponseKey(id)
-    const {result, error} = await this.#waitResponse({pubsubChannel, safe})
+    const {result, before, error} = await this.#waitResponse({pubsubChannel, safe})
     return {
       id,
+      before,
       result,
       error,
       original: photo,

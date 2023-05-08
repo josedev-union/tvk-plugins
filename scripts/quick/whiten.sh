@@ -25,9 +25,17 @@ DATA_JSON="{\"whiten\": 0.1}"
 
 TOKEN="$ENCODED_CLAIMS:$CLAIMS_SIGNATURE"
 
+echo "requesting v1 API ..."
 curl -XPOST \
   -H "Content-Type: multipart/form-data" \
   -H "Authorization: Bearer $TOKEN" \
   -F "imgPhoto=@$IMAGE_PATH" \
   -F 'data=$DATA_JSON' \
   $DENTRINO_API/v1/api/simulations/whiten
+
+echo "requesting v1rc API..."
+curl -XPOST \
+  -H "Content-Type: multipart/form-data" \
+  -F "imgPhoto=@$IMAGE_PATH" \
+  -F 'data=$DATA_JSON' \
+  $DENTRINO_API/api/simulations/whiten?clientId=$DENTRINO_CLIENT_ID
