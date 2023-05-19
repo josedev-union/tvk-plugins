@@ -1,7 +1,6 @@
 import _sha1 from 'js-sha1'
 import _sha256 from 'js-sha256'
 import {v4 as uuid} from 'uuid'
-import {promisify} from 'util'
 import crypto from 'crypto'
 
 const ENCRYPTED_ENCODING = 'base64'
