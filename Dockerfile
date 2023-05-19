@@ -1,4 +1,4 @@
-FROM node:16.16.0-alpine3.16
+FROM node:18.16.0-alpine3.16
 MAINTAINER support@tastytech.ca
 
 WORKDIR /app
