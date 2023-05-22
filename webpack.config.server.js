@@ -55,17 +55,9 @@ module.exports = {
   },
   plugins: [
     new RemovePlugin({ before: {include: ['dist']}}),
-    new CopyPlugin({
-      patterns: [
-        {
-          from: './src/views/',
-          to: './src/views',
-        },
-        {
-          from: './public/',
-          to: './public',
-        },
-      ],
-    }),
+    new CopyPlugin([
+      { from: './src/views/', to: './src/views' },
+      { from: './public/', to: './public' }
+    ]),
   ],
 };

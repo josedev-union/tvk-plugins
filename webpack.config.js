@@ -1,8 +1,6 @@
 const CopyPlugin = require('copy-webpack-plugin');
 const RemovePlugin = require('remove-files-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
-const NodePolyfillPlugin = require("node-polyfill-webpack-plugin")
-
 
 module.exports = {
   entry: {
@@ -59,7 +57,6 @@ module.exports = {
     filename: 'js/[name].bundle.js'
   },
   plugins: [
-    new NodePolyfillPlugin(),
     new Dotenv({
       safe: true,
       expand: true,
@@ -68,21 +65,9 @@ module.exports = {
       silent: true
     }),
     new RemovePlugin({ before: {include: ['public/assets']}}),
-    new CopyPlugin({
-      patterns: [
-        {
-          from: './assets/css/*',
-          to({ context, absoluteFilename }) {
-            return "[source]".replace("assets", "");
-          },
-        },
-        {
-          from: './assets/vendor/css/**/*',
-          to({ context, absoluteFilename }) {
-            return "[source]".replace("assets", "");
-          },
-        },
-      ],
-    }),
+    new CopyPlugin([
+      { from: './assets/css/*', to: '.', transformPath(target, abs) { return target.replace("assets", ""); } },
+      { from: './assets/vendor/css/**/*', to: '.', transformPath(target, abs) { return target.replace("assets", ""); } }
+    ]),
   ],
 };
