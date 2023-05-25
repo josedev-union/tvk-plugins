@@ -17,6 +17,7 @@ export const logger = winston.createLogger({
   levels: levels,
   format: winston.format.combine(
     winston.format.errors({ stack: true }),
+    winston.format.splat(),
     winston.format.timestamp(),
     winston.format.printf(({ level, message, label, timestamp, stack}) => {
       let msg = `${timestamp} [${level}] ${message}`

@@ -4,6 +4,12 @@ import {sanitizer} from '../tools/sanitizer'
 import {normalizer} from '../tools/normalizer'
 import {validator} from '../tools/validator'
 
+const PARAM_VALUE_DEFAULT_MIX_FACTOR = 0
+const PARAM_KEY_MIX_FACTOR = 'mix_factor'
+const PARAM_KEY_START_STYLE_STATS = 'start_style_stats'
+const PARAM_KEY_END_STYLE_STATS = 'end_style_stats'
+
+
 export class QuickBase {
 
   STORAGE_WHITELIST() { return [] }
@@ -109,13 +115,13 @@ export class QuickSegment extends QuickBase {
 
 export class QuickSynth extends QuickBase {
   static get COLLECTION_NAME() { return 'quick_synth' }
-  PARAMS_WHITELIST() {return ['mix_factor', 'start_style_stats', 'end_style_stats'] }
+  PARAMS_WHITELIST() {return [PARAM_KEY_MIX_FACTOR, PARAM_KEY_START_STYLE_STATS, PARAM_KEY_END_STYLE_STATS] }
 
   validationErrors() {
     const errors = []
     validator.validateNumber({
-      fieldName: 'mix_factor',
-      value: this.params['mix_factor'],
+      fieldName: PARAM_KEY_MIX_FACTOR,
+      value: this.params[PARAM_KEY_MIX_FACTOR],
       min: 0.0,
       max: 1.0,
       addTo: errors,
@@ -125,16 +131,16 @@ export class QuickSynth extends QuickBase {
 
   normalizeData() {
     // Params
-    this.params['mix_factor'] = normalizer.toFloat(this.params['mix_factor'] || 0.5 )
-    this.params['start_style_stats'] = normalizer.toChoicesString(this.params['start_style_stats'] || null)
-    this.params['end_style_stats'] = normalizer.toChoicesString(this.params['end_style_stats'] || null)
+    this.params[PARAM_KEY_MIX_FACTOR] = normalizer.getValue(normalizer.toFloat(this.params[PARAM_KEY_MIX_FACTOR]), normalizer.toFloat(PARAM_VALUE_DEFAULT_MIX_FACTOR))
+    this.params[PARAM_KEY_START_STYLE_STATS] = normalizer.toChoicesString(this.params[PARAM_KEY_START_STYLE_STATS] || null)
+    this.params[PARAM_KEY_END_STYLE_STATS] = normalizer.toChoicesString(this.params[PARAM_KEY_END_STYLE_STATS] || null)
   }
 
   buildJobOptions() {
     return  {
-      mix_factor: this.params['mix_factor'],
-      start_style_stats: this.params['start_style_stats'],
-      end_style_stats: this.params['end_style_stats'],
+      mix_factor: this.params[PARAM_KEY_MIX_FACTOR],
+      start_style_stats: this.params[PARAM_KEY_START_STYLE_STATS],
+      end_style_stats: this.params[PARAM_KEY_END_STYLE_STATS],
     }
   }
 }

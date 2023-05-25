@@ -15,4 +15,8 @@ export const normalizer = new (class {
     }
     return val
   }
+
+  getValue(val, default_val) {
+    return (val === undefined || val === null) ? default_val : val
+  }
 })()

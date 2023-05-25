@@ -1,6 +1,7 @@
 import {idGenerator} from '../tools/idGenerator'
 import {Database} from './Database'
 import {InMemory as Cache} from '../../cache/InMemory'
+import {logger} from '../../instrumentation/logger'
 
 import {timeInSeconds} from '../../utils/time'
 const {SECONDS, MINUTES, HOURS, DAYS} = timeInSeconds
@@ -60,6 +61,7 @@ export class ApiClient {
 
     apiIsEnabled({api='default'}) {
       const configValue = this.#getApiConfig({api, config: API_CONFIG_ENABLED})
+      logger.debug("apiClient.apiIsEnabled: API id is %s", api)
       if (typeof(configValue) === 'undefined') return true
       return configValue
     }
