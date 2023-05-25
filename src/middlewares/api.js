@@ -22,6 +22,13 @@ export const api = new (class {
     }
   }
 
+  getRequestHeader() {
+    return (req, res, next) => {
+      logger.debug('api.getRequestHeader: Request header: %O', req.headers)
+      next()
+    }
+  }
+
   setPublic() {
     return (req, res, next) => {
       res.locals.dentIsFrontendRoute = true
