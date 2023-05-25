@@ -224,7 +224,8 @@ function postFull() {
           beforeUrl,
           resultUrl,
         }
-      }
+      },
+      args: dbSimulation.buildJobOptions(),
     })
   })
 }
@@ -299,7 +300,8 @@ function postWhiten() {
           beforeUrl,
           resultUrl,
         }
-      }
+      },
+      args: dbSimulation.buildJobOptions(),
     })
   })
 }

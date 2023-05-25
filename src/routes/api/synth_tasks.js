@@ -65,7 +65,8 @@ function post() {
         result: Buffer.from(simulation.result, 'binary').toString('base64'),
         startStats: simulation.startStats,
         endStats: simulation.endStats,
-      }
+      },
+      args: dbSimulation.buildJobOptions(),
     })
   })
 }
