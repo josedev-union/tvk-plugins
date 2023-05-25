@@ -83,6 +83,7 @@ export const quickApi = new (class {
   get validateApiVisibility() {
     return asyncMiddleware('quickApi.validateApiVisibility', async (req, res, next) => {
       const {dentApiId: apiId, dentClient: client} = res.locals
+      logger.verbose(`API ID is ${apiId}`)
       if (!client.apiIsEnabled({api: apiId})) {
         throw quickApi.#newAuthorizationError({
           subtype: 'no-access-to-route',
@@ -182,6 +183,9 @@ export const quickApi = new (class {
       const {data: dataJson} = fields
       const data = quickApi.#parseJson(dataJson) || {}
       const images = {}
+      logger.verbose('Parsed request: fiedls are %O', dataJson)
+      logger.verbose('Parsed request: parsed fiedls are %O', data)
+      logger.verbose('Parsed request: fiels are %O', files)
       for (let fileKey in files) {
         if (['img', 'seg'].some(word => fileKey.startsWith(word))) {
           images[fileKey] = files[fileKey]
@@ -197,11 +201,14 @@ export const quickApi = new (class {
 
   async #readBody(req, res) {
     if (req.rawBodyJson) {
+      logger.verbose('Request body is parsed as JSON.')
+      logger.debug('quickApi.readBody: Raw body Json is %O', req.rawBodyJson)
       return {
         fields: {data: req.rawBodyJson},
         files: {},
       }
     } else {
+      logger.verbose('Request body is parsed as form-data.')
       return quickApi.#readBodyForm(req, res)
     }
   }
@@ -211,6 +218,8 @@ export const quickApi = new (class {
     const fields = req.body || {}
     const allFiles = req.files || []
     const files = {}
+    logger.debug('quickApi.readBodyForm: Request body parsed by multer is %O.', fields)
+    logger.debug('quickApi.readBodyForm: Request files parsed by multer is %O.', allFiles)
     allFiles.forEach((file) => {
       file.originalFilename = file.originalname
       file.content = file.buffer
@@ -246,20 +255,23 @@ export const quickApi = new (class {
       const {data: bodyData} = res.locals.dentParsedBody
       // Set default params(force) and filter others than customizable and force
       const params = Object.assign({}, bodyData, force)
+      logger.debug('quickApi.dataToModel: Params before converting to model are %O', params)
       if (typeof(customizable) !== 'undefined') {
         Object.keys(params).forEach((key) => {
           if (!customizable.includes(key) && !(key in force)) {
+            logger.debug('quickApi.dataToModel: Key %s is removed from the request because it is not included in allowed param list', key)
             delete params[key]
           }
         })
       }
-
+      logger.debug('quickApi.dataToModel: Params after converting to model are %O', params)
       const model = modelConstructor.build({
         clientId,
         params,
         metadata: bodyData,
       })
       model.normalizeData()
+      logger.debug('quickApi.dataToModel: Params after normalizeing the model are %O', model.params)
       const errors = model.validationErrors()
       if (errors.length > 0) {
         const {message} = errors[0]

@@ -83,8 +83,8 @@ export class QuickFullSimulation extends QuickBase {
     // Params
     this.params[PARAM_KEY_MODE] = normalizer.toChoicesString(this.params[PARAM_KEY_MODE] || PARAM_VALUE_DEFAULT_MODE)
     this.params[PARAM_KEY_BLEND] = normalizer.toChoicesString(this.params[PARAM_KEY_BLEND] || PARAM_VALUE_DEFAULT_BLEND)
-    this.params[PARAM_KEY_BRIGHTNESS] = normalizer.toFloat(this.params[PARAM_KEY_BRIGHTNESS] || PARAM_VALUE_DEFAULT_BRIGHTNESS)
-    this.params[PARAM_KEY_WHITEN] = normalizer.toFloat(this.params[PARAM_KEY_WHITEN] || PARAM_VALUE_DEFAULT_WHITEN)
+    this.params[PARAM_KEY_BRIGHTNESS] = normalizer.getValue(normalizer.toFloat(this.params[PARAM_KEY_BRIGHTNESS]), normalizer.toFloat(PARAM_VALUE_DEFAULT_BRIGHTNESS))
+    this.params[PARAM_KEY_WHITEN] = normalizer.getValue(normalizer.toFloat(this.params[PARAM_KEY_WHITEN]), normalizer.toFloat(PARAM_VALUE_DEFAULT_WHITEN))
     this.params[PARAM_KEY_STYLE_MODE] = normalizer.toChoicesString(this.params[PARAM_KEY_STYLE_MODE] || PARAM_VALUE_DEFAULT_STYLE_MODE)
     if (this.params[PARAM_KEY_STYLE_MODE] == PARAM_VALUE_STYLE_MODE_MIX) {
       this.params[PARAM_KEY_MIX_FACTOR] = normalizer.toFloat(this.params[PARAM_KEY_MIX_FACTOR])
@@ -202,7 +202,7 @@ export class QuickWhitenSimulation extends QuickBase {
 
   normalizeData() {
     // Params
-    this.params['whiten'] = normalizer.toFloat(this.params['whiten'] || 0.5 )
+    this.params['whiten'] = normalizer.getValue(normalizer.toFloat(this.params['whiten']), normalizer.toFloat(PARAM_VALUE_DEFAULT_WHITEN))
   }
 
   buildJobOptions() {
