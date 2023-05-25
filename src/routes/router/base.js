@@ -15,7 +15,11 @@ export class BasicRouter {
   // Router name
   NAME() { return "Basic"}
   // The list of handlers(aka. middlewares)
-  BASIC_HANDLERS() { return [] }
+  BASIC_HANDLERS() {
+    return [
+      api.getRequestHeader(),
+    ]
+  }
   // Key name in kwgard for the route id
   ROUTE_ID_KEY() { return "id" }
 
@@ -110,6 +114,7 @@ export class QuickRouter extends BasicRouter {
   NAME() {return "Quick"}
   BASIC_HANDLERS() {
     return [
+      ...super.BASIC_HANDLERS(),
       api.setId(this.apiId),
       quickApi.globalTimeout(this.NAME()),
       quickApi.parseAuthToken,

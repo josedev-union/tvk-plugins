@@ -21,7 +21,7 @@ CLAIMS_JSON="{\"clientId\": \"$DENTRINO_CLIENT_ID\", \"paramsHashed\": \"none\"}
 ENCODED_CLAIMS=$(echo -n $CLAIMS_JSON|base64 -w0)
 CLAIMS_SIGNATURE=$(echo -n "$CLAIMS_JSON" | openssl dgst -sha256 -hex -hmac $DENTRINO_CLIENT_SECRET | sed 's/^.* //')
 
-DATA_JSON="{\"whiten\": 0.1}"
+DATA_JSON="{\"whiten\": 0.3}"
 
 TOKEN="$ENCODED_CLAIMS:$CLAIMS_SIGNATURE"
 
@@ -30,12 +30,12 @@ curl -XPOST \
   -H "Content-Type: multipart/form-data" \
   -H "Authorization: Bearer $TOKEN" \
   -F "imgPhoto=@$IMAGE_PATH" \
-  -F 'data=$DATA_JSON' \
+  -F "data=$DATA_JSON" \
   $DENTRINO_API/v1/api/simulations/whiten
 
 echo "requesting v1rc API..."
 curl -XPOST \
   -H "Content-Type: multipart/form-data" \
   -F "imgPhoto=@$IMAGE_PATH" \
-  -F 'data=$DATA_JSON' \
+  -F "data=$DATA_JSON" \
   $DENTRINO_API/api/simulations/whiten?clientId=$DENTRINO_CLIENT_ID
