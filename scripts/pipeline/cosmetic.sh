@@ -23,12 +23,23 @@ DATA_JSON="{\"mixFactor\": 1, \"whiten\": 0, \"brightness\": 0, \"styleMode\": \
 
 # v1rc
 echo "Requesting cosmetic V1rc API... "
-curl -XPOST \
+res=$(curl -XPOST \
   -F "imgPhoto=@$PHOTO_PATH" \
   -F "imgStartStyle=@$START_STYLE_PATH" \
   -F "imgEndStyle=@$END_STYLE_PATH" \
   -F "data=$DATA_JSON" \
-  $DENTRINO_API/api/simulations/cosmetic?clientId=$DENTRINO_CLIENT_ID
+  $DENTRINO_API/api/simulations/cosmetic?clientId=$DENTRINO_CLIENT_ID)
+
+
+echo $res
+simulation_id=$(echo $res | jq -r .simulation.id)
+
+echo "Patching feedbackScore in cosmetic V1rc API... "
+curl -XPATCH \
+  -H 'Content-Type: application/json' \
+  -d '{"feedbackScore": 2.75}' \
+  "$DENTRINO_API/api/simulations/$simulation_id?clientId=$DENTRINO_CLIENT_ID" \
+  | jq .
 
 # v1
 echo "Requesting cosmetic V1 API... "
