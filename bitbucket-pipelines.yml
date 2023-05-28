@@ -75,7 +75,7 @@ definitions:
           - apk add make git
           - echo $GCP_KEY_JSON_PROD | base64 -d > ./gcloud-api-key.json
           - cat ./gcloud-api-key.json | docker login -u _json_key --password-stdin https://gcr.io
-          - PROJECT_ID=dentrino-production make update_latest
+          - PROJECT_ID=dentrino-production APP_ENV=production make update_latest
 
     - step: &deploy-prod
         name: Deploy production
