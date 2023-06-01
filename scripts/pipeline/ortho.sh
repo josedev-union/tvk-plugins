@@ -25,8 +25,6 @@ DATA_JSON="{\"mixFactor\": 1, \"whiten\": 0, \"brightness\": 0, \"styleMode\": \
 echo "Requesting ortho V1rc API... "
 res=$(curl -XPOST \
   -F "imgPhoto=@$PHOTO_PATH" \
-  -F "imgStartStyle=@$START_STYLE_PATH" \
-  -F "imgEndStyle=@$END_STYLE_PATH" \
   -F "data=$DATA_JSON" \
   $DENTRINO_API/api/simulations/ortho?clientId=$DENTRINO_CLIENT_ID)
 
@@ -50,7 +48,5 @@ TOKEN="$ENCODED_CLAIMS:$CLAIMS_SIGNATURE"
 curl -XPOST \
   -H "Authorization: Bearer $TOKEN" \
   -F "imgPhoto=@$PHOTO_PATH" \
-  -F "imgStartStyle=@$START_STYLE_PATH" \
-  -F "imgEndStyle=@$END_STYLE_PATH" \
   -F "data=$DATA_JSON" \
   $DENTRINO_API/v1/api/simulations/ortho?clientId=$DENTRINO_CLIENT_ID
