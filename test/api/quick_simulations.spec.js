@@ -7,7 +7,7 @@ import axios from 'axios'
 
 import {redisPubsub, buffersRedis, redisSubscribe, clearRedis, redisUnsubscribeAll} from '../../src/config/redis'
 import {QuickFullSimulationClient} from "../../src/models/clients/QuickSimulationClient"
-import {QuickSimulation} from "../../src/models/database/QuickSimulation"
+import {QuickFullSimulation} from "../../src/models/database/QuickSimulation"
 import {ApiSimulationClient} from "../helpers/ApiSimulationClient"
 import {firebaseHelpers} from '../helpers/firebaseHelpers'
 import {simpleCrypto} from "../../src/shared/simpleCrypto"
@@ -180,7 +180,7 @@ describe('POST simulations/ortho', () => {
     })
 
     test(`create a new simulation with the params used`, async () => {
-      const simulation = await QuickSimulation.get(response.body.simulation.id, {source: googleProject})
+      const simulation = await QuickFullSimulation.get(response.body.simulation.id, {source: googleProject})
       expect(simulation.params).toEqual({
         mode: 'ortho',
         blend: 'poisson',
@@ -247,7 +247,7 @@ describe('POST simulations/cosmetic', () => {
     })
 
     test(`create a new simulation with the params used`, async () => {
-      const simulation = await QuickSimulation.get(response.body.simulation.id, {source: googleProject})
+      const simulation = await QuickFullSimulation.get(response.body.simulation.id, {source: googleProject})
       expect(simulation.params).toEqual({
         mode: 'cosmetic',
         blend: 'poisson',
@@ -821,13 +821,13 @@ function describeSimulationMetadataChanges(getParams) {
     })
 
     test(`create a new simulation`, async () => {
-      const simulation = await QuickSimulation.get(response.body.simulation.id, {source: googleProject})
+      const simulation = await QuickFullSimulation.get(response.body.simulation.id, {source: googleProject})
       expect(simulation).toBeTruthy()
     })
 
     test(`simulation has metadata`, async () => {
       const simResponded = response.body.simulation
-      const simulation = await QuickSimulation.get(simResponded.id, {source: googleProject})
+      const simulation = await QuickFullSimulation.get(simResponded.id, {source: googleProject})
       expect(simulation.id).toEqual(simResponded.id)
       expect(simulation.metadata).toEqual({
         captureType: 'camera',
@@ -838,7 +838,7 @@ function describeSimulationMetadataChanges(getParams) {
 
     test(`respond simulation metadata`, async () => {
       const simResponded = response.body.simulation
-      const simulation = await QuickSimulation.get(simResponded.id, {source: googleProject})
+      const simulation = await QuickFullSimulation.get(simResponded.id, {source: googleProject})
       expect(simResponded.metadata).toEqual(simulation.metadata)
     })
   })
@@ -860,7 +860,7 @@ function describeSimulationStorageChanges(getParams) {
     })
 
     test(`simulation has storage data`, async () => {
-      const simulation = await QuickSimulation.get(response.body.simulation.id, {source: googleProject})
+      const simulation = await QuickFullSimulation.get(response.body.simulation.id, {source: googleProject})
       expect(simulation.storage.bucket).toEqual(bucketname)
       expect(simulation.storage.directoryPath).toBeDefined()
       expect(simulation.storage.originalPath).toBeDefined()
