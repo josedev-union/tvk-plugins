@@ -5,6 +5,13 @@ image: node:16-alpine
 
 definitions:
   steps:
+    - step: &test
+        caches:
+          - node
+        script:
+          - npm install
+          - npm test
+
     - step: &build-staging
         name: Build Docker image
         script:
@@ -85,14 +92,17 @@ definitions:
 pipelines:
   branches:
     master:
+      - step: *test
       - step: *build-prod
       - step: *push-prod
       - step: *deploy-prod
     staging:
+      - step: *test
       - step: *build-staging
       - step: *push-staging
       - step: *deploy-staging
 
   pull-requests:
     '**':
+      - step: *test
       - step: *build-staging
