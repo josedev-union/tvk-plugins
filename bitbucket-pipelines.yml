@@ -5,8 +5,14 @@ options:
 image: timbru31/java-node:11-16
 
 definitions:
+  services:
+    redis:
+      image: redis:7
+
   steps:
     - step: &test
+        services:
+          - redis
         caches:
           - node
         script:
