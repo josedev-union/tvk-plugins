@@ -1043,7 +1043,12 @@ async function mockWorkerRequest({error}) {
     await redisSetex(morphedRedisKey, 5, encrypt(Buffer.from(mouthMorphed, 'binary')))
   }
   const responseChannel = QuickFullSimulationClient.pubsubResponseKey(simulationRequest.id)
-  const responseMessage = error ? {error} : {
+  const responseMessage = error ? {
+    status: 'error',
+    data: {
+      error: error,
+    },
+  } : {
     status: 'success',
     data: {
       result_redis_key: resultRedisKey,
