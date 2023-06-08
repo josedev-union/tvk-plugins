@@ -89,8 +89,12 @@ export class QuickFullSimulationClient extends QuickClient {
     const messageStr = await redisSubscribe(pubsubChannel)
     logger.verbose(`Result Received ${pubsubChannel} - ${messageStr}`)
     const message = JSON.parse(messageStr)
+
     if (message['status'] === 'error') {
       return this.throwError({message: message['data']['error'], safe})
+    }
+    if (message['error']) {
+      return this.#throwError({message: message['error'], safe})
     }
 
     const resultRedisKey = message['data']['result_redis_key']
