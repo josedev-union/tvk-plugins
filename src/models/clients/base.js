@@ -34,7 +34,7 @@ export class QuickClient {
     if (message.match(/timeout/i)) {
       return this.#throwTimeoutError({message, safe})
     }
-    let publicMessage = 'Error when executing task'
+    let publicMessage = `Error when executing ${this.job_type()}`
     let errorTag = 'generic'
     let subtype = undefined
 
@@ -47,15 +47,15 @@ export class QuickClient {
     }
     const error = new RichError({
       httpCode: 422,
-      id: 'task-error',
+      id: `${this.job_type()}-error`,
       subtype,
       subtypeIsPublic: true,
       publicMessage,
       debugMessage: message,
       logLevel: 'error',
       tags: {
-        'task:success': false,
-        'task:error': errorTag,
+        [`${this.job_type()}:success`]: false,
+        [`${this.job_type()}:error`]: errorTag,
       },
     })
 
@@ -67,18 +67,32 @@ export class QuickClient {
     const error = new RichError({
       httpCode: 504,
       id: 'timeout',
-      subtype: 'task-timeout',
+      subtype: `${this.job_type()}-timeout`,
       publicMessage: 'Operation took too long',
       debugMessage: message,
       logLevel: 'error',
       tags: {
-        'task:success': false,
-        'error:timeout': 'task-queue-wait',
-        'task:error': 'queue-wait',
+        [`${this.job_type()}:success`]: false,
+        'error:timeout': `${this.job_type()}-queue-wait`,
+        [`${this.job_type()}:error`]: 'queue-wait',
       },
     })
 
     if (safe) return {error}
     else throw error
+  }
+}
+
+
+export class QuickTaskClient extends QuickClient {
+  job_type() {
+    return "task"
+  }
+}
+
+
+export class QuickSimulationClient extends QuickClient {
+  job_type() {
+    return "simulation"
   }
 }

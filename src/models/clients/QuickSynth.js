@@ -6,7 +6,7 @@ import {redisPubsub, buffersRedis, redisSubscribe} from "../../config/redis"
 import {RichError} from "../../utils/RichError"
 import {simpleCrypto} from "../../shared/simpleCrypto"
 import {promisify} from "util"
-import {QuickClient} from './base'
+import {QuickTaskClient} from './base'
 
 const readfile = promisify(fs.readFile)
 const redisGet = promisify(buffersRedis.get).bind(buffersRedis)
@@ -17,7 +17,7 @@ const redisGetSafe = (key) => !key ? undefined : redisGet(key)
 const redisDelSafe = (key) => !key ? undefined : redisDel(key)
 
 
-export class QuickSynthClient extends QuickClient {
+export class QuickSynthClient extends QuickTaskClient {
   static PUBSUB_PREFIX = 'listener:quick:synth'
   static pubsubRequestKey() { return `${this.PUBSUB_PREFIX}:request` }
   static pubsubResponseKey(id) { return `${this.PUBSUB_PREFIX}:${id}:response` }

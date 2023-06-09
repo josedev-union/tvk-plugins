@@ -4,7 +4,7 @@ import {envShared} from '../../../src/shared/envShared'
 import {simpleCrypto} from '../../../src/shared/simpleCrypto'
 import {security} from '../../../src/models/security'
 import {SmileTask} from '../../../src/models/database/SmileTask'
-import {clearRedis} from '../../../src/config/redis'
+import {clearRedis, quitRedis, quitBuffersRedis, quitRedisPubsub} from '../../../src/config/redis'
 import {env} from '../../../src/config/env'
 import {firebaseHelpers} from '../../helpers/firebaseHelpers'
 
@@ -612,3 +612,9 @@ async function simplePostTask({user, client, ip='127.0.0.1'}) {
     const token = simpleCrypto.base64(`${client.id}:${signature}`)
     return await postSolicitation(json, user.id, token, ip)
 }
+
+afterAll(async () => {
+  await quitRedis()
+  await quitBuffersRedis()
+  await quitRedisPubsub()
+})

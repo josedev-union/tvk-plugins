@@ -1,6 +1,6 @@
 import {Factory} from 'rosie'
 import {RateLimit} from '../../../src/models/database/RateLimit'
-import {redis, clearRedis} from '../../../src/config/redis'
+import {clearRedis, quitRedis, quitBuffersRedis, quitRedisPubsub} from '../../../src/config/redis'
 import '../../../src/config/config'
 
 describe(`limit the amount of the slots within a timeframe`, () => {
@@ -37,4 +37,10 @@ describe(`limit the amount of the slots within a timeframe`, () => {
         expect(secondAllowed).toBe(true)
         expect(thirdAllowed).toBe(true)
     })
+})
+
+afterAll(async () => {
+  await quitRedis()
+  await quitBuffersRedis()
+  await quitRedisPubsub()
 })

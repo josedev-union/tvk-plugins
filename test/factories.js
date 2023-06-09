@@ -3,7 +3,7 @@ import {User} from '../src/models/database/User'
 import {Database} from '../src/models/database/Database'
 import {ApiClient} from '../src/models/database/ApiClient'
 import {SmileTask} from '../src/models/database/SmileTask'
-import {QuickSimulation} from '../src/models/database/QuickSimulation'
+import {QuickFullSimulation} from '../src/models/database/QuickSimulation'
 import {simpleCrypto} from '../src/shared/simpleCrypto'
 import {idGenerator} from '../src/models/tools/idGenerator'
 import {v4 as uuid} from 'uuid'
@@ -64,7 +64,7 @@ Factory.define('smile_task', SmileTask)
     }
   })
 
-Factory.define('quick_simulation', QuickSimulation)
+Factory.define('quick_simulation', QuickFullSimulation)
   .sequence('id', (i) => simpleCrypto.sha1(uuid()))
   .sequence('clientId', (i) => Factory.build('api_client').id)
   .sequence('createdAt', (i) => Database.toTimestamp(new Date()))
