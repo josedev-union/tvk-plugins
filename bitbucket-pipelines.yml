@@ -10,6 +10,7 @@ definitions:
 
   steps:
     - step: &test
+        name: Execute tests
         image: timbru31/java-node:11-16
         services:
           - redis
