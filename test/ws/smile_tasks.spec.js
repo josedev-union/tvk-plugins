@@ -76,7 +76,7 @@ describe(`full event sequence`, () => {
   })
 })
 
-afterAll(async (done) => {
+afterAll(async () => {
   await redis.quit()
-  server.close(done);
+  server.close();
 })
