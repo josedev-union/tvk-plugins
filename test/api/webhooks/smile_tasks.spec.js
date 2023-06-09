@@ -2,6 +2,7 @@ import { Factory } from 'rosie'
 import {SmileTask} from '../../../src/models/database/SmileTask'
 import {helpers} from '../../helpers'
 import {firebaseHelpers} from '../../helpers/firebaseHelpers'
+import {quitRedis, quitBuffersRedis, quitRedisPubsub} from '../../../src/config/redis'
 
 import {initSupertestApp} from '../../helpers/supertest'
 const supertestApp = initSupertestApp()
@@ -78,3 +79,9 @@ function postWebhook(json={}) {
     .set('Content-Type', 'application/json')
     .send(json)
 }
+
+afterAll(async () => {
+  await quitRedis()
+  await quitBuffersRedis()
+  await quitRedisPubsub()
+})

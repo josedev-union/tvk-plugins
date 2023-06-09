@@ -11,16 +11,30 @@ export class WebsocketServer {
     }
     return this.singleton
   }
-  
+
   constructor() {
     this.localServers = {}
     this.generalRedis = redisFactory.newRedisPubsub()
     this.onReceive = null
   }
 
+  destroy() {
+    this.generalRedis.quit()
+    for (var key in this.localServers) {
+      this.localServers[key].terminate()
+      delete this.localServers[key]
+    }
+  }
+
   static upgradeRequestsOn(server) {
     server.on('upgrade', (request, socket, head) => {
       WebsocketServer.instance().onUpgrade(request, socket, head);
+    });
+  }
+
+  upgradeRequestsOn(server) {
+    server.on('upgrade', (request, socket, head) => {
+      this.onUpgrade(request, socket, head);
     });
   }
 

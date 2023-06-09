@@ -10,6 +10,7 @@ import {security} from '../../src/models/security'
 import {SmileTask} from '../../src/models/database/SmileTask'
 import {storageFactory} from '../../src/models/storage/storageFactory'
 import {redisFactory} from '../../src/models/redisFactory'
+import {quitRedis, quitBuffersRedis, quitRedisPubsub} from '../../src/config/redis'
 import {env} from '../../src/config/env'
 import {WebsocketServer} from '../../src/websockets/WebsocketServer'
 import app from '../../src/app'
@@ -18,7 +19,8 @@ import {firebaseHelpers} from '../helpers/firebaseHelpers'
 const redis = redisFactory.newRedisPubsub()
 const server = http.createServer();
 server.listen(9876, '0.0.0.0')
-WebsocketServer.upgradeRequestsOn(server)
+const wsServer = WebsocketServer.instance()
+wsServer.upgradeRequestsOn(server)
 
 beforeAll(async () => {
   await firebaseHelpers.ensureTestEnv()
@@ -77,6 +79,10 @@ describe(`full event sequence`, () => {
 })
 
 afterAll(async () => {
+  server.close()
+  wsServer.destroy()
   await redis.quit()
-  server.close();
+  await quitRedis()
+  await quitBuffersRedis()
+  await quitRedisPubsub()
 })
