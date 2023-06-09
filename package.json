@@ -15,7 +15,7 @@
     "start-server": "node -r newrelic src/start.js",
     "console": "node -r dotenv/config -r @babel/register -r ./src/config/config.js",
     "script": "npm run dev-build && node -r dotenv/config -r @babel/register -r ./src/config/config.js ./scripts/$SCRIPT.js",
-    "test:run": "jest -i --detectOpenHandles",
+    "test:run": "jest --detectOpenHandles --forceExit",
     "test": "firebase emulators:exec 'npm run test:run'"
   },
   "dependencies": {
