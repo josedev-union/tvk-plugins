@@ -6,6 +6,11 @@ export const redis = redisFactory.newRedis()
 export const buffersRedis = redisFactory.newRedis({return_buffers: true})
 export const redisPubsub = redisFactory.newRedisPubsub()
 export const clearRedis = promisify(redis.flushall).bind(redis)
+
+export const quitRedis = promisify(redis.quit).bind(redis)
+export const quitBuffersRedis = promisify(buffersRedis.quit).bind(buffersRedis)
+export const quitRedisPubsub = promisify(redisPubsub.quit).bind(redisPubsub)
+
 const allSubscribers = {}
 export function redisSubscribe(channel) {
   if (!allSubscribers[channel]) allSubscribers[channel] = []

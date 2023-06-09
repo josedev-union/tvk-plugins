@@ -75,3 +75,8 @@ describe(`full event sequence`, () => {
     expect(ws.closed).toBe(true)
   })
 })
+
+afterAll(async (done) => {
+  await redis.quit()
+  server.close(done);
+})

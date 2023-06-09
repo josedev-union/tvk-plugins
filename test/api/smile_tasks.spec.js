@@ -5,7 +5,7 @@ import {simpleCrypto} from '../../src/shared/simpleCrypto'
 import {security} from '../../src/models/security'
 import {SmileTask} from '../../src/models/database/SmileTask'
 import {storageFactory} from '../../src/models/storage/storageFactory'
-import {clearRedis} from '../../src/config/redis'
+import {clearRedis, quitRedis} from '../../src/config/redis'
 import {firebaseHelpers} from '../helpers/firebaseHelpers'
 
 const UPLOAD_MAX_SIZE = envShared.maxUploadSizeMb * 1024 * 1024
@@ -320,3 +320,7 @@ async function simplePostTask({user, client, ip='127.0.0.1'}) {
     const token = simpleCrypto.base64(`${client.id}:${signature}`)
     return await postSolicitation(json, user.id, token, ip)
 }
+
+afterAll(async () => {
+  await quitRedis()
+})

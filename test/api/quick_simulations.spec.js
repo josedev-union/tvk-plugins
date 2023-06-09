@@ -5,7 +5,7 @@ import { Factory } from 'rosie'
 
 import axios from 'axios'
 
-import {redisPubsub, buffersRedis, redisSubscribe, clearRedis, redisUnsubscribeAll} from '../../src/config/redis'
+import {redisPubsub, buffersRedis, redisSubscribe, clearRedis, redisUnsubscribeAll, quitRedis, quitBuffersRedis, quitRedisPubsub} from '../../src/config/redis'
 import {QuickFullSimulationClient} from "../../src/models/clients/QuickSimulationClient"
 import {QuickFullSimulation} from "../../src/models/database/QuickSimulation"
 import {ApiSimulationClient} from "../helpers/ApiSimulationClient"
@@ -1084,3 +1084,9 @@ function intToIp({inx}) {
   inx = Math.floor(inx / 256)
   return `192.0.${part2}.${part1}`
 }
+
+afterAll(async () => {
+  await quitRedis()
+  await quitBuffersRedis()
+  await quitRedisPubsub()
+})
