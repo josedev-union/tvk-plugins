@@ -1,8 +1,7 @@
 options:
   docker: true
 
-#image: node:16-alpine
-image: timbru31/java-node:11-16
+image: node:16-alpine
 
 definitions:
   services:
@@ -11,6 +10,7 @@ definitions:
 
   steps:
     - step: &test
+        image: timbru31/java-node:11-16
         services:
           - redis
         caches:
