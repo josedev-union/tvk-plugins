@@ -24,7 +24,7 @@ jest.mock('../../src/config/env' , () => {
   env.quickApiMaxUploadSizeMb = 0.6
   env.quickApiMaxUploadSizeBytes = env.quickApiMaxUploadSizeMb * 1024 * 1024
 
-  env.quickApiRateLimit_timeWindowSeconds = 60.0
+  env.quickApiRateLimit_timeWindowSeconds = 120.0
   env.quickApiRateLimit_clientSimulationsPerTimeWindow = 2.0
   env.quickApiRateLimit_clientRequestsPerTimeWindow = 3.0
 
