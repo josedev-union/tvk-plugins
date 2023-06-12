@@ -1,12 +1,10 @@
-options:
-  docker: true
-
 image: node:16-alpine
 
 definitions:
   services:
     redis:
       image: redis:7
+      memory: 128
 
   steps:
     - step: &test
@@ -28,6 +26,8 @@ definitions:
           - docker save --output image.cache $(make image_tag)
         artifacts:
           - image.cache
+        services:
+          - docker
 
     - step: &push-staging
         name: Push to staging gcr
@@ -38,6 +38,8 @@ definitions:
           - echo $GCP_KEY_JSON_STAGING | base64 -d > ./gcloud-api-key.json
           - cat ./gcloud-api-key.json | docker login -u _json_key --password-stdin https://gcr.io
           - make update_latest
+        services:
+          - docker
 
     - step: &deploy-staging
         name: Deploy staging
@@ -80,6 +82,8 @@ definitions:
           - docker save --output image.cache $(make image_tag)
         artifacts:
           - image.cache
+        services:
+          - docker
 
     - step: &push-prod
         name: Push to prod gcr
@@ -91,6 +95,8 @@ definitions:
           - echo $GCP_KEY_JSON_PROD | base64 -d > ./gcloud-api-key.json
           - cat ./gcloud-api-key.json | docker login -u _json_key --password-stdin https://gcr.io
           - PROJECT_ID=dentrino-production APP_ENV=production make update_latest
+        services:
+          - docker
 
     - step: &deploy-prod
         name: Deploy production
