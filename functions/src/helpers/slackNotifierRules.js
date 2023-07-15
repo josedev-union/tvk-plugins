@@ -18,6 +18,7 @@ function paramsMatch({params={}, conditions={}}) {
   const allMatch = Object.entries(conditions).every(([key, expected]) => {
     const val = params[key]
     let matched = false
+  // TODO(joseb): Once conditions include op, distinguish the match result between equal and include
     if (val === expected) matched = true
     else if (String(val).includes(String(expected))) matched = true
     console.log("COMPARE", key, val, expected, matched)

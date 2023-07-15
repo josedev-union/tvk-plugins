@@ -11,13 +11,11 @@ const {defineFunctionsToWatchBuckets} = require('../helpers/functions')
 const SLACK_CHANNEL_STAG_ORTHO_PILOT = 'C042YDEF0BV'
 const SLACK_CHANNEL_STAG_ON_DEMAND = 'C02DY7HHE8K'
 const SLACK_CHANNEL_PROD_ON_DEMAND = 'C02EMRWB256'
+// TODO(joseb): Add op verb in when to distinguish the match result between equal and include
+//              i.e. when: [{key: bucket, value: staging.dentrio.ai, op: equal}, {key: clientId, value: testtxt, op: include}]
 const SLACK_NOTIFIERS = [
   {
-    when: {bucket: 'staging', clientId: 'testext'},
-    notifyToChannel: SLACK_CHANNEL_STAG_ORTHO_PILOT,
-  },
-  {
-    when: {bucket: 'b-dentrino-staging'},
+    when: {bucket: 'b-dentrino-staging', clientId: 'testext'},
     notifyToChannel: SLACK_CHANNEL_STAG_ORTHO_PILOT,
   },
 
